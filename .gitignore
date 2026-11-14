@@ -1,0 +1,43 @@
+# Machine-specific data and overrides (not loaded by the scaffold).
+/local/
+*.local
+*.local.*
+.env
+.env.*
+
+# Credentials and private key material. Still review every staged diff.
+.ssh/
+.gnupg/
+.aws/
+.azure/
+.config/gcloud/
+.git-credentials
+.netrc
+.npmrc
+.pypirc
+credentials
+credentials.*
+secrets/
+secrets.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.agekey
+id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
+
+# History, state, backups and editor/OS files.
+.bash_history
+.zsh_history
+.lesshst
+*.db
+*.db-*
+*.log
+*.bak
+*.swp
+*.swo
+*~
+.DS_Store
