@@ -6,7 +6,8 @@ This is a map of **what exists**, with future responsibilities labelled.
 dotfiles/
 ├── README.md                # Short GitHub entry point
 ├── AGENTS.md                # Brief agent rules; links to this handbook
-├── bootstrap.sh             # Read-only scaffold today
+├── get-started.sh           # Standalone Git installation and one HTTPS clone
+├── bootstrap.sh             # Read-only checkout scaffold today
 ├── update.sh                # Read-only scaffold today
 ├── scripts/lib/             # OS detection and interactive confirmation
 ├── .config/
