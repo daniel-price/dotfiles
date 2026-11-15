@@ -44,9 +44,15 @@ grep -q 'Clone declined' "$TMP/out" || fail 'noninteractive clone not declined'
 
 # Existing checkout with exact origin should be skipped without changing it.
 mkdir "$TMP/home/.dotfiles"
+cat > "$TMP/home/.dotfiles/bootstrap.sh" <<'BOOT'
+#!/usr/bin/env bash
+printf 'unexpected bootstrap execution\n' > "$HOME/bootstrap-invoked"
+BOOT
 HOME="$TMP/home" PATH="$TMP/bin:$PATH" \
     bash "$ROOT/get-started.sh" >"$TMP/out" 2>&1
 grep -q 'skipped clone and update' "$TMP/out" || fail 'existing clone not skipped'
+grep -q 'Bootstrap execution declined' "$TMP/out" || fail 'bootstrap should require a separate approval'
+[[ ! -e "$TMP/home/bootstrap-invoked" ]] || fail 'bootstrap executed without terminal approval'
 
 if HOME="$TMP/home" SIMULATE_REMOTE='https://example.invalid/other' \
     PATH="$TMP/bin:$PATH" bash "$ROOT/get-started.sh" >"$TMP/out" 2>&1; then
@@ -54,6 +60,7 @@ if HOME="$TMP/home" SIMULATE_REMOTE='https://example.invalid/other' \
 fi
 grep -q 'unexpected origin' "$TMP/out" || fail 'missing origin error'
 
+rm "$TMP/home/.dotfiles/bootstrap.sh"
 rmdir "$TMP/home/.dotfiles"
 printf 'untouched\n' > "$TMP/home/.dotfiles"
 if HOME="$TMP/home" PATH="$TMP/bin:$PATH" \
