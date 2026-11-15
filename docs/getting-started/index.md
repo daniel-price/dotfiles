@@ -7,15 +7,18 @@ development-environment setup remains read-only scaffolding.
 ## Fresh machine: one-file bootstrap
 
 Prerequisites: Bash 3.2+ and curl; Git and GitHub SSH keys are **not** required.
-Supported hosts are macOS and Debian/Ubuntu-derived Linux (including Pop!_OS).
+Bash is included on standard macOS and Pop!_OS installations, but not every
+minimal Linux image. Supported hosts are macOS and Debian/Ubuntu-derived Linux
+(including Pop!_OS).
 
 ```sh
 (
   tmp_dir=$(mktemp -d) || exit 1
+  script="$tmp_dir/get-started.sh"
   trap 'rm -rf "$tmp_dir"' EXIT
-  curl -fsSLo "$tmp_dir/get-started.sh" \
+  curl -fsSLo "$script" \
     https://raw.githubusercontent.com/daniel-price/dotfiles/main/get-started.sh &&
-    bash "$tmp_dir/get-started.sh"
+    bash "$script"
 )
 ```
 
