@@ -23,6 +23,7 @@ design and historical plans are [available separately](reference/index.md).
 | --- | --- |
 | OS detection and explicit yes/no helper | Implemented in the scaffold |
 | Read-only `bootstrap.sh` and `update.sh` | Implemented |
+| Single-file Git prerequisite and public HTTPS clone | Implemented as standalone stage zero |
 | Dependency-free scaffold tests | Implemented |
 | Installing tools and runtimes | Planned |
 | Deploying Neovim, Zellij, Ghostty or shell settings | Planned |
@@ -31,8 +32,9 @@ design and historical plans are [available separately](reference/index.md).
 | Container/service configuration | Not yet designed |
 | GitHub Pages publication | Proposed in this documentation PR |
 
-An exit code of zero from the current bootstrap means **inspection completed**,
-not that setup was successful.
+`get-started.sh` only ensures Git and acquires the public checkout. An exit
+code of zero from the checkout's `bootstrap.sh` still means **inspection
+completed**, not that the machine has been configured.
 
 ## How do I use it?
 
