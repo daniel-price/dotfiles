@@ -41,3 +41,7 @@ id_ed25519*
 *.swo
 *~
 .DS_Store
+
+# Generated documentation site and Zensical local cache.
+/site/
+/.cache/

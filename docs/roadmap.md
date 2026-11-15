@@ -1,27 +1,40 @@
-# Incremental roadmap
+# Roadmap
 
-Implement each row as a small, reviewable change. Split the macOS and Linux paths
-or individual applications further when helpful. Validate modifying behaviour in
-a disposable machine or isolated home before using it on a daily workstation.
+A small, readable account of **what works now and what comes next**. Detailed
+task acceptance criteria are deliberately kept in
+[reference & history](reference/index.md) and future GitHub issues/PRs.
 
-| Order | Change | Independently testable acceptance check |
+## Current status
+
+**Scaffold only.** The two entry points are read-only, and the documentation
+site is proposed in a stacked PR. A checkout does not yet configure a machine.
+
+## Next milestones
+
+| Priority | Work | State |
 | --- | --- | --- |
-| 1 | Establish the first operation's state check, precise prompt and truthful outcome reporting. | Already-correct state skips; decline and noninteractive input leave state untouched; failure is visible. |
-| 2 | Ensure only missing Git, Zsh and curl prerequisites, separately for apt/Linux and Homebrew/macOS. | Each missing item needs consent; installed items are untouched; Linux never invokes Homebrew; no implicit upgrades. |
-| 3 | Add guided machine-specific SSH key creation and public-key registration instructions. | Existing keys are preserved; all writes require consent; private material stays local; authentication can be checked without publication. |
-| 4 | Install mise through a reviewed official method and a chosen supported version. | Existing installation is detected; decline leaves no downloads or files; a second run makes no unnecessary changes. |
-| 5 | Complete bootstrap acquisition, clone the exact personal dotfiles remote, and delegate to update. | Fresh-machine flow has no missing sibling files; existing/conflicting paths are safe; declined clone or delegation is honoured. |
-| 6 | Add guarded Git synchronisation to update. | Consent precedes fetch/pull; clean fast-forward succeeds; dirty, diverged or unexpected remotes fail without discarding work. Review newly fetched code before running it. |
-| 7 | Declare and provision one runtime/tool at a time with mise; add required system packages separately. | Missing tool installs only with consent; existing tools are not upgraded implicitly; shared and OS-specific declarations are tested. |
-| 8 | Validate native mise deployment with one disposable file, then migrate one explicitly approved configuration at a time. | Same symlink is skipped; conflicts cannot be overwritten silently; each write needs consent; markers are excluded; no private values enter Git. |
-| 9 | Add one optional OS setting at a time. | Detect existing value; show old/new values; decline is harmless; repeated application is idempotent on the target OS. |
-| 10 | Add an explicit upgrade operation and complete the change summary. | Routine update leaves installed versions alone; an upgrade lists exactly what will change and asks before each modifying operation. |
+| 1 | Finalise safe bootstrap acquisition and prerequisite checks | Planned |
+| 2 | Install mise and provision one tool at a time with confirmation | Planned |
+| 3 | Add guarded Git updates and a truthful change report | Planned |
+| 4 | Deploy one harmless dotfile via native mise; then migrate configs gradually | Planned |
+| 5 | Prototype an optional, approved private configuration overlay with explicit opt-in and precedence/conflict tests | Planned |
+| 5 | Prototype age encryption and verified restore with fake credentials | Planned |
+| 6 | Select and configure a separate history origin if tracked-file sync is needed | Proposed |
+| Later | Per-platform settings and optional service/container definitions | Not designed |
 
-Before step 8, review source files individually for platform paths, private
-values, obsolete tools and dependencies on files outside version control. Do not
-copy an existing private configuration repository wholesale. Migration always
-needs separate, explicit approval for the files being moved.
+## Delivery conventions
 
-Keep validation alongside each feature: add fixtures for new edge cases and
-tests that check visible behaviour. Add continuous validation on Linux and macOS
-when useful; avoid installing a large test framework for the initial scripts.
+A private-overlay implementation must test public-only setup, denied/unavailable
+private access, explicitly selected sources, dirty/diverged checkouts, mise
+merge order, overlapping target refusal and public CI/site isolation. It must
+use synthetic private fixtures, never actual employer repositories.
+
+Each feature should be a small PR with a copyable manual test plan. Keep
+existing configuration safe; verify no-change, refusal, conflict and repeat
+runs. A completed feature should change the relevant human-facing documentation
+from **planned** to **implemented**.
+
+- [Initial scaffold PR](https://github.com/daniel-price/dotfiles/pull/1)
+- [Mise architecture decision PR](https://github.com/daniel-price/dotfiles/pull/2)
+- [Detailed original implementation plan](reference/scaffold-roadmap.md) —
+  historical/agent-oriented, not the authoritative current checklist
