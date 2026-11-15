@@ -11,8 +11,7 @@ and clone this public repository once over HTTPS. `bootstrap.sh` and
 `update.sh` do **not** yet install mise, configure dotfiles or restore secrets.
 
 - **[Read the documentation](docs/index.md)** (source) ·
-  [GitHub Pages site](https://daniel-price.github.io/dotfiles/) (available after
-  this change is merged and Pages is configured)
+  [GitHub Pages site](https://daniel-price.github.io/dotfiles/)
 - [Getting started](docs/getting-started/index.md)
 - [Requirements](docs/requirements.md)
 - [Architecture and tools](docs/architecture/index.md)
@@ -22,23 +21,29 @@ and clone this public repository once over HTTPS. `bootstrap.sh` and
 
 ## Start on a new machine
 
-Download **one small script**, review it, then run it. Git and GitHub SSH keys
-are not prerequisites:
+Copy and paste this command into a terminal on macOS or Pop!_OS. It needs
+only Bash and curl; Git and GitHub SSH keys are not prerequisites.
+[Review the standalone script](https://github.com/daniel-price/dotfiles/blob/main/get-started.sh)
+before running downloaded code:
 
 ```sh
-curl -fsSLo dotfiles-get-started.sh https://raw.githubusercontent.com/daniel-price/dotfiles/main/get-started.sh && bash dotfiles-get-started.sh
+(
+  tmp_dir=$(mktemp -d) || exit 1
+  trap 'rm -rf "$tmp_dir"' EXIT
+  curl -fsSLo "$tmp_dir/get-started.sh" \
+    https://raw.githubusercontent.com/daniel-price/dotfiles/main/get-started.sh &&
+    bash "$tmp_dir/get-started.sh"
+)
 ```
 
-This checks whether Git is usable, asks before installing it if missing, then
-asks before cloning into `~/.dotfiles`. It does not download a ZIP, alter
-existing Git settings or execute code from the new checkout automatically.
-For now, the checkout bootstrap is read-only:
+The temporary download is deleted automatically when the command finishes.
+The script checks Git, asks before any installation or HTTPS clone into
+`~/.dotfiles`, then **asks separately before running** the checkout's
+`bootstrap.sh`. That bootstrap remains read-only scaffolding for now.
+An existing checkout is neither overwritten nor automatically updated.
 
-```sh
-bash ~/.dotfiles/bootstrap.sh
-```
-
-Do **not** use `curl ... | bash`: interactive stdin is required for approval.
+Do **not** use `curl ... | bash`: stdin must remain connected to your terminal
+for confirmations, and the download must finish before execution.
 
 ## Inspect the current scaffold
 
