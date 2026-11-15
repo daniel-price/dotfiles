@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
-# Self-contained stage-zero entry point; no dependency on other repo files.
+# Stage-zero entry point for a fresh macOS or Pop!_OS machine.
+# Git might not be installed yet, so we cannot start by cloning this repo.
+# This file is downloaded on its own (with curl), without requiring Git,
+# SSH configuration or any sibling scripts from the checkout.
+# Once Git is available, it clones the public repo and separately asks
+# permission before running the checkout's bootstrap.sh.
+# Bash 3.2+ is expected on our supported macOS and Pop!_OS installations.
 set -euo pipefail
 REMOTE='https://github.com/daniel-price/dotfiles.git'
 
