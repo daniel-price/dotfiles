@@ -1,0 +1,3 @@
+# Intentionally inert: tool requests will be added and tested individually.
+# The entry-point scripts do not install or link this file.
+[tools]
