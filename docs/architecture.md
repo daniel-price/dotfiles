@@ -35,8 +35,8 @@ guarantee that apt or any other tool is installed.
 | Linux system packages | apt on supported Debian-derived systems |
 | macOS packages and applications | Homebrew on macOS only |
 | Interactive shell | Zsh; bootstrap remains independent of its configuration |
-| Dotfile deployment | Evaluate mise's native symlink support before adding Bash logic |
-| Private settings and credentials | Machine-local files, outside version control |
+| Dotfile deployment | Mise's native `[dotfiles]`, after a per-target preflight |
+| Private settings and credentials | Machine-local identities; reviewed age ciphertext only after testing |
 
 Neovim, Zellij and Ghostty have directory markers, not usable configurations.
 Deploy only explicitly reviewed targets; never link the whole `.config` directory
@@ -70,6 +70,46 @@ Local overrides are ignored, not yet loaded. Keep SSH private keys, tokens,
 history and personal/work-specific values out of the public repository. Each
 machine gets its own SSH credentials. Ignore rules cannot detect secrets inside
 otherwise legitimate configuration; review each file before publishing it.
+
+## Decision: mise-native dotfiles and age encryption (2026-11-15)
+
+Use **mise** for tool versions, managed dotfiles and age-backed encryption instead
+of introducing chezmoi, SOPS or a second custom symlink manager. This is a
+planning decision only; neither entry point deploys files or secrets today.
+
+The public `daniel-price/dotfiles` checkout remains an ordinary reviewable Git
+repository. A future change will add a repo-level `mise.toml` and explicit
+`[dotfiles]` targets. Preview target changes with `mise dot diff` and
+`mise dot apply --dry-run`, inspect target conflicts, and obtain a separate
+confirmation for each modifying operation. No wholesale linking of marker-only
+directories, automatic trust, or implicit software upgrades.
+
+**Two different encryption workflows must stay distinct:**
+
+- Mise can hold individual age-encrypted environment values using
+  `mise set --age-encrypt`. The documented feature is experimental. Before
+  committing ciphertext, pin/test the chosen mise version, confirm how plaintext
+  is handled and verify that the decryption identity never enters Git.
+- `mise dot track --encrypt` stores encrypted versions of whole files in
+  mise's separate Git-backed tracked-file *history store*, not automatically in
+  the normal public source checkout. Explicitly configure its own history origin
+  (preferably private) and never treat the default branch of this repository
+  as a safe destination for plaintext or unspecified tracked-file history.
+
+Do not enable a background watcher or automatic history synchronisation during
+bootstrap. Start with synthetic credentials in an isolated test HOME. Validate
+encryption before the *first* checkpoint, restore on a second machine, lost-key
+and refused-action behaviour, and a complete review of staged Git history.
+Store recovery age identities outside Git in a secured backup; use distinct
+machine-specific SSH keys rather than cloning a single SSH private key across
+all machines. Previously exposed plaintext credentials require rotation.
+
+Reference documentation:
+[Dotfiles](https://mise.jdx.dev/dotfiles.html),
+[Managed files](https://mise.jdx.dev/dotfiles/managed.html),
+[Encryption](https://mise.jdx.dev/dotfiles/encryption.html),
+[Sync](https://mise.jdx.dev/dotfiles/sync.html),
+[age secrets](https://mise.jdx.dev/environments/secrets/age.html).
 
 ## mise documentation checkpoint
 
