@@ -29,10 +29,11 @@ before running downloaded code:
 ```sh
 (
   tmp_dir=$(mktemp -d) || exit 1
+  script="$tmp_dir/get-started.sh"
   trap 'rm -rf "$tmp_dir"' EXIT
-  curl -fsSLo "$tmp_dir/get-started.sh" \
+  curl -fsSLo "$script" \
     https://raw.githubusercontent.com/daniel-price/dotfiles/main/get-started.sh &&
-    bash "$tmp_dir/get-started.sh"
+    bash "$script"
 )
 ```
 
