@@ -102,4 +102,5 @@ done
 [[ -z "$(find "$TEST_ROOT/home" "$TEST_ROOT/elsewhere" -mindepth 1 -print)" ]] \
     || fail 'entry point wrote to isolated home or working directory'
 printf 'PASS: Entry-point help, errors and repeatable smoke execution\n'
+bash "$ROOT/tests/get-started.sh"
 printf 'All scaffold checks passed.\n'

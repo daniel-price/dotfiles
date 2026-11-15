@@ -1,24 +1,38 @@
 # Getting started
 
-The project is **not an installer yet**. Use the commands below to inspect its
-read-only scaffold; do not rely on them to configure a workstation.
+Only **Git acquisition and a one-time public HTTPS clone** are implemented.
+The remaining development environment setup is still a read-only scaffold.
 
-## Inspect a checkout
+## Fresh machine: one-file bootstrap
 
-Prerequisites: Git and Bash 3.2+; supported hosts are macOS and Pop!_OS or
-another Debian/Ubuntu-derived Linux system.
+Prerequisites: Bash 3.2+ and curl; Git and GitHub SSH keys are **not** required.
+Supported hosts are macOS and Debian/Ubuntu-derived Linux (including Pop!_OS).
 
 ```sh
-git clone https://github.com/daniel-price/dotfiles.git
-cd dotfiles
-bash bootstrap.sh --help
-bash bootstrap.sh
-bash update.sh
-bash tests/run.sh
+curl -fsSLo dotfiles-get-started.sh https://raw.githubusercontent.com/daniel-price/dotfiles/main/get-started.sh && bash dotfiles-get-started.sh
 ```
 
-**Expected today:** both scripts identify the OS, say which setup steps are
-unimplemented and report `No changes made.` The tests use temporary fixtures
+Review the downloaded script before running it. It uses the system's Git if
+available; otherwise it asks before installing Git using apt on Linux or
+requesting Apple's Command Line Tools on macOS. It then asks before one HTTPS
+clone into `~/.dotfiles`. On macOS, complete the installation dialog and rerun.
+
+A matching checkout is **not** updated or cloned again. Files, symlinks and
+checkouts with unexpected remotes at the destination are never overwritten.
+Refusals and noninteractive input do not authorise changes. Do not use
+`curl ... | bash` or pipe `yes` to this script.
+
+## Inspect the checkout scaffold
+
+```sh
+bash ~/.dotfiles/bootstrap.sh --help
+bash ~/.dotfiles/bootstrap.sh
+bash ~/.dotfiles/update.sh
+bash ~/.dotfiles/tests/run.sh
+```
+
+**Expected:** both checkout scripts still identify the OS, list unimplemented
+steps and report `No changes made.` The scaffold tests use temporary fixtures
 and should finish with `All scaffold checks passed.`
 
 The scripts are read-only today but a later version will request confirmation
@@ -27,9 +41,9 @@ out before running it on a live machine.
 
 ## New machine: intended future flow
 
-1. Acquire the small bootstrap entry point using a documented safe method.
-2. Ensure Git and minimal prerequisites only after explicit approval.
-3. Clone this public personal repository once.
+1. Download and inspect the standalone `get-started.sh`, then run it interactively.
+2. Ensure Git only if missing, with explicit approval.
+3. Clone this public personal repository once (implemented in stage zero).
 4. Install mise after approval; provision tools and apply reviewed dotfiles.
 5. Optionally opt into an authorised private configuration source on selected
    machines. The public setup must not depend on it.
@@ -37,9 +51,9 @@ out before running it on a live machine.
    identity; keep machine-specific SSH credentials local.
 7. Re-run without unnecessary changes; upgrades remain an explicit action.
 
-**Not implemented:** the standalone download, package installation, SSH
+**Not implemented:** automatic delegation to the main bootstrap, SSH
 registration, mise deployment, private-layer integration and encrypted restore
-steps. No private repositories should be discovered or cloned automatically;
+steps. Git installation and the initial clone are the only implemented actions. No private repositories should be discovered or cloned automatically;
 see [the private-profile guide](../guides/private-profiles.md).
 
 ## Existing machine: intended future flow

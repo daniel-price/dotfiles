@@ -20,6 +20,8 @@ jobs:
           python-version: "3.13"
       - name: Install Zensical
         run: python -m pip install zensical
+      - name: Validate bootstrap scripts
+        run: bash tests/run.sh
       - name: Build and validate site
         run: zensical build --clean --strict
       - name: Upload Pages artifact

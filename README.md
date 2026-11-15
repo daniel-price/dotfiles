@@ -5,9 +5,10 @@ The repository is also its own handbook: how to use it, why it is designed this
 way, and what still needs building. An optional, separately authorised private
 repository may provide non-public configuration on selected machines.
 
-**Current status: scaffold only.** `bootstrap.sh` and `update.sh` detect the
-platform and report unimplemented work. They do **not** yet install packages,
-clone repositories, manage dotfiles or restore secrets.
+**Current status: stage-zero acquisition plus read-only scaffold.** The new
+self-contained `get-started.sh` can install Git (when missing, after approval)
+and clone this public repository once over HTTPS. `bootstrap.sh` and
+`update.sh` do **not** yet install mise, configure dotfiles or restore secrets.
 
 - **[Read the documentation](docs/index.md)** (source) ·
   [GitHub Pages site](https://daniel-price.github.io/dotfiles/) (available after
@@ -18,6 +19,26 @@ clone repositories, manage dotfiles or restore secrets.
 - [Public/private/local configuration layers](docs/architecture/private-configuration.md)
 - [Roadmap](docs/roadmap.md)
 - [Detailed reference & decisions](docs/reference/index.md)
+
+## Start on a new machine
+
+Download **one small script**, review it, then run it. Git and GitHub SSH keys
+are not prerequisites:
+
+```sh
+curl -fsSLo dotfiles-get-started.sh https://raw.githubusercontent.com/daniel-price/dotfiles/main/get-started.sh && bash dotfiles-get-started.sh
+```
+
+This checks whether Git is usable, asks before installing it if missing, then
+asks before cloning into `~/.dotfiles`. It does not download a ZIP, alter
+existing Git settings or execute code from the new checkout automatically.
+For now, the checkout bootstrap is read-only:
+
+```sh
+bash ~/.dotfiles/bootstrap.sh
+```
+
+Do **not** use `curl ... | bash`: interactive stdin is required for approval.
 
 ## Inspect the current scaffold
 
@@ -30,8 +51,8 @@ bash update.sh
 bash tests/run.sh
 ```
 
-These are currently read-only. `bootstrap.sh` requires the sibling files in
-this checkout; **do not** pipe it directly from a URL into a shell.
+`bootstrap.sh` and `update.sh` are still read-only and require sibling files
+in their checkout. `get-started.sh` is the separate, standalone entry point.
 
 ## Safety
 

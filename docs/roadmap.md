@@ -6,14 +6,16 @@ task acceptance criteria are deliberately kept in
 
 ## Current status
 
-**Scaffold only.** The two entry points are read-only, and the documentation
-site is proposed in a stacked PR. A checkout does not yet configure a machine.
+**Git acquisition is implemented; full environment setup remains scaffolded.**
+The standalone `get-started.sh` installs missing Git after approval and clones
+once. The checkout's `bootstrap.sh` and `update.sh` remain read-only.
 
 ## Next milestones
 
 | Priority | Work | State |
 | --- | --- | --- |
-| 1 | Finalise safe bootstrap acquisition and prerequisite checks | Planned |
+| 1 | Download one self-contained file, ensure Git with consent, clone once over HTTPS | Implemented |
+| 1b | Other prerequisites and safe delegation to checkout bootstrap | Planned |
 | 2 | Install mise and provision one tool at a time with confirmation | Planned |
 | 3 | Add guarded Git updates and a truthful change report | Planned |
 | 4 | Deploy one harmless dotfile via native mise; then migrate configs gradually | Planned |
