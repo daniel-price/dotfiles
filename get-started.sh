@@ -103,7 +103,7 @@ main() {
     case "${1:-}" in
         -h|--help)
             printf '%s\n' 'Usage: bash dotfiles-get-started.sh [--help]' \
-                'Standalone Git prerequisite and one HTTPS clone; no SSH, mise or dotfile setup.'
+                'Standalone Git prerequisite, one HTTPS clone and approved checkout bootstrap handoff.'
             return ;;
         '') ;;
         *) fail 'Unknown argument. Use --help.' ;;
@@ -113,10 +113,21 @@ main() {
     os=$(platform)
     info "Detected $os."
     ensure_git "$os"
-    checkout_once "$HOME/.dotfiles"
-    if [[ -f "$HOME/.dotfiles/bootstrap.sh" ]]; then
-        info "Next: inspect $HOME/.dotfiles/bootstrap.sh, then run: bash \"$HOME/.dotfiles/bootstrap.sh\""
-        info 'The checkout bootstrap is currently a read-only scaffold.'
+    local target="$HOME/.dotfiles"
+    checkout_once "$target"
+    if [[ ! -d "$target" ]]; then
+        info 'No checkout available; bootstrap not run.'
+        return
     fi
+    if [[ ! -f "$target/bootstrap.sh" || -L "$target/bootstrap.sh" ]]; then
+        fail "Missing or non-regular bootstrap script at $target/bootstrap.sh; nothing executed."
+    fi
+    if ! confirm "Run the checkout bootstrap at $target/bootstrap.sh?"; then
+        info 'Bootstrap execution declined; checkout left unchanged.'
+        return
+    fi
+    info "Running bootstrap from $target."
+    # Subshell leaves the original working directory unchanged.
+    (cd "$target" && bash ./bootstrap.sh) || fail 'Checkout bootstrap failed.'
 }
 main "$@"
