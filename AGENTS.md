@@ -9,6 +9,11 @@ and are **not** evidence that a feature already exists.
 - **Scope:** operate only on this personal dotfiles repository and other
   resources explicitly authorised for the task. Do not inspect or interact
   with unrelated repositories, organisations or employer resources.
+- **Private/work boundaries:** the public setup must remain standalone. A
+  private configuration repository is an optional, separately authorised
+  source; do not discover, read, clone or modify it without explicit permission.
+  Work material must remain in an employer-approved location, never in this
+  public repository, its documentation, CI logs or generated Pages output.
 - **Safety:** this repository is public. Never commit plaintext secrets,
   private age keys, SSH private keys, tokens or real test credentials.
   Synthetic examples only. Never expose private values in CI logs.
@@ -20,7 +25,8 @@ and are **not** evidence that a feature already exists.
 - **Tools:** mise + age is the planned approach, **not yet implemented** for
   dotfiles or encryption. Consult and verify the selected mise version before
   adding commands; distinguish normal Git source from mise's separate
-  Git-backed tracked-file history.
+  Git-backed tracked-file history. An optional private configuration repo is
+  distinct from both of those; its composition/precedence is not implemented.
 - **PRs:** small changes; list commands actually executed, untested platforms,
   and a numbered, copyable manual test plan with expected results and safe
   cleanup. Update human-facing docs whenever behaviour changes.

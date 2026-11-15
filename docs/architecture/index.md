@@ -10,6 +10,8 @@ not a list of installed or working features.**
 | Runtime and suitable developer tool versions | mise | Planned |
 | Managed dotfiles and templating | Native mise dotfiles | Planned, requires validation |
 | Encrypted values and tracked files | age through mise | Planned; separate mechanisms |
+| Optional private config | Separately authorised Git repo and selected profile | Planned; not connected |
+| Machine-local identities and overrides | Outside Git | Policy only |
 | System packages, Pop!_OS | apt | Planned |
 | System packages and apps, macOS | Homebrew | Planned; never use on Pop!_OS |
 | Interactive shell | zsh | Planned configuration |
@@ -20,8 +22,11 @@ not a list of installed or working features.**
 - **Bash** handles OS detection, precise prompts, ordering and reports.
 - **Mise** will own declared tool versions and approved dotfile targets; avoid
   another general-purpose dotfile manager or custom symlink machinery.
-- **Git** stores reviewable configuration source, but a future mise tracked-file
-  history store is a **different** repository/history.
+- **Git** stores reviewable source. The optional private configuration repo
+  and mise's encrypted tracked-file history are **distinct Git stores**.
+- **Layering** should compose public defaults, explicitly enabled private
+  additions/overrides and then machine-local state. The exact mise merge
+  and file-target behaviour must be tested before implementation.
 - **Machine-local state** (age recovery identities, private SSH keys, secrets
   not deliberately encrypted for sharing, local overrides) stays out of the
   public repository.
@@ -31,6 +36,7 @@ not a list of installed or working features.**
 ## Read next
 
 - [Operating systems](platforms.md)
+- [Public, private and local configuration](private-configuration.md)
 - [Secrets and encryption](secrets.md)
 - [Applications and containers](applications.md)
 - [Repository layout](repository-layout.md)

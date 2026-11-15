@@ -31,12 +31,16 @@ out before running it on a live machine.
 2. Ensure Git and minimal prerequisites only after explicit approval.
 3. Clone this public personal repository once.
 4. Install mise after approval; provision tools and apply reviewed dotfiles.
-5. Restore authorised encrypted settings using a **separately recovered** age
+5. Optionally opt into an authorised private configuration source on selected
+   machines. The public setup must not depend on it.
+6. Restore authorised encrypted settings using a **separately recovered** age
    identity; keep machine-specific SSH credentials local.
-6. Re-run without unnecessary changes; upgrades remain an explicit action.
+7. Re-run without unnecessary changes; upgrades remain an explicit action.
 
 **Not implemented:** the standalone download, package installation, SSH
-registration, mise deployment and encrypted restore steps.
+registration, mise deployment, private-layer integration and encrypted restore
+steps. No private repositories should be discovered or cloned automatically;
+see [the private-profile guide](../guides/private-profiles.md).
 
 ## Existing machine: intended future flow
 

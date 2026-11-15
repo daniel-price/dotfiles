@@ -20,10 +20,18 @@ existing tool should not be upgraded merely because an update script ran.
   eventually deployed by mise.
 - **Platform variants:** explicit, versioned platform-specific config **when
   introduced**; there is not yet an implemented per-platform directory.
-- **Machine-specific non-secrets:** opt-in local overrides; `local/` and
-  `*.local` are ignored now but not automatically loaded.
+- **Private profiles:** an optional, separately authorised Git repository
+  may supply non-public personal/work settings on deliberately selected
+  machines; this is not currently implemented.
+- **Machine-local overrides:** identities, keys and host-only settings remain
+  outside Git; `local/` and `*.local` are ignored but not yet loaded.
 - **Sensitive identities:** outside the public Git checkout, with secure
   recovery and explicit access decisions.
+
+The intended precedence is public defaults, approved private overlay and
+local-only overrides last, with collisions explicitly reviewed. Mise config
+load order must be verified rather than assumed; see
+[configuration layers](private-configuration.md).
 
 Avoid embedding hostnames, personal addresses, work settings or actual SSH
 private keys in public documentation.

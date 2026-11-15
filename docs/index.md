@@ -12,7 +12,9 @@ describe intended behaviour and exit without changing the machine.
 
 A public Git repository holding the source of my portable development setup,
 small Bash entry points, future mise configuration and the documentation
-explaining how it works. Human-facing instructions live here; deeper technical
+explaining how it works. An optional, separately approved private source may
+add non-public personal/work configuration, but it is not integrated yet.
+Human-facing instructions live here; deeper technical
 design and historical plans are [available separately](reference/index.md).
 
 ## What currently works?
@@ -25,6 +27,7 @@ design and historical plans are [available separately](reference/index.md).
 | Installing tools and runtimes | Planned |
 | Deploying Neovim, Zellij, Ghostty or shell settings | Planned |
 | Encrypted secret restoration | Planned |
+| Optional private configuration repository | Planned; not connected |
 | Container/service configuration | Not yet designed |
 | GitHub Pages publication | Proposed in this documentation PR |
 
@@ -35,7 +38,8 @@ not that setup was successful.
 
 Start with [Getting started](getting-started/index.md), which shows what can
 safely be run today and what cannot. For the reasoning behind choices, read
-[Requirements](requirements.md) and [Architecture](architecture/index.md).
+[Requirements](requirements.md) and [Architecture](architecture/index.md),
+including [private configuration](architecture/private-configuration.md).
 For unfinished functionality, see the [Roadmap](roadmap.md).
 
 > Public repository: files under `docs/reference/` are public too, even when

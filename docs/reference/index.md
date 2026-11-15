@@ -12,6 +12,8 @@ them the first thing a human reader has to navigate.
   trade-offs, rejected alternatives and implementation caveats
 - [ADR-0002 — Docs as code on GitHub Pages](../decisions/0002-docs-as-code.md):
   why the handbook is Markdown in this repository
+- [ADR-0003 — Separate public/private/local layers](../decisions/0003-private-config-layers.md):
+  why optional private config must remain distinct from encrypted history
 
 ## Archived design and plans
 

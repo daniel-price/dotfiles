@@ -2,7 +2,8 @@
 
 Personal, cross-platform development environment for **Pop!_OS** and **macOS**.
 The repository is also its own handbook: how to use it, why it is designed this
-way, and what still needs building.
+way, and what still needs building. An optional, separately authorised private
+repository may provide non-public configuration on selected machines.
 
 **Current status: scaffold only.** `bootstrap.sh` and `update.sh` detect the
 platform and report unimplemented work. They do **not** yet install packages,
@@ -14,6 +15,7 @@ clone repositories, manage dotfiles or restore secrets.
 - [Getting started](docs/getting-started/index.md)
 - [Requirements](docs/requirements.md)
 - [Architecture and tools](docs/architecture/index.md)
+- [Public/private/local configuration layers](docs/architecture/private-configuration.md)
 - [Roadmap](docs/roadmap.md)
 - [Detailed reference & decisions](docs/reference/index.md)
 

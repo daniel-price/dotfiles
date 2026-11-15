@@ -9,6 +9,7 @@ in this repository yet.
 | Material | Intended location |
 | --- | --- |
 | Public config and documentation | This Git repository |
+| Non-public configuration, not necessarily a secret | Optional approved private configuration repo |
 | Reviewed age-encrypted values | Public source only after validation |
 | Mise's encrypted tracked-file history | A separately configured Git origin, preferably private |
 | age private/recovery identities | Secure backup outside every Git repository |
@@ -24,6 +25,11 @@ in this repository yet.
    are placed in mise's **separate tracked-file Git history**, not magically
    inside the normal public dotfiles checkout. Do not assume that making this
    source repository public makes the history store safe to push publicly.
+
+The **optional private configuration source is a third, different repository**,
+not mise's encrypted tracked-file history. Private repository access alone
+is not secret encryption, nor authorisation to store employer-owned data in
+a personal account. See [configuration layers](private-configuration.md).
 
 Neither mechanism is currently configured here. Never test with real keys.
 Validate first encryption, history inspection, a second-machine restore, a
