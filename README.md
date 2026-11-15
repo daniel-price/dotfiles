@@ -1,8 +1,9 @@
 # dotfiles
 
 Personal development environment for macOS and Debian/Ubuntu-derived Linux,
-primarily Pop!_OS. Bash coordinates setup; mise will manage development tools,
-with apt for Linux system packages and Homebrew for macOS packages only.
+primarily Pop!_OS. Bash coordinates setup; mise is the intended owner of both
+development tools and declarative dotfile deployment, with apt for Linux system
+packages and Homebrew for macOS packages only.
 
 ## Current status
 
@@ -12,8 +13,9 @@ from an existing checkout. A successful exit means inspection completed, not tha
 the machine has been configured.
 
 Package installation, SSH configuration, mise installation, cloning, Git
-synchronisation, symlink deployment, OS settings and bootstrap delegation to
-`update.sh` are all deferred. No existing dotfiles have been migrated.
+synchronisation, mise dotfile deployment, encrypted-secret restoration, OS
+settings and bootstrap delegation to `update.sh` are all deferred. No existing
+dotfiles have been migrated.
 
 ## Try the scaffold
 
@@ -45,7 +47,7 @@ from a URL into Bash.
 | `.config/mise/config.toml` | Valid, empty tools table; no selected tools or tasks |
 | `.config/{nvim,zellij,ghostty}/` | Directory markers only, awaiting explicit migration |
 | `tests/run.sh` | Bash syntax, OS fixtures, confirmation refusal and smoke checks |
-| `docs/architecture.md` | Ownership, safety and future mise integration |
+| `docs/architecture.md` | Ownership, safety, mise dotfiles and secret-storage design |
 | `docs/roadmap.md` | Small follow-up changes with acceptance checks |
 
 The `.gitkeep` files are inert directory markers, not application configuration.
@@ -63,8 +65,20 @@ empty directories. The mise file is also not installed or linked by these script
   conflicts must be resolved explicitly; never overwrite them silently.
 - Installing missing software and upgrading existing software are separate
   operations. A routine update must not upgrade installed software implicitly.
-- Keep credentials machine-specific and outside this public repository. Review
-  every staged diff: `.gitignore` is an aid, not a secret scanner.
+- Never publish plaintext credentials or private decryption identities to this
+  public repository. Machine-specific SSH keys remain local. Any future encrypted
+  values or encrypted history require explicit review, key recovery and tests
+  before Git publication; review every staged diff because `.gitignore` is not
+  a secret scanner.
+
+**Chosen direction (plan only):** use mise's native `[dotfiles]` deployment,
+`mise dot apply`/`diff`, runtime management and age-backed secret features; do
+not add chezmoi or bespoke symlink management. Keep the normal public checkout
+separate from mise's Git-backed tracked-file history. Initially keep SSH keys
+and other machine identities out of Git. Encrypted values in mise configuration
+and encrypted tracked-file history are different mechanisms; the latter needs
+a deliberately configured history origin (preferably private), **not** the
+public checkout's default branch. See [architecture](docs/architecture.md).
 
 No confirmation prompts are needed yet because the entry points have no
 modifying operations. Local override files are ignored but are not loaded by the
