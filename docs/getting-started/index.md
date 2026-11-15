@@ -1,7 +1,8 @@
 # Getting started
 
-Only **Git acquisition and a one-time public HTTPS clone** are implemented.
-The remaining development environment setup is still a read-only scaffold.
+The one-command installer ensures Git, acquires the public repository and
+**offers to run its bootstrap with a separate confirmation**. The full
+development-environment setup remains read-only scaffolding.
 
 ## Fresh machine: one-file bootstrap
 
@@ -9,20 +10,41 @@ Prerequisites: Bash 3.2+ and curl; Git and GitHub SSH keys are **not** required.
 Supported hosts are macOS and Debian/Ubuntu-derived Linux (including Pop!_OS).
 
 ```sh
-curl -fsSLo dotfiles-get-started.sh https://raw.githubusercontent.com/daniel-price/dotfiles/main/get-started.sh && bash dotfiles-get-started.sh
+(
+  tmp_dir=$(mktemp -d) || exit 1
+  trap 'rm -rf "$tmp_dir"' EXIT
+  curl -fsSLo "$tmp_dir/get-started.sh" \
+    https://raw.githubusercontent.com/daniel-price/dotfiles/main/get-started.sh &&
+    bash "$tmp_dir/get-started.sh"
+)
 ```
 
-Review the downloaded script before running it. It uses the system's Git if
-available; otherwise it asks before installing Git using apt on Linux or
-requesting Apple's Command Line Tools on macOS. It then asks before one HTTPS
-clone into `~/.dotfiles`. On macOS, complete the installation dialog and rerun.
+**Copy the whole code block above into a terminal.** It downloads only
+`get-started.sh` into a temporary directory, executes it after the download
+finishes, and **deletes the temporary directory automatically** on exit or
+ordinary failure. No downloaded script remains in your current directory.
+[Read the script on GitHub](https://github.com/daniel-price/dotfiles/blob/main/get-started.sh)
+before running downloaded code.
 
-A matching checkout is **not** updated or cloned again. Files, symlinks and
-checkouts with unexpected remotes at the destination are never overwritten.
-Refusals and noninteractive input do not authorise changes. Do not use
-`curl ... | bash` or pipe `yes` to this script.
+The script checks Git, asking before installation if needed (apt on Linux or
+Apple Command Line Tools on macOS). It asks separately before an HTTPS clone
+into `~/.dotfiles`, then **asks a third time before running** the checkout's
+`bootstrap.sh`. It runs bootstrap from the repository directory without
+changing your terminal's working directory.
+
+On macOS, complete the Command Line Tools installer and rerun if Git was
+missing. An existing matching checkout is reused without fetching or
+updating it. Existing conflicting destinations are never overwritten.
+Declining any prompt skips that operation.
+
+**Do not use `curl ... | bash`.** It interferes with the interactive
+confirmation flow and can execute a partially downloaded script. The
+temporary-file command downloads everything first.
 
 ## Inspect the checkout scaffold
+
+After approving the clone, the script offers to run the bootstrap.
+To inspect or rerun it later:
 
 ```sh
 bash ~/.dotfiles/bootstrap.sh --help
@@ -41,9 +63,11 @@ out before running it on a live machine.
 
 ## New machine: intended future flow
 
-1. Download and inspect the standalone `get-started.sh`, then run it interactively.
+1. Download the standalone `get-started.sh` to a temporary directory and
+   run it interactively; the wrapper automatically cleans up.
 2. Ensure Git only if missing, with explicit approval.
-3. Clone this public personal repository once (implemented in stage zero).
+3. Clone the public repository once and separately approve its bootstrap
+   (implemented in stage zero).
 4. Install mise after approval; provision tools and apply reviewed dotfiles.
 5. Optionally opt into an authorised private configuration source on selected
    machines. The public setup must not depend on it.
@@ -51,9 +75,10 @@ out before running it on a live machine.
    identity; keep machine-specific SSH credentials local.
 7. Re-run without unnecessary changes; upgrades remain an explicit action.
 
-**Not implemented:** automatic delegation to the main bootstrap, SSH
-registration, mise deployment, private-layer integration and encrypted restore
-steps. Git installation and the initial clone are the only implemented actions. No private repositories should be discovered or cloned automatically;
+**Not implemented:** SSH registration, mise deployment, private-layer
+integration and encrypted restore. Git installation, the initial clone and
+a confirmed handoff to the read-only checkout bootstrap are implemented.
+No private repositories should be discovered or cloned automatically;
 see [the private-profile guide](../guides/private-profiles.md).
 
 ## Existing machine: intended future flow
