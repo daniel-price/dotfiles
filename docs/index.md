@@ -4,9 +4,9 @@ This is the documentation for my personal development environment. The goal is
 to make a new Pop!_OS or macOS machine feel familiar without having to remember
 how everything was configured, while keeping the setup reviewable and safe.
 
-**Status: scaffold only (November 2026).** Nothing has been installed or
-restored by this repository yet. The existing scripts detect the platform,
-describe intended behaviour and exit without changing the machine.
+**Status: minimal bootstrap working (November 2026).** Stage zero can install
+Git if missing, clone the public checkout and, with separate approval, run
+its read-only bootstrap. Mise, dotfiles and secrets setup remain unimplemented.
 
 ## What is this?
 
@@ -23,7 +23,7 @@ design and historical plans are [available separately](reference/index.md).
 | --- | --- |
 | OS detection and explicit yes/no helper | Implemented in the scaffold |
 | Read-only `bootstrap.sh` and `update.sh` | Implemented |
-| Single-file Git prerequisite and public HTTPS clone | Implemented as standalone stage zero |
+| Temporary download, Git prerequisite, HTTPS clone and confirmed bootstrap handoff | Implemented as standalone stage zero |
 | Dependency-free scaffold tests | Implemented |
 | Installing tools and runtimes | Planned |
 | Deploying Neovim, Zellij, Ghostty or shell settings | Planned |
@@ -35,6 +35,25 @@ design and historical plans are [available separately](reference/index.md).
 `get-started.sh` only ensures Git and acquires the public checkout. An exit
 code of zero from the checkout's `bootstrap.sh` still means **inspection
 completed**, not that the machine has been configured.
+
+## Start a new machine
+
+Copy this into your terminal on macOS or Pop!_OS after
+[reviewing the script](https://github.com/daniel-price/dotfiles/blob/main/get-started.sh):
+
+```sh
+(
+  tmp_dir=$(mktemp -d) || exit 1
+  trap 'rm -rf "$tmp_dir"' EXIT
+  curl -fsSLo "$tmp_dir/get-started.sh" \
+    https://raw.githubusercontent.com/daniel-price/dotfiles/main/get-started.sh &&
+    bash "$tmp_dir/get-started.sh"
+)
+```
+
+The temporary download cleans up automatically. Git installation, checkout,
+and running the checkout bootstrap each require explicit approval. Your
+repository stays in `~/.dotfiles`; private configuration is never installed.
 
 ## How do I use it?
 
