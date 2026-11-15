@@ -1,3 +1,12 @@
+# Historical scaffold architecture
+
+> **Archive / technical record (2026-11-15).** This is a snapshot of earlier
+> design details. It is not the maintained human-facing architecture, and planned
+> steps below have not necessarily been implemented. See
+> [current architecture](../architecture/index.md).
+
+---
+
 # Architecture
 
 ## Two entry points, one small shared library
