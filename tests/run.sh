@@ -14,11 +14,24 @@ assert_equal() {
     [[ "$1" == "$2" ]] || fail "$3 (expected $1, got $2)"
 }
 
-for script in "$ROOT/scripts/bootstrap.sh" "$ROOT/scripts/update.sh" \
-    "$ROOT/scripts/lib/common.sh" "$ROOT/scripts/lib/os.sh" "$ROOT/tests/run.sh"; do
+for script in "$ROOT/get-started.sh" "$ROOT/scripts/bootstrap.sh" \
+    "$ROOT/scripts/check-clean.sh" "$ROOT/scripts/format.sh" \
+    "$ROOT/scripts/install-dev-tools.sh" "$ROOT/scripts/install-hooks.sh" \
+    "$ROOT/scripts/lint.sh" "$ROOT/scripts/update.sh" \
+    "$ROOT/scripts/lib/common.sh" "$ROOT/scripts/lib/os.sh" \
+    "$ROOT/scripts/lib/shell-files.sh" "$ROOT/tests/check-clean.sh" \
+    "$ROOT/tests/get-started.sh" "$ROOT/tests/run.sh"; do
     bash -n "$script"
 done
 printf 'PASS: Bash syntax\n'
+
+for moved in bootstrap update; do
+    [[ ! -e "$ROOT/$moved.sh" ]] || fail "legacy root $moved script remains"
+    [[ -x "$ROOT/scripts/$moved.sh" ]] || fail "moved $moved script is not executable"
+done
+[[ -f "$ROOT/get-started.sh" && -f "$ROOT/mise.toml" && -f "$ROOT/lefthook.yml" ]] ||
+    fail 'expected root entry points or tool configuration missing'
+printf 'PASS: Checkout script layout and executable modes\n'
 
 source "$ROOT/scripts/lib/os.sh"
 source "$ROOT/scripts/lib/common.sh"
@@ -104,6 +117,7 @@ done
 [[ -z "$(find "$TEST_ROOT/home" "$TEST_ROOT/elsewhere" -mindepth 1 -print)" ]] ||
     fail 'entry point wrote to isolated home or working directory'
 printf 'PASS: Entry-point help, errors and repeatable smoke execution\n'
+bash "$ROOT/tests/check-clean.sh"
 bash "$ROOT/tests/get-started.sh"
 if command -v python3 >/dev/null 2>&1; then
     python3 "$ROOT/tests/get-started-interactive.py"

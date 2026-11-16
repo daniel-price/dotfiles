@@ -28,4 +28,4 @@ if [[ ${#files[@]} -eq 0 ]]; then
     printf 'No tracked shell scripts to lint.\n'
     exit 0
 fi
-exec mise exec -- shellcheck -- "${files[@]}"
+exec mise exec -- shellcheck -x -- "${files[@]}"
