@@ -42,14 +42,8 @@ done
 case "$source_dir$target_dir" in
 *$'\n'* | *$'\r'* | *$'\t'*) die 'Paths must not contain control characters.' ;;
 esac
-case "$source_dir" in
-'~/'*) source_dir="$HOME/${source_dir#'~/'}" ;;
-esac
-case "$target_dir" in
-'~/'*) target_dir="$HOME/${target_dir#'~/'}" ;;
-esac
 [[ "$source_dir" == /* && "$target_dir" == /* ]] ||
-    die 'Source and target must be absolute paths after expansion.'
+    die 'Source and target must be absolute paths.'
 
 canonical_dir() {
     local path=$1
