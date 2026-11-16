@@ -8,6 +8,7 @@ not a list of installed or working features.**
 | --- | --- | --- |
 | Fresh setup and recurring update | Bash `bootstrap.sh`, `update.sh` | Read-only scaffold |
 | Runtime and suitable developer tool versions | mise | Planned |
+| Checkout development tools and shell Git hooks | mise + Lefthook | Implemented; opt-in developer setup |
 | Managed dotfiles and templating | Native mise dotfiles | Planned, requires validation |
 | Encrypted values and tracked files | age through mise | Planned; separate mechanisms |
 | Optional private config | Separately authorised Git repo and selected profile | Planned; not connected |

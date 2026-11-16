@@ -1,0 +1,32 @@
+name: Shell checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  shell:
+    name: Shell checks (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@236a21c3b91f5db6d4e174b348674a0f0caac06d # v5
+        with:
+          version: "2026.11.9"
+      - name: Check formatting and lint
+        run: mise run check
+      - name: Test commit hooks and partial staging
+        run: mise run test:hooks
+      - name: Test bootstrap scripts
+        run: bash tests/run.sh
+      - name: Check validation left tracked files unchanged
+        run: git diff --exit-code && git diff --cached --exit-code

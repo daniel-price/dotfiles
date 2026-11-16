@@ -17,6 +17,7 @@ and clone this public repository once over HTTPS. `bootstrap.sh` and
 - [Architecture and tools](docs/architecture/index.md)
 - [Public/private/local configuration layers](docs/architecture/private-configuration.md)
 - [Roadmap](docs/roadmap.md)
+- [Development tools and Git hooks](docs/guides/development.md)
 - [Detailed reference & decisions](docs/reference/index.md)
 
 ## Start on a new machine

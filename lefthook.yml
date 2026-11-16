@@ -1,0 +1,33 @@
+# Git hooks must use this checkout's pinned tools, including outside mise shells.
+lefthook: mise exec -- lefthook
+assert_lefthook_installed: true
+# Only the explicit setup command installs hooks; check/format remain opt-in.
+no_auto_install: true
+
+pre-commit:
+  parallel: false
+  jobs:
+    - name: shfmt
+      glob: "*.sh"
+      run: mise exec -- shfmt -w -i 4 {staged_files}
+      stage_fixed: true
+    - name: shellcheck
+      glob: "*.sh"
+      run: mise exec -- shellcheck {staged_files}
+
+# Separate read-only checks for CI and local use; never stage or fix files here.
+check:
+  parallel: true
+  jobs:
+    - name: shfmt
+      glob: "*.sh"
+      run: mise exec -- shfmt -d -i 4 {all_files}
+    - name: shellcheck
+      glob: "*.sh"
+      run: mise exec -- shellcheck {all_files}
+
+format:
+  jobs:
+    - name: shfmt
+      glob: "*.sh"
+      run: mise exec -- shfmt -w -i 4 {all_files}

@@ -10,7 +10,10 @@ set -euo pipefail
 REMOTE='https://github.com/daniel-price/dotfiles.git'
 
 info() { printf '[info] %s\n' "$*"; }
-fail() { printf '[error] %s\n' "$*" >&2; exit 1; }
+fail() {
+    printf '[error] %s\n' "$*" >&2
+    exit 1
+}
 
 confirm() {
     local answer
@@ -21,28 +24,28 @@ confirm() {
     printf '%s [y/N] ' "$1" >&2
     IFS= read -r answer || return 1
     case "$answer" in
-        y|Y|yes|YES|Yes) return 0 ;;
-        *) return 1 ;;
+    y | Y | yes | YES | Yes) return 0 ;;
+    *) return 1 ;;
     esac
 }
 
 platform() {
     case "$(uname -s)" in
-        Darwin) printf 'macos\n' ;;
-        Linux)
-            local release
-            for release in /etc/os-release /usr/lib/os-release; do
-                [[ -r "$release" ]] || continue
-                if grep -Eq '^ID="?((debian|ubuntu|pop))"?$' "$release" ||
-                   grep -Eq '^ID_LIKE=.*(debian|ubuntu)' "$release"; then
-                    printf 'debian\n'
-                    return
-                fi
-                break
-            done
-            fail 'Unsupported Linux distribution (requires Debian/Ubuntu/Pop!_OS).'
-            ;;
-        *) fail 'Unsupported OS (requires macOS or Debian/Ubuntu-derived Linux).' ;;
+    Darwin) printf 'macos\n' ;;
+    Linux)
+        local release
+        for release in /etc/os-release /usr/lib/os-release; do
+            [[ -r "$release" ]] || continue
+            if grep -Eq '^ID="?((debian|ubuntu|pop))"?$' "$release" ||
+                grep -Eq '^ID_LIKE=.*(debian|ubuntu)' "$release"; then
+                printf 'debian\n'
+                return
+            fi
+            break
+        done
+        fail 'Unsupported Linux distribution (requires Debian/Ubuntu/Pop!_OS).'
+        ;;
+    *) fail 'Unsupported OS (requires macOS or Debian/Ubuntu-derived Linux).' ;;
     esac
 }
 
@@ -90,10 +93,11 @@ checkout_once() {
             fail "Checkout destination is not its own Git repository: $target"
         existing_origin=$(git -C "$target" remote get-url origin 2>/dev/null || :)
         case "$existing_origin" in
-            "$REMOTE"|'https://github.com/daniel-price/dotfiles'|'git@github.com:daniel-price/dotfiles.git')
-                info "Existing checkout at $target; skipped clone and update."
-                return ;;
-            *) fail 'Existing checkout has an unexpected origin; nothing changed.' ;;
+        "$REMOTE" | 'https://github.com/daniel-price/dotfiles' | 'git@github.com:daniel-price/dotfiles.git')
+            info "Existing checkout at $target; skipped clone and update."
+            return
+            ;;
+        *) fail 'Existing checkout has an unexpected origin; nothing changed.' ;;
         esac
     fi
     if ! confirm "Clone the public dotfiles repo over HTTPS to $target?"; then
@@ -107,12 +111,13 @@ checkout_once() {
 main() {
     [[ $# -le 1 ]] || fail 'Expected no arguments or --help.'
     case "${1:-}" in
-        -h|--help)
-            printf '%s\n' 'Usage: bash dotfiles-get-started.sh [--help]' \
-                'Standalone Git prerequisite, one HTTPS clone and approved checkout bootstrap handoff.'
-            return ;;
-        '') ;;
-        *) fail 'Unknown argument. Use --help.' ;;
+    -h | --help)
+        printf '%s\n' 'Usage: bash dotfiles-get-started.sh [--help]' \
+            'Standalone Git prerequisite, one HTTPS clone and approved checkout bootstrap handoff.'
+        return
+        ;;
+    '') ;;
+    *) fail 'Unknown argument. Use --help.' ;;
     esac
     [[ -n "${HOME:-}" && -d "$HOME" ]] || fail 'HOME must be an existing directory.'
     local os

@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
-ROOT=$(CDPATH= cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
+ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-stage-zero.XXXXXX")
 trap 'rm -rf -- "$TMP"' EXIT
-fail() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
+fail() {
+    printf 'FAIL: %s\n' "$*" >&2
+    exit 1
+}
 
 bash -n "$ROOT/get-started.sh"
 bash "$ROOT/get-started.sh" --help | grep -q 'Standalone Git prerequisite' ||
@@ -13,7 +16,7 @@ if bash "$ROOT/get-started.sh" --unknown >/dev/null 2>&1; then
 fi
 
 mkdir "$TMP/home" "$TMP/bin"
-cat > "$TMP/bin/git" <<'GIT'
+cat >"$TMP/bin/git" <<'GIT'
 #!/usr/bin/env bash
 case "$1" in
     --version)
@@ -44,7 +47,7 @@ grep -q 'Clone declined' "$TMP/out" || fail 'noninteractive clone not declined'
 
 # Existing checkout with exact origin should be skipped without changing it.
 mkdir "$TMP/home/.dotfiles"
-cat > "$TMP/home/.dotfiles/bootstrap.sh" <<'BOOT'
+cat >"$TMP/home/.dotfiles/bootstrap.sh" <<'BOOT'
 #!/usr/bin/env bash
 printf 'unexpected bootstrap execution\n' > "$HOME/bootstrap-invoked"
 BOOT
@@ -62,7 +65,7 @@ grep -q 'unexpected origin' "$TMP/out" || fail 'missing origin error'
 
 rm "$TMP/home/.dotfiles/bootstrap.sh"
 rmdir "$TMP/home/.dotfiles"
-printf 'untouched\n' > "$TMP/home/.dotfiles"
+printf 'untouched\n' >"$TMP/home/.dotfiles"
 if HOME="$TMP/home" PATH="$TMP/bin:$PATH" \
     bash "$ROOT/get-started.sh" >"$TMP/out" 2>&1; then
     fail 'existing file accepted'

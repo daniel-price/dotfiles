@@ -4,6 +4,7 @@ These guides describe the safe intended workflow. Where implementation is not
 yet available, the guide says so instead of inventing working commands.
 
 - [Add or change a tool](add-tool.md)
+- [Develop this repository and enable Git hooks](development.md)
 - [Manage a dotfile](manage-dotfile.md)
 - [Manage an encrypted secret](manage-secret.md)
 - [Use an optional private profile](private-profiles.md)

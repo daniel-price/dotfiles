@@ -1,0 +1,25 @@
+# Development tools for this checkout; separate from the managed global config.
+[tools]
+lefthook = "2.2.2"
+shfmt = "3.14.1"
+shellcheck = "0.11.0"
+
+[settings]
+# Installing or changing tool versions is an explicit developer action.
+auto_install = false
+
+[tasks."hooks:install"]
+description = "Enable this checkout's pre-commit hook after confirmation"
+run = "bash scripts/install-hooks.sh"
+
+[tasks.check]
+description = "Check tracked shell scripts without changing files or staging"
+run = "lefthook run check"
+
+[tasks.format]
+description = "Format tracked shell scripts without staging changes"
+run = "lefthook run format"
+
+[tasks."test:hooks"]
+description = "Test auto-formatting and partial staging in a disposable repository"
+run = "bash tests/hooks.sh"
