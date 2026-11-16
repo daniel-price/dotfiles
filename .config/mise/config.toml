@@ -1,4 +1,3 @@
-# Managed tool declarations for new machines. The entry-point scripts do not
-# install or link this file; scripts/provision-tool.sh installs one tool at a time.
+# Intentionally inert: machine tool declarations live in tools/mise.toml so
+# checkout/CI commands do not provision them. This file is not yet deployed.
 [tools]
-neovim = "0.12.6"

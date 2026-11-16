@@ -26,7 +26,7 @@ case "$1" in
 neovim)
     tool=neovim
     spec='neovim@0.12.6'
-    config_dir="$ROOT/.config/mise"
+    config_dir="$ROOT/.config/mise/tools"
     ;;
 *)
     die 'Unsupported tool. Use --help for usage.'
