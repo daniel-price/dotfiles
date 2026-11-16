@@ -12,7 +12,7 @@ usage() {
     printf '%s\n' \
         'Usage: bash scripts/deploy-zsh-config.sh [--target FILE]' \
         'Preview and apply the reviewed zsh startup file with mise.' \
-        'Defaults to $HOME/.zshrc. Never overwrites an existing target.'
+        'Defaults to the home-directory .zshrc. Never overwrites an existing target.'
 }
 
 target_file=''
