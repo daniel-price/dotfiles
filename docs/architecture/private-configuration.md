@@ -1,7 +1,9 @@
 # Public, private and machine-local configuration
 
-**Status: planned — no private repository is connected, cloned, read or
-deployed by this project.**
+**Status: narrow prototype implemented.** A user-supplied private directory can
+be linked to one explicit target through mise. There is still no automatic
+private repository discovery, cloning, profile selection, precedence merge or
+secrets integration.
 
 Some configuration is not secret but should not be public; other files are
 specific to work or to an individual machine. Treat these as **distinct trust
@@ -63,8 +65,14 @@ reruns and rollback.
 - Use **synthetic private fixtures** for implementation/testing, not actual
   employer repositories or credentials.
 
-The exact private repo layout, opt-in interface and mise configuration wiring
-will be designed and tested in a separate PR; none is selected here.
+The current prototype is deliberately narrow. `scripts/apply-private-overlay.sh`
+takes an explicit source directory and target directory, previews them with
+`mise dot diff` and `mise dot apply --dry-run`, asks once before `mise dot apply`,
+and refuses existing real paths, different symlinks, dirty checkouts and
+diverged or behind branches. It never discovers, clones, fetches, updates or
+persistently trusts a repository; the temporary generated mise config is trusted
+only for the invoking process. Private sources and their identifiers remain on
+the local machine. Full profile composition and precedence are still planned.
 
 See [the intended how-to](../guides/private-profiles.md),
 [ADR-0003](../decisions/0003-private-config-layers.md), and

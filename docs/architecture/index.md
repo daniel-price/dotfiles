@@ -6,13 +6,13 @@ not a list of installed or working features.**
 
 | Responsibility | Chosen or proposed owner | Status |
 | --- | --- | --- |
-| Fresh setup | Bash `scripts/bootstrap.sh` | Installs missing `zsh`, `curl` and pinned mise after individual approval |
+| Fresh setup | Bash `scripts/bootstrap.sh` | Installs missing `zsh`, `curl`, pinned mise and Neovim after individual approval |
 | Recurring update | Bash `scripts/update.sh` | Read-only scaffold |
-| Runtime and suitable developer tool versions | mise | Installer implemented; tool declarations and provisioning planned |
+| Runtime and suitable developer tool versions | mise | Neovim provisioning implemented; further tools planned |
 | Checkout development tools and shell Git hooks | mise + Lefthook | Implemented; opt-in developer setup |
-| Managed dotfiles and templating | Native mise dotfiles | Planned, requires validation |
+| Managed dotfiles and templating | Native mise dotfiles | One explicit directory-symlink overlay implemented; broader deployment planned |
 | Encrypted values and tracked files | age through mise | Planned; separate mechanisms |
-| Optional private config | Separately authorised Git repo and selected profile | Planned; not connected |
+| Optional private config | Separately authorised Git repo and selected profile | Narrow single-target overlay implemented; full profiles not connected |
 | Machine-local identities and overrides | Outside Git | Policy only |
 | System packages, Pop!_OS | apt | Planned |
 | System packages and apps, macOS | Homebrew | Planned; never use on Pop!_OS |

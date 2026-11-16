@@ -1,6 +1,6 @@
 # ADR-0003: Separate public, private and local configuration
 
-**Status:** Accepted architectural direction; implementation pending  
+**Status:** Accepted; one-target overlay prototype implemented, full profiles pending
 **Date:** 2026-11-15
 
 ## Context

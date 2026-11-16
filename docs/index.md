@@ -4,10 +4,11 @@ This is the documentation for my personal development environment. The goal is
 to make a new Pop!_OS or macOS machine feel familiar without having to remember
 how everything was configured, while keeping the setup reviewable and safe.
 
-**Status: baseline bootstrap working (November 2026).** Stage zero can install
-Git if missing, clone the public checkout and, with separate approval, run its
-bootstrap. That bootstrap can install missing `zsh`, `curl` and pinned mise;
-mise tool configuration, dotfiles and secrets setup remain unimplemented.
+**Status: one-managed-tool bootstrap working (November 2026).** Stage zero can
+install Git if missing, clone the public checkout and, with separate approval,
+run its bootstrap. That bootstrap installs missing `zsh`, `curl`, pinned mise
+and Neovim `0.12.6`. A narrow, explicit private-config overlay can deploy one
+selected directory; full profile layering and secrets remain unimplemented.
 
 ## What is this?
 
@@ -25,21 +26,23 @@ design and historical plans are [available separately](reference/index.md).
 | OS detection and explicit yes/no helper | Implemented in the scaffold |
 | Install only missing `zsh` and `curl` with individual approval | Implemented |
 | Install verified mise `v2026.11.9` with separate download and execution approval | Implemented |
+| Provision Neovim `0.12.6` with mise and per-tool confirmation | Implemented |
 | Read-only `scripts/update.sh` | Implemented |
 | Temporary download, Git prerequisite, HTTPS clone and confirmed bootstrap handoff | Implemented as standalone stage zero |
 | Dependency-free scaffold tests | Implemented |
 | Opt-in shell formatting/lint hooks and pinned development tools | Implemented; see [development](guides/development.md) |
-| Installing tools and runtimes | Planned |
-| Deploying Neovim, Zellij, Ghostty or shell settings | Planned |
+| Installing further tools and runtimes | Planned |
+| Deploying Zellij, Ghostty or shell settings | Planned |
+| One-target private config directory overlay | Implemented; explicit opt-in only |
 | Encrypted secret restoration | Planned |
-| Optional private configuration repository | Planned; not connected |
+| Full private configuration profiles and precedence | Planned; not connected |
 | Container/service configuration | Not yet designed |
 | GitHub Pages publication | Proposed in this documentation PR |
 
 `get-started.sh` ensures Git and acquires the public checkout. The checkout
-bootstrap then checks `zsh`, `curl` and mise. An exit code of zero does not mean
-the machine has shell activation, configured mise tools, dotfiles or restored
-secrets.
+bootstrap then checks `zsh`, `curl`, mise and Neovim. An exit code of zero does
+not mean the machine has shell activation, other configured tools, deployed
+dotfiles or restored secrets.
 
 ## Start a new machine
 
