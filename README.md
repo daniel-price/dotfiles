@@ -5,13 +5,13 @@ The repository is also its own handbook: how to use it, why it is designed this
 way, and what still needs building. An optional, separately authorised private
 repository may provide non-public configuration on selected machines.
 
-**Current status: bootstrap with one managed tool.** The self-contained
-`get-started.sh` can install Git (when missing, after approval) and clone this
-public repository once over HTTPS. `scripts/bootstrap.sh` can then install
-missing `zsh`, `curl`, pinned mise and Neovim `0.12.6`, with separate approval
-for each operation. An explicit opt-in script can deploy one selected private
-configuration directory through mise. `scripts/update.sh` remains read-only;
-secrets are not restored.
+**Current status: bootstrap with one managed tool and opt-in shell activation.**
+The self-contained `get-started.sh` can install Git (when missing, after
+approval) and clone this public repository once over HTTPS. `scripts/bootstrap.sh`
+can install missing `zsh`, `curl`, pinned mise and Neovim `0.12.6`, with separate
+approval for each operation. Separate opt-in scripts can deploy a reviewed zsh
+startup file or one selected private configuration directory through mise.
+`scripts/update.sh` remains read-only; secrets are not restored.
 
 - **[Read the documentation](docs/index.md)** (source) ·
   [GitHub Pages site](https://daniel-price.github.io/dotfiles/)
@@ -51,6 +51,11 @@ and does not add shell activation. Neovim is installed from the checked-in mise
 declaration only after its own confirmation. An existing checkout is neither
 overwritten nor automatically updated.
 
+After installing mise, run `bash scripts/deploy-zsh-config.sh` from the checkout
+if you want a reviewed `~/.zshrc` that activates mise. That step is deliberately
+separate, previews both mise checks and refuses to overwrite an existing shell
+configuration. It does not affect an already-running Bash shell.
+
 Do **not** use `curl ... | bash`: stdin must remain connected to your terminal
 for confirmations, and the download must finish before execution.
 
@@ -61,6 +66,7 @@ From a local checkout, with Bash 3.2 or newer:
 ```sh
 bash scripts/bootstrap.sh --help
 bash scripts/bootstrap.sh
+bash scripts/deploy-zsh-config.sh --help
 bash scripts/update.sh
 bash tests/run.sh
 ```

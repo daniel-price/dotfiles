@@ -66,7 +66,7 @@ existing mise found on `PATH` or at that destination is reported and left
 unchanged, even when it is an older version. Bootstrap then calls
 `scripts/provision-tool.sh neovim`, which reads the checked-in `0.12.6`
 declaration and asks once before running `mise install`. Bootstrap does not
-activate mise or edit shell startup files.
+activate mise or edit shell startup files; use the separate step below.
 
 To deploy a private Neovim configuration, explicitly select an already-present
 source directory and target directory after reviewing
@@ -77,6 +77,34 @@ discovers, clones, fetches or updates a repository for you.
 **Do not use `curl ... | bash`.** It interferes with the interactive
 confirmation flow and can execute a partially downloaded script. The
 temporary-file command downloads everything first.
+
+## Activate mise in zsh (optional)
+
+After bootstrap, install a reviewed `~/.zshrc` that activates mise so tools such
+as `nvim` are available in new interactive zsh sessions. This requires mise
+`2026.11.9` or newer; bootstrap installs that version. Older releases fail with
+an explicit version message before any change:
+
+```sh
+bash ~/.dotfiles/scripts/deploy-zsh-config.sh --help
+bash ~/.dotfiles/scripts/deploy-zsh-config.sh
+```
+
+Expected: mise shows a diff and a dry-run first, then the script asks once before
+applying a symlink to `.config/zsh/zshrc`. The public source only activates mise
+from `PATH` or `~/.local/bin/mise`; it does not copy a private shell config. If
+`~/.zshrc` already exists as a real file or a symlink to somewhere else, the
+script refuses and makes no change. Merge or back up your existing file
+yourself, then rerun. A repeat run with the correct symlink exits without a
+prompt.
+
+This step does not change your current shell or a Bash session. Start a new zsh
+session, or run `exec zsh`, to use the activated tools. To verify without
+changing a shell, run:
+
+```sh
+"$HOME/.local/bin/mise" -C "$HOME/.dotfiles/.config/mise/tools" exec neovim@0.12.6 -- nvim --version
+```
 
 ## Inspect the checkout scaffold
 
@@ -113,18 +141,20 @@ documentation for the version you check out before running it on a live machine.
    separate approval (implemented). It does not activate mise.
 6. Bootstrap can provision pinned Neovim through mise after a separate approval
    (implemented).
-7. Explicitly deploy one reviewed private configuration directory through the
+7. Optionally deploy the reviewed zsh startup file that activates mise
+   (implemented).
+8. Explicitly deploy one reviewed private configuration directory through the
    mise overlay (narrow prototype implemented).
-8. Provision further reviewed tools and apply further reviewed dotfiles.
-9. Restore authorised encrypted settings using a **separately recovered** age
+9. Provision further reviewed tools and apply further reviewed dotfiles.
+10. Restore authorised encrypted settings using a **separately recovered** age
    identity; keep machine-specific SSH credentials local.
-10. Re-run without unnecessary changes; upgrades remain an explicit action.
+11. Re-run without unnecessary changes; upgrades remain an explicit action.
 
-**Not implemented:** SSH registration, mise activation, further tool
-provisioning, broad dotfile deployment, full private profiles and encrypted
-restore. Git installation, the initial clone, a confirmed bootstrap handoff,
-individually approved `zsh`/`curl` installs, verified mise installation,
-Neovim provisioning and the narrow overlay are implemented.
+**Not implemented:** SSH registration, further tool provisioning, broad dotfile
+deployment, full private profiles and encrypted restore. Git installation, the
+initial clone, a confirmed bootstrap handoff, individually approved
+`zsh`/`curl` installs, verified mise installation, Neovim provisioning, the
+reviewed zsh activation file and the narrow overlay are implemented.
 No private repositories should be discovered or cloned automatically;
 see [the private-profile guide](../guides/private-profiles.md).
 

@@ -59,6 +59,7 @@ with tempfile.TemporaryDirectory(prefix="dotfiles-tool-overlay-") as scratch:
     mise_fake.write_text("""#!/usr/bin/env bash
 printf '%s\\n' "$*" >> "$MOCK_MISE_LOG"
 case "$*" in
+  --version) printf '%s\\n' '2026.11.9 fake' ;;
   *"install --dry-run-code"*)
     [[ -e "$MOCK_MISE_STATE" ]] && exit 0 || exit 1
     ;;

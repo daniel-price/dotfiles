@@ -9,10 +9,12 @@ This is a map of **what exists**, with future responsibilities labelled.
 | `scripts/bootstrap.sh` | Installs missing `zsh`, `curl`, pinned mise and Neovim after individual approval. |
 | `scripts/provision-tool.sh` | Installs one reviewed mise-declared tool after confirmation. |
 | `scripts/apply-private-overlay.sh` | Previews and applies one explicitly selected private directory symlink. |
+| `scripts/deploy-zsh-config.sh` | Previews and applies the reviewed zsh startup file after confirmation. |
 | `scripts/update.sh` | Read-only checkout scaffold today. |
 | `scripts/` | Visible checkout scripts for setup, shared checks and docs builds. |
 | `scripts/lib/` | OS, confirmation and mise location/trust helpers. |
-| `.config/` | Future managed user dotfiles: mise, Neovim, Zellij and Ghostty placeholders. |
+| `.config/zsh/zshrc` | Reviewed public zsh startup file that activates mise. |
+| `.config/` | Other future managed user dotfiles: Neovim, Zellij and Ghostty placeholders. |
 | `mise.toml`, `lefthook.yml` | Project development tooling and hook configuration. |
 | `zensical.toml` | Documentation-site configuration. |
 | `tests/` | Scaffold checks and disposable hook integration tests. |

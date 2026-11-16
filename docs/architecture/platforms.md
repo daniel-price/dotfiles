@@ -8,7 +8,7 @@ explicit instead of hidden inside a monolithic installation script.
 | OS detection | Debian/Ubuntu family, including `ID_LIKE` | Darwin |
 | System packages | apt | Homebrew |
 | Runtime and dotfile declarations | mise installed on approval; declarations planned | mise installed on approval; declarations planned |
-| Interactive shell | zsh installed on approval; configuration planned | zsh installed on approval; configuration planned |
+| Interactive shell | zsh installed on approval; opt-in reviewed startup file | zsh installed on approval; opt-in reviewed startup file |
 | Bootstrap language | Bash | System Bash 3.2-compatible |
 
 A missing package must be checked and approved before installation. An
@@ -41,7 +41,9 @@ behaviour.
 
 Apart from the Apple Command Line Tools bundle requested only to obtain missing
 Git on macOS, bootstrap installs no other system package, application, shell
-setting or dotfile.
+setting or dotfile. To activate mise in a new zsh session, run
+`bash scripts/deploy-zsh-config.sh` separately; it previews the reviewed
+`.config/zsh/zshrc` file and refuses to overwrite an existing `~/.zshrc`.
 
 ## Checkout Development Tools
 

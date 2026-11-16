@@ -102,16 +102,12 @@ elif [[ -e "$target_dir" ]]; then
 fi
 
 mise=$(mise_command) || die 'mise is unavailable; install it before applying an overlay.'
+mise_supports_dot "$mise" ||
+    die 'mise 2026.11.9 or newer is required for dotfile deployment; bootstrap installs it.'
 work=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-overlay.XXXXXX") ||
     die 'Could not create a temporary mise configuration directory.'
 trap 'rm -rf -- "$work"' EXIT
 
-toml_escape() {
-    local value=$1
-    value=${value//\\/\\\\}
-    value=${value//\"/\\\"}
-    printf '%s' "$value"
-}
 printf '[dotfiles."%s"]\nsource = "%s"\nmode = "symlink"\n' \
     "$(toml_escape "$target_dir")" "$(toml_escape "$source_dir")" \
     >"$work/mise.toml"
