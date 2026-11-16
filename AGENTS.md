@@ -30,6 +30,9 @@ and are **not** evidence that a feature already exists.
 - **PRs:** small changes; list commands actually executed, untested platforms,
   and a numbered, copyable manual test plan with expected results and safe
   cleanup. Update human-facing docs whenever behaviour changes.
+- **CI:** workflow run steps call versioned scripts, with tool commands and
+  flags owned by those scripts. Reuse the same scripts from local commands and
+  Git hooks. Actions may handle runtime setup, caches, artifacts and deployment.
 - **Docs:** user-facing guidance should be accurate, concise and task-oriented.
   Store dense plans and older investigations under `docs/reference/`, label
   historical material, and link to it instead of duplicating it.
