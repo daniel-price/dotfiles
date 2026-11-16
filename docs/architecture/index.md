@@ -6,9 +6,9 @@ not a list of installed or working features.**
 
 | Responsibility | Chosen or proposed owner | Status |
 | --- | --- | --- |
-| Fresh setup | Bash `scripts/bootstrap.sh` | Installs missing `zsh` and `curl` after individual approval |
+| Fresh setup | Bash `scripts/bootstrap.sh` | Installs missing `zsh`, `curl` and pinned mise after individual approval |
 | Recurring update | Bash `scripts/update.sh` | Read-only scaffold |
-| Runtime and suitable developer tool versions | mise | Planned |
+| Runtime and suitable developer tool versions | mise | Installer implemented; tool declarations and provisioning planned |
 | Checkout development tools and shell Git hooks | mise + Lefthook | Implemented; opt-in developer setup |
 | Managed dotfiles and templating | Native mise dotfiles | Planned, requires validation |
 | Encrypted values and tracked files | age through mise | Planned; separate mechanisms |

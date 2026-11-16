@@ -7,7 +7,7 @@ explicit instead of hidden inside a monolithic installation script.
 | --- | --- | --- |
 | OS detection | Debian/Ubuntu family, including `ID_LIKE` | Darwin |
 | System packages | apt | Homebrew |
-| Runtime and dotfile declarations | mise (planned) | mise (planned) |
+| Runtime and dotfile declarations | mise installed on approval; declarations planned | mise installed on approval; declarations planned |
 | Interactive shell | zsh (planned) | zsh (planned) |
 | Bootstrap language | Bash | System Bash 3.2-compatible |
 

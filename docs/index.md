@@ -6,8 +6,8 @@ how everything was configured, while keeping the setup reviewable and safe.
 
 **Status: baseline bootstrap working (November 2026).** Stage zero can install
 Git if missing, clone the public checkout and, with separate approval, run its
-bootstrap. That bootstrap can install missing `zsh` and `curl` one at a time;
-mise, dotfiles and secrets setup remain unimplemented.
+bootstrap. That bootstrap can install missing `zsh`, `curl` and pinned mise;
+mise tool configuration, dotfiles and secrets setup remain unimplemented.
 
 ## What is this?
 
@@ -24,6 +24,7 @@ design and historical plans are [available separately](reference/index.md).
 | --- | --- |
 | OS detection and explicit yes/no helper | Implemented in the scaffold |
 | Install only missing `zsh` and `curl` with individual approval | Implemented |
+| Install verified mise `v2026.11.9` with separate download and execution approval | Implemented |
 | Read-only `scripts/update.sh` | Implemented |
 | Temporary download, Git prerequisite, HTTPS clone and confirmed bootstrap handoff | Implemented as standalone stage zero |
 | Dependency-free scaffold tests | Implemented |
@@ -36,8 +37,9 @@ design and historical plans are [available separately](reference/index.md).
 | GitHub Pages publication | Proposed in this documentation PR |
 
 `get-started.sh` ensures Git and acquires the public checkout. The checkout
-bootstrap then checks `zsh` and `curl`. An exit code of zero does not mean the
-machine has a configured shell, mise, dotfiles or restored secrets.
+bootstrap then checks `zsh`, `curl` and mise. An exit code of zero does not mean
+the machine has shell activation, configured mise tools, dotfiles or restored
+secrets.
 
 ## Start a new machine
 
