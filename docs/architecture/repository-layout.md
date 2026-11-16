@@ -2,24 +2,28 @@
 
 This is a map of **what exists**, with future responsibilities labelled.
 
-```text
-dotfiles/
-├── README.md                # Short GitHub entry point
-├── AGENTS.md                # Brief agent rules; links to this handbook
-├── get-started.sh           # Standalone Git installation and one HTTPS clone
-├── bootstrap.sh             # Read-only checkout scaffold today
-├── update.sh                # Read-only scaffold today
-├── scripts/lib/             # OS detection and interactive confirmation
-├── .config/
-│   ├── mise/config.toml     # Empty [tools] table
-│   ├── nvim/                # Marker only
-│   ├── zellij/              # Marker only
-│   └── ghostty/             # Marker only
-├── tests/                   # Dependency-free Bash scaffold tests
-├── docs/                    # Canonical website Markdown
-├── zensical.toml            # Static-site configuration
-└── .github/workflows/docs.yml # Build/Pages workflow
-```
+| Path | Responsibility |
+| --- | --- |
+| `README.md`, `AGENTS.md` | Human and agent entry points. |
+| `get-started.sh` | Standalone download: ensure Git and acquire the checkout. |
+| `scripts/bootstrap.sh`, `scripts/update.sh` | Read-only checkout scaffolds today. |
+| `scripts/` | Visible checkout scripts for setup, shared checks and docs builds. |
+| `scripts/lib/` | OS detection and interactive confirmation helpers. |
+| `.config/` | Future managed user dotfiles: mise, Neovim, Zellij and Ghostty placeholders. |
+| `mise.toml`, `lefthook.yml` | Project development tooling and hook configuration. |
+| `zensical.toml` | Documentation-site configuration. |
+| `tests/` | Scaffold checks and disposable hook integration tests. |
+| `docs/` | Canonical handbook Markdown. |
+| `.github/` | Workflow orchestration and PR template. |
+
+Keep executable project code in visible `scripts/`; there is no separate
+hidden `.scripts/` directory. Reserve `.config/` for configuration intended for
+the user's home directory. Repository tooling stays in its usual discovery
+locations rather than being mixed with those future deployed files.
+
+The root keeps six visible files: the two entry documents, the standalone
+download, and three tool configurations. The checkout's bootstrap and update
+commands live with the other scripts.
 
 The application directories currently contain placeholders, **not deployable
 configurations**. Do not link the whole `.config` tree.
@@ -31,12 +35,12 @@ in `tests/hooks.sh`, and Linux/macOS CI in `.github/workflows/shell.yml`. See
 
 **Planned separate sources** (not currently connected or cloned):
 
-```text
-public dotfiles repo     -> shared defaults, safe docs, bootstrap
-optional private repo   -> approved non-public profiles, separate checkout
-machine-local state     -> private identities, keys and host overrides
-optional mise history   -> encrypted tracked-file snapshots (distinct source)
-```
+| Source | Planned contents |
+| --- | --- |
+| Public dotfiles repo | Shared defaults, safe docs and bootstrap. |
+| Optional private repo | Approved non-public profiles in a separate checkout. |
+| Machine-local state | Private identities, keys and host overrides. |
+| Optional mise history | Encrypted tracked-file snapshots in a distinct source. |
 
 No private remote, path, repository name or work-specific details belong in
 this public repo. Public setup and Pages builds must never require private

@@ -14,7 +14,7 @@ assert_equal() {
     [[ "$1" == "$2" ]] || fail "$3 (expected $1, got $2)"
 }
 
-for script in "$ROOT/bootstrap.sh" "$ROOT/update.sh" \
+for script in "$ROOT/scripts/bootstrap.sh" "$ROOT/scripts/update.sh" \
     "$ROOT/scripts/lib/common.sh" "$ROOT/scripts/lib/os.sh" "$ROOT/tests/run.sh"; do
     bash -n "$script"
 done
@@ -81,19 +81,19 @@ printf 'PASS: Confirmation refuses noninteractive approval\n'
 mkdir "$TEST_ROOT/home" "$TEST_ROOT/elsewhere"
 for entry in bootstrap update; do
     for help in -h --help; do
-        output=$(bash "$ROOT/$entry.sh" "$help")
+        output=$(bash "$ROOT/scripts/$entry.sh" "$help")
         [[ "$output" == *'Usage:'* ]] || fail "$entry help missing"
     done
-    if bash "$ROOT/$entry.sh" --unknown >"$TEST_ROOT/out" 2>"$TEST_ROOT/err"; then
+    if bash "$ROOT/scripts/$entry.sh" --unknown >"$TEST_ROOT/out" 2>"$TEST_ROOT/err"; then
         fail "$entry accepted unknown argument"
     fi
-    if bash "$ROOT/$entry.sh" --help extra >"$TEST_ROOT/out" 2>"$TEST_ROOT/err"; then
+    if bash "$ROOT/scripts/$entry.sh" --help extra >"$TEST_ROOT/out" 2>"$TEST_ROOT/err"; then
         fail "$entry accepted extra argument"
     fi
     # Run twice from elsewhere, with an isolated HOME, on a supported host only.
     if detect_os >/dev/null 2>&1; then
-        output=$(cd "$TEST_ROOT/elsewhere" && HOME="$TEST_ROOT/home" bash "$ROOT/$entry.sh")
-        repeated=$(cd "$TEST_ROOT/elsewhere" && HOME="$TEST_ROOT/home" bash "$ROOT/$entry.sh")
+        output=$(cd "$TEST_ROOT/elsewhere" && HOME="$TEST_ROOT/home" bash "$ROOT/scripts/$entry.sh")
+        repeated=$(cd "$TEST_ROOT/elsewhere" && HOME="$TEST_ROOT/home" bash "$ROOT/scripts/$entry.sh")
         assert_equal "$output" "$repeated" "$entry repeatability"
         [[ "$output" == *'scaffolding only'* && "$output" == *'Not implemented:'* &&
             "$output" == *'No changes made.'* ]] || fail "$entry scope unclear"

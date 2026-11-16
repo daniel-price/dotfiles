@@ -7,8 +7,9 @@ repository may provide non-public configuration on selected machines.
 
 **Current status: stage-zero acquisition plus read-only scaffold.** The new
 self-contained `get-started.sh` can install Git (when missing, after approval)
-and clone this public repository once over HTTPS. `bootstrap.sh` and
-`update.sh` do **not** yet install mise, configure dotfiles or restore secrets.
+and clone this public repository once over HTTPS. `scripts/bootstrap.sh`
+and `scripts/update.sh` do **not** yet install mise, configure dotfiles or
+restore secrets.
 
 - **[Read the documentation](docs/index.md)** (source) ·
   [GitHub Pages site](https://daniel-price.github.io/dotfiles/)
@@ -41,7 +42,7 @@ before running downloaded code:
 The temporary download is deleted automatically when the command finishes.
 The script checks Git, asks before any installation or HTTPS clone into
 `~/.dotfiles`, then **asks separately before running** the checkout's
-`bootstrap.sh`. That bootstrap remains read-only scaffolding for now.
+`scripts/bootstrap.sh`. That bootstrap remains read-only scaffolding for now.
 An existing checkout is neither overwritten nor automatically updated.
 
 Do **not** use `curl ... | bash`: stdin must remain connected to your terminal
@@ -52,14 +53,14 @@ for confirmations, and the download must finish before execution.
 From a local checkout, with Bash 3.2 or newer:
 
 ```sh
-bash bootstrap.sh --help
-bash bootstrap.sh
-bash update.sh
+bash scripts/bootstrap.sh --help
+bash scripts/bootstrap.sh
+bash scripts/update.sh
 bash tests/run.sh
 ```
 
-`bootstrap.sh` and `update.sh` are still read-only and require sibling files
-in their checkout. `get-started.sh` is the separate, standalone entry point.
+The checkout scripts are still read-only and require the repository's helper
+files. `get-started.sh` is the separate, standalone entry point.
 
 ## Safety
 

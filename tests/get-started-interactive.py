@@ -29,8 +29,8 @@ case "$1" in
     esac;;
   clone)
     printf '%s\\n' "$4" >> "$MOCK_CLONE_LOG"
-    mkdir -p "$4"
-    cat > "$4/bootstrap.sh" <<'BOOT'
+    mkdir -p "$4/scripts"
+    cat > "$4/scripts/bootstrap.sh" <<'BOOT'
 #!/usr/bin/env bash
 printf '%s\\n' "$PWD" > "$MOCK_BOOTSTRAP_MARKER"
 [[ "${MOCK_BOOTSTRAP_FAIL:-0}" != 1 ]]
@@ -76,20 +76,31 @@ esac
     # Clone approval does not imply permission to run cloned code.
     status, output = run_tty("y\nn\n")
     assert status == 0, output
-    assert (home / ".dotfiles" / "bootstrap.sh").exists()
+    assert (home / ".dotfiles" / "scripts" / "bootstrap.sh").exists()
     assert not marker.exists(), output
     assert log.read_text().count("\n") == 1
     assert "Bootstrap execution declined" in output, output
 
     # Explicit bootstrap approval; existing repo is reused without a second clone.
+    legacy_bootstrap = home / ".dotfiles" / "bootstrap.sh"
+    legacy_bootstrap.write_text("#!/usr/bin/env bash\nexit 99\n")
     status, output = run_tty("y\n")
     assert status == 0, output
     assert marker.read_text().strip() == str(home / ".dotfiles"), output
     assert log.read_text().count("\n") == 1, "Unexpected second clone"
+    legacy_bootstrap.unlink()
 
     # Errors inside the checkout bootstrap must cause stage zero to fail.
     marker.unlink()
     status, output = run_tty("y\n", should_fail=True)
     assert status != 0 and "Checkout bootstrap failed" in output, output
 
-    print("PASS: PTY clone/confirmation/handoff, idempotence and failure propagation")
+    # An existing pre-move checkout keeps working without an implicit update.
+    (home / ".dotfiles" / "scripts" / "bootstrap.sh").rename(legacy_bootstrap)
+    marker.unlink()
+    status, output = run_tty("y\n")
+    assert status == 0, output
+    assert marker.read_text().strip() == str(home / ".dotfiles"), output
+    assert log.read_text().count("\n") == 1, "Legacy checkout was cloned again"
+
+    print("PASS: PTY current/legacy handoff, confirmation, idempotence and failure propagation")

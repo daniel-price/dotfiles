@@ -46,8 +46,8 @@ grep -q 'Clone declined' "$TMP/out" || fail 'noninteractive clone not declined'
 [[ ! -e "$TMP/home/.dotfiles" ]] || fail 'checkout created without consent'
 
 # Existing checkout with exact origin should be skipped without changing it.
-mkdir "$TMP/home/.dotfiles"
-cat >"$TMP/home/.dotfiles/bootstrap.sh" <<'BOOT'
+mkdir -p "$TMP/home/.dotfiles/scripts"
+cat >"$TMP/home/.dotfiles/scripts/bootstrap.sh" <<'BOOT'
 #!/usr/bin/env bash
 printf 'unexpected bootstrap execution\n' > "$HOME/bootstrap-invoked"
 BOOT
@@ -63,6 +63,13 @@ if HOME="$TMP/home" SIMULATE_REMOTE='https://example.invalid/other' \
 fi
 grep -q 'unexpected origin' "$TMP/out" || fail 'missing origin error'
 
+# The downloaded entry point must also preserve older checkouts without updates.
+mv "$TMP/home/.dotfiles/scripts/bootstrap.sh" "$TMP/home/.dotfiles/bootstrap.sh"
+rmdir "$TMP/home/.dotfiles/scripts"
+HOME="$TMP/home" PATH="$TMP/bin:$PATH" \
+    bash "$ROOT/get-started.sh" >"$TMP/out" 2>&1
+grep -q 'Bootstrap execution declined' "$TMP/out" || fail 'legacy bootstrap approval was not requested'
+[[ ! -e "$TMP/home/bootstrap-invoked" ]] || fail 'legacy bootstrap ran without approval'
 rm "$TMP/home/.dotfiles/bootstrap.sh"
 rmdir "$TMP/home/.dotfiles"
 printf 'untouched\n' >"$TMP/home/.dotfiles"
