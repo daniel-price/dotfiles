@@ -15,7 +15,7 @@ MISE_INSTALLER_SHA256='60adf5460b19a791b964c414a2fff9d46990c9f2b1dfc0e4ba8c2b865
 usage() {
     printf '%s\n' \
         'Usage: bash scripts/bootstrap.sh [--help]' \
-        'Install missing zsh, curl, pinned mise, Neovim and Zellij after separate confirmation.' \
+        'Install missing zsh, curl, mise, Neovim, Zellij and Ghostty after separate confirmation.' \
         'Does not configure the shell, deploy dotfiles or upgrade software.'
 }
 
@@ -192,5 +192,6 @@ ensure_tool "$platform" curl
 ensure_mise "$platform"
 bash "$ROOT/scripts/provision-tool.sh" neovim
 bash "$ROOT/scripts/provision-tool.sh" zellij
+bash "$ROOT/scripts/install-ghostty.sh"
 log 'Bootstrap complete. Not implemented: SSH setup, other tool installation, dotfile deployment,'
 log 'Git updates, or shell configuration.'

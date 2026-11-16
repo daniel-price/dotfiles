@@ -28,13 +28,14 @@ design and historical plans are [available separately](reference/index.md).
 | Install only missing `zsh` and `curl` with individual approval | Implemented |
 | Install verified mise `v2026.11.9` with separate download and execution approval | Implemented |
 | Provision Neovim `0.12.6` and Zellij `0.46.0` with mise and per-tool confirmation | Implemented |
+| Install Ghostty with apt/Homebrew after separate confirmation | Implemented |
 | Opt-in deployment of a reviewed zsh startup file via mise | Implemented |
 | Read-only `scripts/update.sh` | Implemented |
 | Temporary download, Git prerequisite, HTTPS clone and confirmed bootstrap handoff | Implemented as standalone stage zero |
 | Dependency-free scaffold tests | Implemented |
 | Opt-in shell formatting/lint hooks and pinned development tools | Implemented; see [development](guides/development.md) |
 | Installing further tools and runtimes | Planned |
-| Installing Ghostty and OpenCode; broader shell settings | Planned |
+| Installing OpenCode and broader shell settings | Planned |
 | One-target private config directory overlay | Implemented; explicit opt-in only |
 | Encrypted secret restoration | Planned |
 | Full private configuration profiles and precedence | Planned; not connected |

@@ -17,7 +17,7 @@ assert_equal() {
 for script in "$ROOT/get-started.sh" "$ROOT/scripts/bootstrap.sh" \
     "$ROOT/scripts/apply-private-overlay.sh" "$ROOT/scripts/check-clean.sh" \
     "$ROOT/scripts/deploy-zsh-config.sh" "$ROOT/scripts/format.sh" \
-    "$ROOT/scripts/install-dev-tools.sh" \
+    "$ROOT/scripts/install-dev-tools.sh" "$ROOT/scripts/install-ghostty.sh" \
     "$ROOT/scripts/install-hooks.sh" "$ROOT/scripts/lint.sh" \
     "$ROOT/scripts/provision-tool.sh" "$ROOT/scripts/update.sh" \
     "$ROOT/scripts/lib/common.sh" "$ROOT/scripts/lib/mise.sh" \
@@ -117,6 +117,26 @@ case "$1" in
 esac
 MISE
 chmod +x "$TEST_ROOT/bin/mise"
+cat >"$TEST_ROOT/bin/apt-cache" <<'APT_CACHE'
+#!/usr/bin/env bash
+printf '%s\n' '  Candidate: 1.4.0'
+APT_CACHE
+cat >"$TEST_ROOT/bin/dpkg-query" <<'DPKG_QUERY'
+#!/usr/bin/env bash
+printf '%s\n' 'deinstall ok config-files'
+DPKG_QUERY
+printf '%s\n' '#!/usr/bin/env bash' 'exec "$@"' >"$TEST_ROOT/bin/sudo"
+printf '%s\n' '#!/usr/bin/env bash' 'exit 0' >"$TEST_ROOT/bin/add-apt-repository"
+cat >"$TEST_ROOT/bin/brew" <<'BREW'
+#!/usr/bin/env bash
+case "$1" in
+list) exit 1 ;;
+*) exit 0 ;;
+esac
+BREW
+chmod +x "$TEST_ROOT/bin/apt-cache" "$TEST_ROOT/bin/dpkg-query" \
+    "$TEST_ROOT/bin/sudo" "$TEST_ROOT/bin/add-apt-repository" \
+    "$TEST_ROOT/bin/brew"
 for entry in bootstrap update; do
     for help in -h --help; do
         output=$(bash "$ROOT/scripts/$entry.sh" "$help")
@@ -157,6 +177,7 @@ if command -v python3 >/dev/null 2>&1; then
     python3 "$ROOT/tests/tool-overlay-interactive.py"
     python3 "$ROOT/tests/zsh-deploy-interactive.py"
     python3 "$ROOT/tests/provision-zellij-interactive.py"
+    python3 "$ROOT/tests/install-ghostty-interactive.py"
 else
     printf 'SKIP: interactive bootstrap tests (python3 not found)\n'
 fi

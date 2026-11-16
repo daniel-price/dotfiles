@@ -2,8 +2,8 @@
 
 The one-command installer ensures Git, acquires the public repository and
 **offers to run its bootstrap with a separate confirmation**. Bootstrap then
-checks `zsh`, `curl`, mise, Neovim and Zellij, asking separately before each
-missing installation. An optional explicit overlay can deploy one selected private
+checks `zsh`, `curl`, mise, Neovim, Zellij and Ghostty, asking separately before
+each missing installation. An optional explicit overlay can deploy one selected private
 configuration directory. The full development-environment setup remains
 unimplemented.
 
@@ -66,8 +66,10 @@ existing mise found on `PATH` or at that destination is reported and left
 unchanged, even when it is an older version. Bootstrap then calls
 `scripts/provision-tool.sh neovim`, which reads the checked-in `0.12.6`
 declaration and asks once before running `mise install`. It repeats this for
-pinned Zellij. Bootstrap does not activate mise or edit shell startup files; use
-the separate step below.
+pinned Zellij. Ghostty is handled by a separate script because it is a desktop
+app: apt on Debian/Ubuntu/Pop!_OS and a Homebrew cask on macOS. If apt cannot
+provide Ghostty, adding the community PPA is a separate confirmation. Bootstrap
+does not activate mise or edit shell startup files; use the separate step below.
 
 To deploy a private Neovim configuration, explicitly select an already-present
 source directory and target directory after reviewing
@@ -120,9 +122,10 @@ bash ~/.dotfiles/tests/run.sh
 ```
 
 **Expected:** bootstrap identifies the OS, skips available `zsh`, `curl`, mise,
-Neovim and Zellij, or asks separately before installing a missing component. Mise
-requires separate download/verification and execution confirmation; Neovim and
-Zellij each have their own install prompt. It then lists the unimplemented steps. Update still
+Neovim, Zellij and Ghostty, or asks separately before installing a missing
+component. Mise requires separate download/verification and execution
+confirmation; Neovim and Zellij each have their own install prompt. Ghostty has
+its own apt/Homebrew prompt. It then lists the unimplemented steps. Update still
 reports `No changes made.` The tests use temporary fixtures and should finish
 with `All bootstrap checks passed.`
 
@@ -142,21 +145,23 @@ documentation for the version you check out before running it on a live machine.
    separate approval (implemented). It does not activate mise.
 6. Bootstrap can provision pinned Neovim and Zellij through mise after separate
    approvals (implemented).
-7. Optionally deploy the reviewed zsh startup file that activates mise
+7. Bootstrap can install Ghostty through apt or Homebrew after a separate approval
    (implemented).
-8. Explicitly deploy one reviewed private configuration directory through the
+8. Optionally deploy the reviewed zsh startup file that activates mise
+   (implemented).
+9. Explicitly deploy one reviewed private configuration directory through the
    mise overlay (narrow prototype implemented).
-9. Provision further reviewed tools and apply further reviewed dotfiles.
-10. Restore authorised encrypted settings using a **separately recovered** age
+10. Provision further reviewed tools and apply further reviewed dotfiles.
+11. Restore authorised encrypted settings using a **separately recovered** age
    identity; keep machine-specific SSH credentials local.
-11. Re-run without unnecessary changes; upgrades remain an explicit action.
+12. Re-run without unnecessary changes; upgrades remain an explicit action.
 
 **Not implemented:** SSH registration, further tool provisioning, broad dotfile
 deployment, full private profiles and encrypted restore. Git installation, the
 initial clone, a confirmed bootstrap handoff, individually approved
 `zsh`/`curl` installs, verified mise installation, Neovim and Zellij
-provisioning, the reviewed zsh activation file and the narrow overlay are
-implemented.
+provisioning, Ghostty installation, the reviewed zsh activation file and the
+narrow overlay are implemented.
 No private repositories should be discovered or cloned automatically;
 see [the private-profile guide](../guides/private-profiles.md).
 
