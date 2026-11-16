@@ -191,7 +191,7 @@ esac
     )
     assert applied[0] == 0, applied[1]
     assert target.is_symlink(), applied[1]
-    assert target.resolve() == source, applied[1]
+    assert target.resolve() == source.resolve(), applied[1]
     assert sum(line.endswith(" dot apply") for line in overlay_lines()) == 1, overlay_lines()
     target.unlink()
 
