@@ -36,18 +36,25 @@ when installing missing tools or adopting a reviewed version change.
 | Command | Result |
 | --- | --- |
 | `git commit` | Format staged `*.sh` files, stage the formatting, then run ShellCheck. |
-| `bash scripts/shell.sh check` | Check every tracked `*.sh` file without rewriting or staging it. |
-| `bash scripts/shell.sh format` | Format every tracked `*.sh` file without changing staging. |
-| `bash scripts/shell.sh lint -- file.sh` | Lint selected files, using the same command as the commit hook. |
+| `bash scripts/format.sh` | Format every tracked `*.sh` file without changing staging. |
+| `bash scripts/format.sh --check` | Check formatting without rewriting or staging files. |
+| `bash scripts/lint.sh` | Run ShellCheck on every tracked `*.sh` file without changing it. |
+| `bash scripts/format.sh -- file.sh` | Format selected files, using the same command as the commit hook. |
+| `bash scripts/lint.sh -- file.sh` | Lint selected files, using the same command as the commit hook. |
 | `bash tests/hooks.sh` | Exercise the hooks in a disposable repository that is removed afterwards. |
 | `bash tests/run.sh` | Run the existing bootstrap checks; Python 3 enables the interactive cases. |
 | `bash scripts/check-clean.sh` | Fail if tracked working files or the index differ from HEAD. |
 
-`mise run check`, `mise run format` and `mise run test:hooks` remain convenience
-aliases for the same scripts. Shell scripts accept an optional file list after
-`--`; without one they select tracked `*.sh` files. Paths are relative to the
-repository root, and names containing spaces are supported. The scripts can be
-invoked from another directory by passing their full path.
+`mise run format` and `mise run lint` are convenience aliases for these scripts.
+`mise run check` runs both the formatting check and linting, reporting failures
+from either command. `mise run test:hooks` runs the disposable hook tests.
+
+Both scripts accept an optional file list after `--`; without one they select
+tracked `*.sh` files. Combine `--check` with a file list to check selected files:
+`bash scripts/format.sh --check -- file.sh`. Paths are relative to the repository
+root, and names containing spaces are supported. The scripts can be invoked
+from another directory by passing their full path. Shared file selection lives
+in `scripts/lib/shell-files.sh`.
 
 Lefthook runs through mise even when Git is launched from a shell without mise
 activation, so the `mise` executable must be on that application's `PATH`.
@@ -66,10 +73,10 @@ zsh. Add an appropriate separate check when those files are introduced.
 
 ## Continuous validation
 
-The **Shell checks** workflow installs the pinned tools, runs the shell check script,
-exercises real commits and partial staging, and runs the bootstrap tests on
-Linux and macOS. CI uses the separate read-only check rather than the
-auto-formatting commit hook. Local hook installation remains opt-in.
+The **Shell checks** workflow installs the pinned tools, runs
+`bash scripts/format.sh --check` and `bash scripts/lint.sh`, exercises real
+commits and partial staging, and runs the bootstrap tests on Linux and macOS.
+These CI commands are read-only. Local hook installation remains opt-in.
 
 Workflow `run` steps contain script calls. Scripts own the tool invocations,
 arguments and validation so local runs and hooks share the same behaviour.

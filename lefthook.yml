@@ -9,8 +9,8 @@ pre-commit:
   jobs:
     - name: shfmt
       glob: "*.sh"
-      run: bash scripts/shell.sh format -- {staged_files}
+      run: bash scripts/format.sh -- {staged_files}
       stage_fixed: true
     - name: shellcheck
       glob: "*.sh"
-      run: bash scripts/shell.sh lint -- {staged_files}
+      run: bash scripts/lint.sh -- {staged_files}
