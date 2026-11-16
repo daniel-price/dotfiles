@@ -4,11 +4,12 @@ This is the documentation for my personal development environment. The goal is
 to make a new Pop!_OS or macOS machine feel familiar without having to remember
 how everything was configured, while keeping the setup reviewable and safe.
 
-**Status: one-managed-tool bootstrap working (November 2026).** Stage zero can
-install Git if missing, clone the public checkout and, with separate approval,
-run its bootstrap. That bootstrap installs missing `zsh`, `curl`, pinned mise
-and Neovim `0.12.6`. A narrow, explicit private-config overlay can deploy one
-selected directory; full profile layering and secrets remain unimplemented.
+**Status: one-managed-tool bootstrap with opt-in shell activation (November
+2026).** Stage zero can install Git if missing, clone the public checkout and,
+with separate approval, run its bootstrap. That bootstrap installs missing
+`zsh`, `curl`, pinned mise and Neovim `0.12.6`. Separate opt-in scripts can
+deploy a reviewed zsh startup file or one selected private directory; full
+profile layering and secrets remain unimplemented.
 
 ## What is this?
 
@@ -27,12 +28,13 @@ design and historical plans are [available separately](reference/index.md).
 | Install only missing `zsh` and `curl` with individual approval | Implemented |
 | Install verified mise `v2026.11.9` with separate download and execution approval | Implemented |
 | Provision Neovim `0.12.6` with mise and per-tool confirmation | Implemented |
+| Opt-in deployment of a reviewed zsh startup file via mise | Implemented |
 | Read-only `scripts/update.sh` | Implemented |
 | Temporary download, Git prerequisite, HTTPS clone and confirmed bootstrap handoff | Implemented as standalone stage zero |
 | Dependency-free scaffold tests | Implemented |
 | Opt-in shell formatting/lint hooks and pinned development tools | Implemented; see [development](guides/development.md) |
 | Installing further tools and runtimes | Planned |
-| Deploying Zellij, Ghostty or shell settings | Planned |
+| Deploying Zellij, Ghostty or broader shell settings | Planned |
 | One-target private config directory overlay | Implemented; explicit opt-in only |
 | Encrypted secret restoration | Planned |
 | Full private configuration profiles and precedence | Planned; not connected |
@@ -40,9 +42,9 @@ design and historical plans are [available separately](reference/index.md).
 | GitHub Pages publication | Proposed in this documentation PR |
 
 `get-started.sh` ensures Git and acquires the public checkout. The checkout
-bootstrap then checks `zsh`, `curl`, mise and Neovim. An exit code of zero does
-not mean the machine has shell activation, other configured tools, deployed
-dotfiles or restored secrets.
+bootstrap then checks `zsh`, `curl`, mise and Neovim. Shell activation is a
+separate opt-in step; an exit code of zero does not mean the machine has an
+activated shell, other configured tools, deployed dotfiles or restored secrets.
 
 ## Start a new machine
 

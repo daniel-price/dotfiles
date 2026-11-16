@@ -16,7 +16,8 @@ assert_equal() {
 
 for script in "$ROOT/get-started.sh" "$ROOT/scripts/bootstrap.sh" \
     "$ROOT/scripts/apply-private-overlay.sh" "$ROOT/scripts/check-clean.sh" \
-    "$ROOT/scripts/format.sh" "$ROOT/scripts/install-dev-tools.sh" \
+    "$ROOT/scripts/deploy-zsh-config.sh" "$ROOT/scripts/format.sh" \
+    "$ROOT/scripts/install-dev-tools.sh" \
     "$ROOT/scripts/install-hooks.sh" "$ROOT/scripts/lint.sh" \
     "$ROOT/scripts/provision-tool.sh" "$ROOT/scripts/update.sh" \
     "$ROOT/scripts/lib/common.sh" "$ROOT/scripts/lib/mise.sh" \
@@ -25,6 +26,12 @@ for script in "$ROOT/get-started.sh" "$ROOT/scripts/bootstrap.sh" \
     bash -n "$script"
 done
 printf 'PASS: Bash syntax\n'
+if command -v zsh >/dev/null 2>&1; then
+    zsh -n "$ROOT/.config/zsh/zshrc" || fail 'reviewed zsh file has invalid syntax'
+    printf 'PASS: Reviewed zsh syntax\n'
+else
+    printf 'SKIP: Reviewed zsh syntax (zsh not found)\n'
+fi
 
 for moved in bootstrap update; do
     [[ ! -e "$ROOT/$moved.sh" ]] || fail "legacy root $moved script remains"
@@ -148,6 +155,7 @@ if command -v python3 >/dev/null 2>&1; then
     python3 "$ROOT/tests/get-started-interactive.py"
     python3 "$ROOT/tests/bootstrap-interactive.py"
     python3 "$ROOT/tests/tool-overlay-interactive.py"
+    python3 "$ROOT/tests/zsh-deploy-interactive.py"
 else
     printf 'SKIP: interactive bootstrap tests (python3 not found)\n'
 fi

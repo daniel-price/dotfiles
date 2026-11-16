@@ -24,3 +24,10 @@ trust_mise_config_dir() {
         export MISE_TRUSTED_CONFIG_PATHS="$dir"
     fi
 }
+
+toml_escape() {
+    local value=$1
+    value=${value//\\/\\\\}
+    value=${value//\"/\\\"}
+    printf '%s' "$value"
+}

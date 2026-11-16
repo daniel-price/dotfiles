@@ -1,16 +1,30 @@
 # Manage a dotfile
 
-**Status: planned.** Mise native dotfile deployment is the chosen direction,
-but there are no configured deployment targets yet.
+**Status: partly implemented.** A reviewed zsh startup file can be deployed
+through mise, and one explicitly selected private directory can be linked. Other
+dotfiles remain planned.
 
 1. Identify the source file and its intended home-directory target.
-2. Remove secret values; use only explicitly reviewed config files.
+2. Remove secret values and work-specific content; use only explicitly reviewed
+   config files.
 3. Declare a **single** mise-managed target rather than linking a whole
-   application directory or adding a bespoke symlink script.
+   application directory or adding a bespoke symlink manager.
 4. Preview the proposed diff and inspect existing files or symlinks.
 5. Require a precise yes/no prompt for every modifying action.
 6. Test refusal, already-correct state, conflicts and reruns in an isolated HOME.
-7. Only after verification, migrate one real configuration and update the guide.
 
-Existing `.config/nvim`, `.config/zellij` and `.config/ghostty` are currently
-empty placeholders. Read [the design](../architecture/index.md) for context.
+To activate mise in a new zsh session:
+
+```sh
+bash ~/.dotfiles/scripts/deploy-zsh-config.sh --help
+bash ~/.dotfiles/scripts/deploy-zsh-config.sh
+```
+
+The source is `.config/zsh/zshrc`. It only activates mise found on `PATH` or at
+`~/.local/bin/mise`. An existing `~/.zshrc` is never overwritten: resolve that
+conflict manually before rerunning. A repeated run with the correct symlink
+exits without a prompt.
+
+Existing `.config/nvim`, `.config/zellij` and `.config/ghostty` are still empty
+placeholders. See [Getting started](../getting-started/index.md) and
+[architecture](../architecture/index.md) for context.

@@ -106,12 +106,6 @@ work=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-overlay.XXXXXX") ||
     die 'Could not create a temporary mise configuration directory.'
 trap 'rm -rf -- "$work"' EXIT
 
-toml_escape() {
-    local value=$1
-    value=${value//\\/\\\\}
-    value=${value//\"/\\\"}
-    printf '%s' "$value"
-}
 printf '[dotfiles."%s"]\nsource = "%s"\nmode = "symlink"\n' \
     "$(toml_escape "$target_dir")" "$(toml_escape "$source_dir")" \
     >"$work/mise.toml"

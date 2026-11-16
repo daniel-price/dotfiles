@@ -10,13 +10,13 @@ not a list of installed or working features.**
 | Recurring update | Bash `scripts/update.sh` | Read-only scaffold |
 | Runtime and suitable developer tool versions | mise | Neovim provisioning implemented; further tools planned |
 | Checkout development tools and shell Git hooks | mise + Lefthook | Implemented; opt-in developer setup |
-| Managed dotfiles and templating | Native mise dotfiles | One explicit directory-symlink overlay implemented; broader deployment planned |
+| Managed dotfiles and templating | Native mise dotfiles | Reviewed zsh file and one explicit directory overlay implemented; broader deployment planned |
 | Encrypted values and tracked files | age through mise | Planned; separate mechanisms |
 | Optional private config | Separately authorised Git repo and selected profile | Narrow single-target overlay implemented; full profiles not connected |
 | Machine-local identities and overrides | Outside Git | Policy only |
 | System packages, Pop!_OS | apt | Planned |
 | System packages and apps, macOS | Homebrew | Planned; never use on Pop!_OS |
-| Interactive shell | zsh | Planned configuration |
+| Interactive shell | zsh | Opt-in reviewed startup file implemented; broader configuration planned |
 | Long-running services | Containers where justified | Direction only; no implementation |
 
 ## Design boundaries
