@@ -112,6 +112,7 @@ case "${1:-}" in
 *) die 'Unknown argument. Use --help for usage.' ;;
 esac
 
+# shellcheck disable=SC2119
 platform=$(detect_os)
 if ghostty_ready "$platform"; then
     log 'Ghostty is already installed; skipped.'
