@@ -9,25 +9,8 @@ pre-commit:
   jobs:
     - name: shfmt
       glob: "*.sh"
-      run: mise exec -- shfmt -w -i 4 {staged_files}
+      run: bash scripts/shell.sh format -- {staged_files}
       stage_fixed: true
     - name: shellcheck
       glob: "*.sh"
-      run: mise exec -- shellcheck {staged_files}
-
-# Separate read-only checks for CI and local use; never stage or fix files here.
-check:
-  parallel: true
-  jobs:
-    - name: shfmt
-      glob: "*.sh"
-      run: mise exec -- shfmt -d -i 4 {all_files}
-    - name: shellcheck
-      glob: "*.sh"
-      run: mise exec -- shellcheck {all_files}
-
-format:
-  jobs:
-    - name: shfmt
-      glob: "*.sh"
-      run: mise exec -- shfmt -w -i 4 {all_files}
+      run: bash scripts/shell.sh lint -- {staged_files}

@@ -14,11 +14,11 @@ run = "bash scripts/install-hooks.sh"
 
 [tasks.check]
 description = "Check tracked shell scripts without changing files or staging"
-run = "lefthook run check"
+run = "bash scripts/shell.sh check"
 
 [tasks.format]
 description = "Format tracked shell scripts without staging changes"
-run = "lefthook run format"
+run = "bash scripts/shell.sh format"
 
 [tasks."test:hooks"]
 description = "Test auto-formatting and partial staging in a disposable repository"
