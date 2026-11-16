@@ -15,12 +15,13 @@ assert_equal() {
 }
 
 for script in "$ROOT/get-started.sh" "$ROOT/scripts/bootstrap.sh" \
-    "$ROOT/scripts/check-clean.sh" "$ROOT/scripts/format.sh" \
-    "$ROOT/scripts/install-dev-tools.sh" "$ROOT/scripts/install-hooks.sh" \
-    "$ROOT/scripts/lint.sh" "$ROOT/scripts/update.sh" \
-    "$ROOT/scripts/lib/common.sh" "$ROOT/scripts/lib/os.sh" \
-    "$ROOT/scripts/lib/shell-files.sh" "$ROOT/tests/check-clean.sh" \
-    "$ROOT/tests/get-started.sh" "$ROOT/tests/run.sh"; do
+    "$ROOT/scripts/apply-private-overlay.sh" "$ROOT/scripts/check-clean.sh" \
+    "$ROOT/scripts/format.sh" "$ROOT/scripts/install-dev-tools.sh" \
+    "$ROOT/scripts/install-hooks.sh" "$ROOT/scripts/lint.sh" \
+    "$ROOT/scripts/provision-tool.sh" "$ROOT/scripts/update.sh" \
+    "$ROOT/scripts/lib/common.sh" "$ROOT/scripts/lib/mise.sh" \
+    "$ROOT/scripts/lib/os.sh" "$ROOT/scripts/lib/shell-files.sh" \
+    "$ROOT/tests/check-clean.sh" "$ROOT/tests/get-started.sh" "$ROOT/tests/run.sh"; do
     bash -n "$script"
 done
 printf 'PASS: Bash syntax\n'
@@ -92,8 +93,22 @@ fi
 printf 'PASS: Confirmation refuses noninteractive approval\n'
 
 mkdir "$TEST_ROOT/bin" "$TEST_ROOT/home" "$TEST_ROOT/elsewhere"
-printf '%s\n' '#!/usr/bin/env bash' 'printf "%s\n" "2026.11.9 fake"' \
-    >"$TEST_ROOT/bin/mise"
+cat >"$TEST_ROOT/bin/mise" <<'MISE'
+#!/usr/bin/env bash
+case "$1" in
+--version)
+    printf '%s\n' '2026.11.9 fake'
+    ;;
+-C)
+    shift 2
+    case "$1" in
+    install) exit 0 ;;
+    *) exit 0 ;;
+    esac
+    ;;
+*) exit 0 ;;
+esac
+MISE
 chmod +x "$TEST_ROOT/bin/mise"
 for entry in bootstrap update; do
     for help in -h --help; do
@@ -132,6 +147,7 @@ bash "$ROOT/tests/get-started.sh"
 if command -v python3 >/dev/null 2>&1; then
     python3 "$ROOT/tests/get-started-interactive.py"
     python3 "$ROOT/tests/bootstrap-interactive.py"
+    python3 "$ROOT/tests/tool-overlay-interactive.py"
 else
     printf 'SKIP: interactive bootstrap tests (python3 not found)\n'
 fi

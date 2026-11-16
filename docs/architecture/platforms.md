@@ -27,14 +27,17 @@ when bootstrap is already running as root.
 | zsh | `sudo apt-get install --no-upgrade zsh` | `HOMEBREW_NO_AUTO_UPDATE=1 brew install zsh` | Checkout bootstrap; only if zsh is missing |
 | curl | `sudo apt-get install --no-upgrade curl` | `HOMEBREW_NO_AUTO_UPDATE=1 brew install curl` | Checkout bootstrap; only if curl is missing |
 | mise `v2026.11.9` | Verified GitHub Release installer writes `~/.local/bin/mise` | Same verified GitHub Release installer and destination | Checkout bootstrap; only if mise is missing |
+| Neovim `0.12.6` | `mise install neovim@0.12.6` through `scripts/provision-tool.sh` | Same mise command on both operating systems | Checkout bootstrap; only if this version is not already installed |
 
 The macOS zsh/curl path requires an existing Homebrew installation; bootstrap
 does **not** install Homebrew. Standard macOS installations normally already
 include both tools. The mise flow downloads the pinned official GitHub Release
 installer to a temporary file, verifies its committed SHA-256, then asks again
-before it writes the executable. It does not use apt or Homebrew, activate mise,
-or install any mise-managed tool. See [Getting started](../getting-started/index.md)
-for the full consent and conflict behaviour.
+before it writes the executable. It does not use apt or Homebrew, activate mise
+or edit shell startup files. The only managed tool currently provisioned is
+Neovim, installed through mise after its own confirmation. See
+[Getting started](../getting-started/index.md) for the full consent and conflict
+behaviour.
 
 Apart from the Apple Command Line Tools bundle requested only to obtain missing
 Git on macOS, bootstrap installs no other system package, application, shell
@@ -64,9 +67,10 @@ the explicit developer and documentation setup commands.
   eventually deployed by mise.
 - **Platform variants:** explicit, versioned platform-specific config **when
   introduced**; there is not yet an implemented per-platform directory.
-- **Private profiles:** an optional, separately authorised Git repository
-  may supply non-public personal/work settings on deliberately selected
-  machines; this is not currently implemented.
+- **Private profiles:** an optional, separately authorised Git repository may
+  supply non-public personal/work settings on deliberately selected machines.
+  The current implementation deploys only one explicitly selected directory to
+  one target; full profiles are not implemented.
 - **Machine-local overrides:** identities, keys and host-only settings remain
   outside Git; `local/` and `*.local` are ignored but not yet loaded.
 - **Sensitive identities:** outside the public Git checkout, with secure

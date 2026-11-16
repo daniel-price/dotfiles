@@ -1,27 +1,73 @@
 # Use an optional private configuration profile
 
-**Status: planned.** No implementation or private repo has been configured.
+**Status: narrow prototype implemented.** One already-present directory can be
+linked to one explicit target. There is no automatic repository discovery,
+clone, fetch, update, profile selection or configuration precedence merge.
 
-A future machine-specific setup will follow these steps, not automatically
-download private settings just because a machine appears to be used for work.
+The public setup never needs private access. Only run this script on a machine
+and for a source you are explicitly authorised to use. Never put a private
+remote, path, credential or file content in this public repository, CI or the
+generated site.
 
-1. Classify each file: public, authorised private, or machine-local.
-   Work-owned files require an employer-approved destination and device.
-2. Explicitly select a private repository and profile **on the machine**,
-   only after checking permission and intended scope. Do not place its remote
-   URL, credentials or contents in this public repository.
-3. Review clone/update operations and require an individual confirmation.
-   Leave a dirty/diverged checkout unchanged until resolved.
-4. Verify the effective mise merge order: public defaults, private overlay
-   (when selected), then local-only overrides.
-5. Preview every target path; require separate approval for collisions.
-   Declining should preserve the public-only setup.
-6. Test no private access, failed authentication, empty/private profile,
-   collisions, repeated runs and safe cleanup with **dummy fixtures**.
-7. Check that neither public CI/site output nor Git history includes
-   private contents or identifiers.
+## Prerequisites
 
-There are intentionally no executable setup commands yet. See
-[configuration layers](../architecture/private-configuration.md),
+- Bash 3.2+ and a working `mise` installation.
+- A selected source directory that already exists locally as a real directory.
+- A target parent directory that already exists, such as `~/.config`.
+- An informed decision about work versus personal storage. Work-owned files
+  require employer-approved storage and devices.
+
+## Deploy one selected directory
+
+Set the paths in your shell only; do not commit them:
+
+```sh
+PRIVATE_SOURCE='/absolute/path/to/authorised/source'
+PRIVATE_TARGET="$HOME/.config/nvim"
+```
+
+Review the preview and then answer the confirmation prompt:
+
+```sh
+bash ~/.dotfiles/scripts/apply-private-overlay.sh \
+  --source "$PRIVATE_SOURCE" \
+  --target "$PRIVATE_TARGET"
+```
+
+Expected: the script calls `mise dot diff` and `mise dot apply --dry-run`,
+shows the proposed symlink, then asks before `mise dot apply`. The generated
+mise configuration lives in a temporary directory and is trusted only for the
+invoking process; no persistent trust setting is changed.
+
+A repeat run detects that the target already points at the selected source and
+exits without invoking mise or prompting.
+
+## Safety behaviour
+
+The script refuses to continue when:
+
+- the source is missing, is a symlink, is not a directory or contains control
+  characters in its path;
+- the source Git checkout is dirty, diverged from upstream, or behind upstream;
+- the target parent is missing or is not a regular directory;
+- the target is a real file or directory, or is a symlink to a different place.
+
+It never uses `mise dot apply --force`, deletes a conflicting target, fetches
+updates or chooses a source on your behalf. Resolve conflicts manually and
+rerun. Declining the confirmation leaves the target unchanged.
+
+## Testing
+
+Automated checks use synthetic Git repositories and fake mise commands. They
+cover refusal, preview, approval, repeat application, real-path conflicts,
+different symlinks, dirty checkouts and divergence. They do not use real
+private repositories or credentials. See `tests/tool-overlay-interactive.py`.
+
+For a manual test, create two disposable directories with synthetic files and
+use them as `PRIVATE_SOURCE` and a target under a temporary `HOME`. After the
+test, remove the created symlink and temporary directories. Do not test against
+a live editor configuration until you have reviewed the preview.
+
+See [configuration layers](../architecture/private-configuration.md),
 [Secrets](../architecture/secrets.md) and
 [ADR-0003](../decisions/0003-private-config-layers.md).

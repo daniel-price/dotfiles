@@ -1,3 +1,4 @@
-# Intentionally inert: tool requests will be added and tested individually.
-# The entry-point scripts do not install or link this file.
+# Managed tool declarations for new machines. The entry-point scripts do not
+# install or link this file; scripts/provision-tool.sh installs one tool at a time.
 [tools]
+neovim = "0.12.6"

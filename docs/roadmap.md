@@ -11,8 +11,9 @@ remains scaffolded.**
 The standalone `get-started.sh` installs missing Git after approval, clones
 once, and asks separately before running the checkout bootstrap. The documented
 temporary download cleans itself up. `scripts/bootstrap.sh` installs only
-missing `zsh`, `curl` and verified mise, asking separately for each operation.
-`scripts/update.sh` remains read-only.
+missing `zsh`, `curl`, verified mise and Neovim `0.12.6`, asking separately for
+each operation. An explicit opt-in script can deploy one selected private
+configuration directory. `scripts/update.sh` remains read-only.
 
 Checkout development tooling is available separately: pinned shfmt, ShellCheck
 and Lefthook, opt-in pre-commit formatting with partial staging, and Linux/macOS
@@ -27,10 +28,11 @@ CI. See [development](guides/development.md) for setup and read-only checks.
 | 1c | Install missing `zsh` and `curl` prerequisites with separate approval | Implemented |
 | 1d | Remaining machine configuration | Planned |
 | 2 | Install verified mise `v2026.11.9` with separate download and execution approval | Implemented |
-| 2a | Provision one tool at a time with confirmation | Planned |
+| 2a | Provision Neovim at a time with confirmation | Implemented |
 | 3 | Add guarded Git updates and a truthful change report | Planned |
 | 4 | Deploy one harmless dotfile via native mise; then migrate configs gradually | Planned |
-| 5 | Prototype an optional, approved private configuration overlay with explicit opt-in and precedence/conflict tests | Planned |
+| 5a | Narrow one-target private config directory overlay with explicit source, conflict preflight and synthetic tests | Implemented |
+| 5 | Full private configuration profiles, precedence and merge tests | Planned |
 | 5 | Prototype age encryption and verified restore with fake credentials | Planned |
 | 6 | Select and configure a separate history origin if tracked-file sync is needed | Proposed |
 | Later | Per-platform settings and optional service/container definitions | Not designed |

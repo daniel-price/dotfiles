@@ -6,10 +6,12 @@ This is a map of **what exists**, with future responsibilities labelled.
 | --- | --- |
 | `README.md`, `AGENTS.md` | Human and agent entry points. |
 | `get-started.sh` | Standalone download: ensure Git and acquire the checkout. |
-| `scripts/bootstrap.sh` | Installs missing `zsh`, `curl` and pinned mise after individual approval. |
+| `scripts/bootstrap.sh` | Installs missing `zsh`, `curl`, pinned mise and Neovim after individual approval. |
+| `scripts/provision-tool.sh` | Installs one reviewed mise-declared tool after confirmation. |
+| `scripts/apply-private-overlay.sh` | Previews and applies one explicitly selected private directory symlink. |
 | `scripts/update.sh` | Read-only checkout scaffold today. |
 | `scripts/` | Visible checkout scripts for setup, shared checks and docs builds. |
-| `scripts/lib/` | OS detection and interactive confirmation helpers. |
+| `scripts/lib/` | OS, confirmation and mise location/trust helpers. |
 | `.config/` | Future managed user dotfiles: mise, Neovim, Zellij and Ghostty placeholders. |
 | `mise.toml`, `lefthook.yml` | Project development tooling and hook configuration. |
 | `zensical.toml` | Documentation-site configuration. |

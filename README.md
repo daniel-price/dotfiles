@@ -5,12 +5,13 @@ The repository is also its own handbook: how to use it, why it is designed this
 way, and what still needs building. An optional, separately authorised private
 repository may provide non-public configuration on selected machines.
 
-**Current status: stage-zero acquisition plus baseline tools.** The
-self-contained `get-started.sh` can install Git (when missing, after approval)
-and clone this public repository once over HTTPS. `scripts/bootstrap.sh` can
-then install only missing `zsh` and `curl`, and pinned mise, with separate
-approval for each operation. It and `scripts/update.sh` do **not** configure
-mise, install mise tools, deploy dotfiles or restore secrets.
+**Current status: bootstrap with one managed tool.** The self-contained
+`get-started.sh` can install Git (when missing, after approval) and clone this
+public repository once over HTTPS. `scripts/bootstrap.sh` can then install
+missing `zsh`, `curl`, pinned mise and Neovim `0.12.6`, with separate approval
+for each operation. An explicit opt-in script can deploy one selected private
+configuration directory through mise. `scripts/update.sh` remains read-only;
+secrets are not restored.
 
 - **[Read the documentation](docs/index.md)** (source) ·
   [GitHub Pages site](https://daniel-price.github.io/dotfiles/)
@@ -43,11 +44,12 @@ before running downloaded code:
 The temporary download is deleted automatically when the command finishes.
 The script checks Git, asks before any installation or HTTPS clone into
 `~/.dotfiles`, then **asks separately before running** the checkout's
-`scripts/bootstrap.sh`. Bootstrap checks `zsh`, `curl`, and mise; it asks before
-each missing-tool installation and never upgrades an existing tool. A missing
-mise installation is pinned to `v2026.11.9`, verified before execution, and
-does not add shell activation. An existing checkout is neither overwritten nor
-automatically updated.
+`scripts/bootstrap.sh`. Bootstrap checks `zsh`, `curl`, mise and Neovim; it asks
+before each missing-tool installation and never upgrades an existing tool. A
+missing mise installation is pinned to `v2026.11.9`, verified before execution,
+and does not add shell activation. Neovim is installed from the checked-in mise
+declaration only after its own confirmation. An existing checkout is neither
+overwritten nor automatically updated.
 
 Do **not** use `curl ... | bash`: stdin must remain connected to your terminal
 for confirmations, and the download must finish before execution.
