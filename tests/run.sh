@@ -108,8 +108,13 @@ for entry in bootstrap update; do
         output=$(cd "$TEST_ROOT/elsewhere" && HOME="$TEST_ROOT/home" bash "$ROOT/scripts/$entry.sh")
         repeated=$(cd "$TEST_ROOT/elsewhere" && HOME="$TEST_ROOT/home" bash "$ROOT/scripts/$entry.sh")
         assert_equal "$output" "$repeated" "$entry repeatability"
-        [[ "$output" == *'scaffolding only'* && "$output" == *'Not implemented:'* &&
-            "$output" == *'No changes made.'* ]] || fail "$entry scope unclear"
+        if [[ "$entry" == bootstrap ]]; then
+            [[ "$output" == *'Detected platform:'* && "$output" == *'Bootstrap complete.'* &&
+                "$output" == *'Not implemented:'* ]] || fail 'bootstrap scope unclear'
+        else
+            [[ "$output" == *'scaffolding only'* && "$output" == *'Not implemented:'* &&
+                "$output" == *'No changes made.'* ]] || fail 'update scope unclear'
+        fi
     else
         printf 'SKIP: %s host smoke test (unsupported host)\n' "$entry"
     fi
@@ -121,7 +126,8 @@ bash "$ROOT/tests/check-clean.sh"
 bash "$ROOT/tests/get-started.sh"
 if command -v python3 >/dev/null 2>&1; then
     python3 "$ROOT/tests/get-started-interactive.py"
+    python3 "$ROOT/tests/bootstrap-interactive.py"
 else
     printf 'SKIP: interactive bootstrap tests (python3 not found)\n'
 fi
-printf 'All scaffold checks passed.\n'
+printf 'All bootstrap checks passed.\n'

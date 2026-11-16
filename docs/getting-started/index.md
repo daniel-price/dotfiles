@@ -1,8 +1,9 @@
 # Getting started
 
 The one-command installer ensures Git, acquires the public repository and
-**offers to run its bootstrap with a separate confirmation**. The full
-development-environment setup remains read-only scaffolding.
+**offers to run its bootstrap with a separate confirmation**. Bootstrap then
+checks `zsh` and `curl`, offering to install each missing tool separately. The
+full development-environment setup remains unimplemented.
 
 ## Fresh machine: one-file bootstrap
 
@@ -40,9 +41,14 @@ missing. An existing matching checkout is reused without fetching or
 updating it. Existing conflicting destinations are never overwritten.
 Declining any prompt skips that operation.
 
-The current bootstrap is `scripts/bootstrap.sh`. If a reused checkout still
-has the earlier root-level `bootstrap.sh`, the standalone entry point can run
-that version after the same separate approval; it does not update the checkout.
+The current bootstrap is `scripts/bootstrap.sh`. It installs only a missing
+`zsh` or `curl`: `apt-get install --no-upgrade` on Debian-derived Linux, or
+`HOMEBREW_NO_AUTO_UPDATE=1 brew install` on macOS. It does not change the login
+shell or configure it. If Homebrew is needed but unavailable, it stops without
+making a change so it can be installed and reviewed separately. If a reused
+checkout still has the earlier root-level `bootstrap.sh`, the standalone entry
+point can run that version after the same separate approval; it does not update
+the checkout.
 
 **Do not use `curl ... | bash`.** It interferes with the interactive
 confirmation flow and can execute a partially downloaded script. The
@@ -60,13 +66,13 @@ bash ~/.dotfiles/scripts/update.sh
 bash ~/.dotfiles/tests/run.sh
 ```
 
-**Expected:** both checkout scripts still identify the OS, list unimplemented
-steps and report `No changes made.` The scaffold tests use temporary fixtures
-and should finish with `All scaffold checks passed.`
+**Expected:** bootstrap identifies the OS, skips available `zsh` and `curl`, or
+asks separately before installing either missing tool. It then lists the
+unimplemented steps. Update still reports `No changes made.` The tests use
+temporary fixtures and should finish with `All bootstrap checks passed.`
 
-The scripts are read-only today but a later version will request confirmation
-before each change. Read the code and documentation for the version you check
-out before running it on a live machine.
+Every bootstrap change already requires its own confirmation. Read the code and
+documentation for the version you check out before running it on a live machine.
 
 ## New machine: intended future flow
 
@@ -75,16 +81,19 @@ out before running it on a live machine.
 2. Ensure Git only if missing, with explicit approval.
 3. Clone the public repository once and separately approve its bootstrap
    (implemented in stage zero).
-4. Install mise after approval; provision tools and apply reviewed dotfiles.
-5. Optionally opt into an authorised private configuration source on selected
+4. Bootstrap checks and, with separate approvals, installs missing `zsh` and
+   `curl` (implemented).
+5. Install mise after approval; provision tools and apply reviewed dotfiles.
+6. Optionally opt into an authorised private configuration source on selected
    machines. The public setup must not depend on it.
-6. Restore authorised encrypted settings using a **separately recovered** age
+7. Restore authorised encrypted settings using a **separately recovered** age
    identity; keep machine-specific SSH credentials local.
-7. Re-run without unnecessary changes; upgrades remain an explicit action.
+8. Re-run without unnecessary changes; upgrades remain an explicit action.
 
 **Not implemented:** SSH registration, mise deployment, private-layer
-integration and encrypted restore. Git installation, the initial clone and
-a confirmed handoff to the read-only checkout bootstrap are implemented.
+integration and encrypted restore. Git installation, the initial clone, a
+confirmed bootstrap handoff, and individually approved `zsh`/`curl` installs
+are implemented.
 No private repositories should be discovered or cloned automatically;
 see [the private-profile guide](../guides/private-profiles.md).
 
