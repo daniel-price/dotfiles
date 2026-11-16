@@ -35,7 +35,7 @@ confirm() {
         return 1
     fi
     case "$answer" in
-        [yY]|[yY][eE][sS]) return 0 ;;
-        *) return 1 ;;
+    [yY] | [yY][eE][sS]) return 0 ;;
+    *) return 1 ;;
     esac
 }

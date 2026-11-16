@@ -12,6 +12,10 @@ once, and asks separately before running the checkout bootstrap. The documented
 temporary download cleans itself up. `bootstrap.sh` and `update.sh`
 remain read-only.
 
+Checkout development tooling is available separately: pinned shfmt, ShellCheck
+and Lefthook, opt-in pre-commit formatting with partial staging, and Linux/macOS
+CI. See [development](guides/development.md) for setup and read-only checks.
+
 ## Next milestones
 
 | Priority | Work | State |

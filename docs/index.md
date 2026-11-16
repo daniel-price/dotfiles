@@ -25,6 +25,7 @@ design and historical plans are [available separately](reference/index.md).
 | Read-only `bootstrap.sh` and `update.sh` | Implemented |
 | Temporary download, Git prerequisite, HTTPS clone and confirmed bootstrap handoff | Implemented as standalone stage zero |
 | Dependency-free scaffold tests | Implemented |
+| Opt-in shell formatting/lint hooks and pinned development tools | Implemented; see [development](guides/development.md) |
 | Installing tools and runtimes | Planned |
 | Deploying Neovim, Zellij, Ghostty or shell settings | Planned |
 | Encrypted secret restoration | Planned |

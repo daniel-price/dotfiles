@@ -24,6 +24,11 @@ dotfiles/
 The application directories currently contain placeholders, **not deployable
 configurations**. Do not link the whole `.config` tree.
 
+Development tooling lives in the root `mise.toml` and `lefthook.yml`, with
+opt-in hook setup in `scripts/install-hooks.sh`, disposable integration checks
+in `tests/hooks.sh`, and Linux/macOS CI in `.github/workflows/shell.yml`. See
+[development](../guides/development.md); this is separate from machine setup.
+
 **Planned separate sources** (not currently connected or cloned):
 
 ```text

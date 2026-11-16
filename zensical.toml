@@ -18,6 +18,7 @@ nav = [
   ] },
   { "How-to guides" = [
     "guides/index.md",
+    { "Development and Git hooks" = "guides/development.md" },
     { "Add a tool" = "guides/add-tool.md" },
     { "Manage a dotfile" = "guides/manage-dotfile.md" },
     { "Manage a secret" = "guides/manage-secret.md" },

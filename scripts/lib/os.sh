@@ -9,9 +9,15 @@ detect_os() {
     fi
     kernel=${1:-$(uname -s)}
     case "$kernel" in
-        Darwin) printf '%s\n' macos; return 0 ;;
-        Linux) ;;
-        *) printf '[error] Unsupported operating system: %s.\n' "$kernel" >&2; return 1 ;;
+    Darwin)
+        printf '%s\n' macos
+        return 0
+        ;;
+    Linux) ;;
+    *)
+        printf '[error] Unsupported operating system: %s.\n' "$kernel" >&2
+        return 1
+        ;;
     esac
 
     os_release=${2:-/etc/os-release}
@@ -29,21 +35,30 @@ detect_os() {
     # Read only the identity fields as data; never source or eval the file.
     while IFS='=' read -r key value || [[ -n "$key" ]]; do
         case "$key" in
-            ID|ID_LIKE)
-                case "$value" in
-                    \"*\") value=${value#\"}; value=${value%\"} ;;
-                    \'*\') value=${value#\'}; value=${value%\'} ;;
-                esac
-                case "$key" in
-                    ID) distribution=$value ;;
-                    ID_LIKE) like=$value ;;
-                esac
+        ID | ID_LIKE)
+            case "$value" in
+            \"*\")
+                value=${value#\"}
+                value=${value%\"}
                 ;;
+            \'*\')
+                value=${value#\'}
+                value=${value%\'}
+                ;;
+            esac
+            case "$key" in
+            ID) distribution=$value ;;
+            ID_LIKE) like=$value ;;
+            esac
+            ;;
         esac
-    done < "$os_release"
+    done <"$os_release"
 
     case " $distribution $like " in
-        *' debian '*|*' ubuntu '*|*' pop '*) printf '%s\n' debian ;;
-        *) printf '[error] Unsupported Linux distribution; expected Debian/Ubuntu family.\n' >&2; return 1 ;;
+    *' debian '* | *' ubuntu '* | *' pop '*) printf '%s\n' debian ;;
+    *)
+        printf '[error] Unsupported Linux distribution; expected Debian/Ubuntu family.\n' >&2
+        return 1
+        ;;
     esac
 }
