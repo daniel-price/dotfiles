@@ -2,8 +2,8 @@
 
 The one-command installer ensures Git, acquires the public repository and
 **offers to run its bootstrap with a separate confirmation**. Bootstrap then
-checks `zsh`, `curl`, mise, Neovim, Zellij and Ghostty, asking separately before
-each missing installation. An optional explicit overlay can deploy one selected private
+checks `zsh`, `curl`, mise, Neovim, Node, OpenCode, Zellij and Ghostty, asking
+separately before each missing installation. An optional explicit overlay can deploy one selected private
 configuration directory. The full development-environment setup remains
 unimplemented.
 
@@ -66,7 +66,9 @@ existing mise found on `PATH` or at that destination is reported and left
 unchanged, even when it is an older version. Bootstrap then calls
 `scripts/provision-tool.sh neovim`, which reads the checked-in `0.12.6`
 declaration and asks once before running `mise install`. It repeats this for
-pinned Zellij. Ghostty is handled by a separate script because it is a desktop
+pinned Node, OpenCode and Zellij. Node is installed before OpenCode because the
+OpenCode npm package's postinstall script needs a Node runtime; no OpenCode
+credentials or model configuration are added. Ghostty is handled by a separate script because it is a desktop
 app: apt on Debian/Ubuntu/Pop!_OS and a Homebrew cask on macOS. If apt cannot
 provide Ghostty, adding the community PPA is a separate confirmation. Bootstrap
 does not activate mise or edit shell startup files; use the separate step below.
@@ -122,10 +124,10 @@ bash ~/.dotfiles/tests/run.sh
 ```
 
 **Expected:** bootstrap identifies the OS, skips available `zsh`, `curl`, mise,
-Neovim, Zellij and Ghostty, or asks separately before installing a missing
-component. Mise requires separate download/verification and execution
-confirmation; Neovim and Zellij each have their own install prompt. Ghostty has
-its own apt/Homebrew prompt. It then lists the unimplemented steps. Update still
+Neovim, Node, OpenCode, Zellij and Ghostty, or asks separately before installing a
+missing component. Mise requires separate download/verification and execution
+confirmation; Neovim, Node, OpenCode and Zellij each have their own install
+prompt. Ghostty has its own apt/Homebrew prompt. It then lists the unimplemented steps. Update still
 reports `No changes made.` The tests use temporary fixtures and should finish
 with `All bootstrap checks passed.`
 
@@ -143,8 +145,8 @@ documentation for the version you check out before running it on a live machine.
    `curl` (implemented).
 5. Bootstrap can download, verify and install missing mise `v2026.11.9` after
    separate approval (implemented). It does not activate mise.
-6. Bootstrap can provision pinned Neovim and Zellij through mise after separate
-   approvals (implemented).
+6. Bootstrap can provision pinned Neovim, Node, OpenCode and Zellij through mise
+   after separate approvals (implemented).
 7. Bootstrap can install Ghostty through apt or Homebrew after a separate approval
    (implemented).
 8. Optionally deploy the reviewed zsh startup file that activates mise
@@ -159,9 +161,9 @@ documentation for the version you check out before running it on a live machine.
 **Not implemented:** SSH registration, further tool provisioning, broad dotfile
 deployment, full private profiles and encrypted restore. Git installation, the
 initial clone, a confirmed bootstrap handoff, individually approved
-`zsh`/`curl` installs, verified mise installation, Neovim and Zellij
-provisioning, Ghostty installation, the reviewed zsh activation file and the
-narrow overlay are implemented.
+`zsh`/`curl` installs, verified mise installation, Neovim, Node, OpenCode and
+Zellij provisioning, Ghostty installation, the reviewed zsh activation file and
+the narrow overlay are implemented.
 No private repositories should be discovered or cloned automatically;
 see [the private-profile guide](../guides/private-profiles.md).
 

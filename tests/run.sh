@@ -178,6 +178,7 @@ if command -v python3 >/dev/null 2>&1; then
     python3 "$ROOT/tests/zsh-deploy-interactive.py"
     python3 "$ROOT/tests/provision-zellij-interactive.py"
     python3 "$ROOT/tests/install-ghostty-interactive.py"
+    python3 "$ROOT/tests/provision-opencode-interactive.py"
 else
     printf 'SKIP: interactive bootstrap tests (python3 not found)\n'
 fi

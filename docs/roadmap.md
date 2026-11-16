@@ -31,6 +31,7 @@ CI. See [development](guides/development.md) for setup and read-only checks.
 | 2 | Install verified mise `v2026.11.9` with separate download and execution approval | Implemented |
 | 2a | Provision Neovim and Zellij one tool at a time with confirmation | Implemented |
 | 2b | Install Ghostty with per-OS installer and separate approval | Implemented |
+| 2c | Provision Node and OpenCode CLI with separate approvals | Implemented |
 | 3 | Add guarded Git updates and a truthful change report | Planned |
 | 4a | Deploy one reviewed zsh startup file via native mise with preview and conflict refusal | Implemented |
 | 4 | Migrate further dotfiles gradually via native mise | Planned |
