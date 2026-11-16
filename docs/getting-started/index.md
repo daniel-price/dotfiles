@@ -32,13 +32,17 @@ before running downloaded code.
 The script checks Git, asking before installation if needed (apt on Linux or
 Apple Command Line Tools on macOS). It asks separately before an HTTPS clone
 into `~/.dotfiles`, then **asks a third time before running** the checkout's
-`bootstrap.sh`. It runs bootstrap from the repository directory without
+`scripts/bootstrap.sh`. It runs bootstrap from the repository directory without
 changing your terminal's working directory.
 
 On macOS, complete the Command Line Tools installer and rerun if Git was
 missing. An existing matching checkout is reused without fetching or
 updating it. Existing conflicting destinations are never overwritten.
 Declining any prompt skips that operation.
+
+The current bootstrap is `scripts/bootstrap.sh`. If a reused checkout still
+has the earlier root-level `bootstrap.sh`, the standalone entry point can run
+that version after the same separate approval; it does not update the checkout.
 
 **Do not use `curl ... | bash`.** It interferes with the interactive
 confirmation flow and can execute a partially downloaded script. The
@@ -50,9 +54,9 @@ After approving the clone, the script offers to run the bootstrap.
 To inspect or rerun it later:
 
 ```sh
-bash ~/.dotfiles/bootstrap.sh --help
-bash ~/.dotfiles/bootstrap.sh
-bash ~/.dotfiles/update.sh
+bash ~/.dotfiles/scripts/bootstrap.sh --help
+bash ~/.dotfiles/scripts/bootstrap.sh
+bash ~/.dotfiles/scripts/update.sh
 bash ~/.dotfiles/tests/run.sh
 ```
 
@@ -86,7 +90,7 @@ see [the private-profile guide](../guides/private-profiles.md).
 
 ## Existing machine: intended future flow
 
-The eventual `update.sh` will check the remote, guard dirty/diverged state,
+The eventual `scripts/update.sh` will check the remote, guard dirty/diverged state,
 fast-forward only when approved, and preview each configuration change before
 applying it. Today it only reports the detected OS.
 

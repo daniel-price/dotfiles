@@ -22,7 +22,7 @@ design and historical plans are [available separately](reference/index.md).
 | Capability | Status |
 | --- | --- |
 | OS detection and explicit yes/no helper | Implemented in the scaffold |
-| Read-only `bootstrap.sh` and `update.sh` | Implemented |
+| Read-only `scripts/bootstrap.sh` and `scripts/update.sh` | Implemented |
 | Temporary download, Git prerequisite, HTTPS clone and confirmed bootstrap handoff | Implemented as standalone stage zero |
 | Dependency-free scaffold tests | Implemented |
 | Opt-in shell formatting/lint hooks and pinned development tools | Implemented; see [development](guides/development.md) |
@@ -34,7 +34,7 @@ design and historical plans are [available separately](reference/index.md).
 | GitHub Pages publication | Proposed in this documentation PR |
 
 `get-started.sh` only ensures Git and acquires the public checkout. An exit
-code of zero from the checkout's `bootstrap.sh` still means **inspection
+code of zero from the checkout's `scripts/bootstrap.sh` still means **inspection
 completed**, not that the machine has been configured.
 
 ## Start a new machine

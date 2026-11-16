@@ -9,7 +9,7 @@ task acceptance criteria are deliberately kept in
 **Git acquisition is implemented; full environment setup remains scaffolded.**
 The standalone `get-started.sh` installs missing Git after approval, clones
 once, and asks separately before running the checkout bootstrap. The documented
-temporary download cleans itself up. `bootstrap.sh` and `update.sh`
+temporary download cleans itself up. `scripts/bootstrap.sh` and `scripts/update.sh`
 remain read-only.
 
 Checkout development tooling is available separately: pinned shfmt, ShellCheck
