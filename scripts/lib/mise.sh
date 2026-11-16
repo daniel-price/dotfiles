@@ -31,3 +31,26 @@ toml_escape() {
     value=${value//\"/\\\"}
     printf '%s' "$value"
 }
+
+mise_supports_dot() {
+    local mise=$1 output version major rest minor patch
+    output=$("$mise" --version 2>/dev/null) || return 1
+    version=${output%% *}
+    version=${version#v}
+    major=${version%%.*}
+    rest=${version#*.}
+    [[ "$rest" != "$version" ]] || return 1
+    minor=${rest%%.*}
+    patch=${rest#*.}
+    [[ "$patch" != "$rest" ]] || return 1
+    patch=${patch%%.*}
+    case "$major$minor$patch" in
+    '' | *[!0-9]*) return 1 ;;
+    esac
+    if ((major > 2026)) ||
+        ((major == 2026 && minor > 11)) ||
+        ((major == 2026 && minor == 11 && patch >= 9)); then
+        return 0
+    fi
+    return 1
+}

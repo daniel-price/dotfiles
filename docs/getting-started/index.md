@@ -81,7 +81,9 @@ temporary-file command downloads everything first.
 ## Activate mise in zsh (optional)
 
 After bootstrap, install a reviewed `~/.zshrc` that activates mise so tools such
-as `nvim` are available in new interactive zsh sessions:
+as `nvim` are available in new interactive zsh sessions. This requires mise
+`2026.11.9` or newer; bootstrap installs that version. Older releases fail with
+an explicit version message before any change:
 
 ```sh
 bash ~/.dotfiles/scripts/deploy-zsh-config.sh --help

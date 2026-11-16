@@ -102,6 +102,8 @@ elif [[ -e "$target_dir" ]]; then
 fi
 
 mise=$(mise_command) || die 'mise is unavailable; install it before applying an overlay.'
+mise_supports_dot "$mise" ||
+    die 'mise 2026.11.9 or newer is required for dotfile deployment; bootstrap installs it.'
 work=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-overlay.XXXXXX") ||
     die 'Could not create a temporary mise configuration directory.'
 trap 'rm -rf -- "$work"' EXIT

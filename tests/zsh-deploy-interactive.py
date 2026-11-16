@@ -54,6 +54,7 @@ with tempfile.TemporaryDirectory(prefix="dotfiles-zsh-deploy-") as scratch:
     mise.write_text("""#!/usr/bin/env bash
 printf '%s\\n' "$*" >> "$MOCK_MISE_LOG"
 case "$*" in
+  --version) printf '%s\\n' '2026.11.9 fake' ;;
   *"dot apply --dry-run"*) exit 0 ;;
   *"dot diff"*) exit 0 ;;
   *"dot apply"*)
@@ -126,4 +127,24 @@ esac
     assert "different symlink" in link_conflict.stdout, link_conflict.stdout
     assert link_log.read_text() == ""
 
-    print("PASS: Zsh deployment consent, preview, conflicts and repeatability")
+    old_bin = temp_root / "old-bin"
+    old_bin.mkdir()
+    old_mise = old_bin / "mise"
+    old_mise.write_text("""#!/usr/bin/env bash
+printf '%s\\n' '2026.8.15 linux-x64'
+""")
+    old_mise.chmod(0o755)
+    old_home = temp_root / "old-home"
+    old_home.mkdir()
+    old_log = temp_root / "old.log"
+    old_log.touch()
+    old_env = make_env(old_home, old_log)
+    old_env["PATH"] = str(old_bin) + os.pathsep + "/usr/bin:/bin"
+    old_version = run_quiet(
+        SCRIPT, ["--target", str(old_home / ".zshrc")], old_env
+    )
+    assert old_version.returncode != 0, old_version.stdout
+    assert "2026.11.9 or newer" in old_version.stdout, old_version.stdout
+    assert old_log.read_text() == ""
+
+    print("PASS: Zsh deployment consent, preview, conflicts, version and repeatability")

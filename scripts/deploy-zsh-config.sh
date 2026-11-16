@@ -81,6 +81,8 @@ elif [[ -e "$target_file" ]]; then
 fi
 
 mise=$(mise_command) || die 'mise is unavailable; install it before deploying the zsh file.'
+mise_supports_dot "$mise" ||
+    die 'mise 2026.11.9 or newer is required for dotfile deployment; bootstrap installs it.'
 work=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-zsh.XXXXXX") ||
     die 'Could not create a temporary mise configuration directory.'
 trap 'rm -rf -- "$work"' EXIT
