@@ -31,6 +31,12 @@ The root `mise.toml` pins development tools and tasks. It is separate from
 tool installation is disabled in this checkout: use `mise install` explicitly
 when installing missing tools or adopting a reviewed version change.
 
+`bash scripts/install-dev-tools.sh` currently installs Lefthook `2.2.2`, shfmt
+`3.14.1` and ShellCheck `0.11.0` through mise on both supported operating
+systems. It does not use apt or Homebrew. The [installed tool inventory](../architecture/platforms.md#checkout-development-tools)
+also records the separate Zensical documentation dependency and its pip-based
+installer.
+
 ## Everyday commands
 
 | Command | Result |

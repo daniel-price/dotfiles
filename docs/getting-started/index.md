@@ -50,6 +50,11 @@ checkout still has the earlier root-level `bootstrap.sh`, the standalone entry
 point can run that version after the same separate approval; it does not update
 the checkout.
 
+The [per-platform installed tool inventory](../architecture/platforms.md#installed-tool-inventory)
+lists every tool this repository currently installs, its installer and its
+scope. It also distinguishes optional checkout-development tooling from the
+machine bootstrap.
+
 For missing mise, bootstrap pins `v2026.11.9`. It asks first to download the
 official release installer to a temporary file and verify its committed
 SHA-256, then asks again before running it. The installer writes only
