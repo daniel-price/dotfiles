@@ -103,4 +103,9 @@ done
     || fail 'entry point wrote to isolated home or working directory'
 printf 'PASS: Entry-point help, errors and repeatable smoke execution\n'
 bash "$ROOT/tests/get-started.sh"
+if command -v python3 > /dev/null 2>&1; then
+    python3 "$ROOT/tests/get-started-interactive.py"
+else
+    printf 'SKIP: interactive bootstrap tests (python3 not found)\n'
+fi
 printf 'All scaffold checks passed.\n'
