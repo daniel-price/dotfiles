@@ -28,14 +28,15 @@ when bootstrap is already running as root.
 | curl | `sudo apt-get install --no-upgrade curl` | `HOMEBREW_NO_AUTO_UPDATE=1 brew install curl` | Checkout bootstrap; only if curl is missing |
 | mise `v2026.11.9` | Verified GitHub Release installer writes `~/.local/bin/mise` | Same verified GitHub Release installer and destination | Checkout bootstrap; only if mise is missing |
 | Neovim `0.12.6` | `mise install neovim@0.12.6` through `scripts/provision-tool.sh` | Same mise command on both operating systems | Checkout bootstrap; only if this version is not already installed |
+| Zellij `0.46.0` | `mise install zellij@0.46.0` through `scripts/provision-tool.sh` | Same mise command on both operating systems | Checkout bootstrap; only if this version is not already installed |
 
 The macOS zsh/curl path requires an existing Homebrew installation; bootstrap
 does **not** install Homebrew. Standard macOS installations normally already
 include both tools. The mise flow downloads the pinned official GitHub Release
 installer to a temporary file, verifies its committed SHA-256, then asks again
 before it writes the executable. It does not use apt or Homebrew, activate mise
-or edit shell startup files. The only managed tool currently provisioned is
-Neovim, installed through mise after its own confirmation. See
+or edit shell startup files. The currently managed tools are Neovim and Zellij,
+installed through mise after their own confirmation. See
 [Getting started](../getting-started/index.md) for the full consent and conflict
 behaviour.
 
