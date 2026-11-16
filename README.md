@@ -5,10 +5,11 @@ The repository is also its own handbook: how to use it, why it is designed this
 way, and what still needs building. An optional, separately authorised private
 repository may provide non-public configuration on selected machines.
 
-**Current status: stage-zero acquisition plus read-only scaffold.** The new
+**Current status: stage-zero acquisition plus baseline prerequisites.** The
 self-contained `get-started.sh` can install Git (when missing, after approval)
-and clone this public repository once over HTTPS. `scripts/bootstrap.sh`
-and `scripts/update.sh` do **not** yet install mise, configure dotfiles or
+and clone this public repository once over HTTPS. `scripts/bootstrap.sh` can
+then install only missing `zsh` and `curl`, with a separate approval for each.
+It and `scripts/update.sh` do **not** yet install mise, configure dotfiles or
 restore secrets.
 
 - **[Read the documentation](docs/index.md)** (source) ·
@@ -42,8 +43,9 @@ before running downloaded code:
 The temporary download is deleted automatically when the command finishes.
 The script checks Git, asks before any installation or HTTPS clone into
 `~/.dotfiles`, then **asks separately before running** the checkout's
-`scripts/bootstrap.sh`. That bootstrap remains read-only scaffolding for now.
-An existing checkout is neither overwritten nor automatically updated.
+`scripts/bootstrap.sh`. Bootstrap checks `zsh` and `curl`; it asks before
+installing each missing tool and never upgrades an installed package. An
+existing checkout is neither overwritten nor automatically updated.
 
 Do **not** use `curl ... | bash`: stdin must remain connected to your terminal
 for confirmations, and the download must finish before execution.
@@ -59,8 +61,9 @@ bash scripts/update.sh
 bash tests/run.sh
 ```
 
-The checkout scripts are still read-only and require the repository's helper
-files. `get-started.sh` is the separate, standalone entry point.
+Bootstrap requires the repository's helper files and makes changes only when a
+missing prerequisite is explicitly approved. `update.sh` remains read-only.
+`get-started.sh` is the separate, standalone entry point.
 
 ## Safety
 

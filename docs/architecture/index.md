@@ -6,7 +6,8 @@ not a list of installed or working features.**
 
 | Responsibility | Chosen or proposed owner | Status |
 | --- | --- | --- |
-| Fresh setup and recurring update | Bash `scripts/bootstrap.sh`, `scripts/update.sh` | Read-only scaffold |
+| Fresh setup | Bash `scripts/bootstrap.sh` | Installs missing `zsh` and `curl` after individual approval |
+| Recurring update | Bash `scripts/update.sh` | Read-only scaffold |
 | Runtime and suitable developer tool versions | mise | Planned |
 | Checkout development tools and shell Git hooks | mise + Lefthook | Implemented; opt-in developer setup |
 | Managed dotfiles and templating | Native mise dotfiles | Planned, requires validation |

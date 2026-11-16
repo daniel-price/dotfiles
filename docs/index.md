@@ -4,9 +4,10 @@ This is the documentation for my personal development environment. The goal is
 to make a new Pop!_OS or macOS machine feel familiar without having to remember
 how everything was configured, while keeping the setup reviewable and safe.
 
-**Status: minimal bootstrap working (November 2026).** Stage zero can install
-Git if missing, clone the public checkout and, with separate approval, run
-its read-only bootstrap. Mise, dotfiles and secrets setup remain unimplemented.
+**Status: baseline bootstrap working (November 2026).** Stage zero can install
+Git if missing, clone the public checkout and, with separate approval, run its
+bootstrap. That bootstrap can install missing `zsh` and `curl` one at a time;
+mise, dotfiles and secrets setup remain unimplemented.
 
 ## What is this?
 
@@ -22,7 +23,8 @@ design and historical plans are [available separately](reference/index.md).
 | Capability | Status |
 | --- | --- |
 | OS detection and explicit yes/no helper | Implemented in the scaffold |
-| Read-only `scripts/bootstrap.sh` and `scripts/update.sh` | Implemented |
+| Install only missing `zsh` and `curl` with individual approval | Implemented |
+| Read-only `scripts/update.sh` | Implemented |
 | Temporary download, Git prerequisite, HTTPS clone and confirmed bootstrap handoff | Implemented as standalone stage zero |
 | Dependency-free scaffold tests | Implemented |
 | Opt-in shell formatting/lint hooks and pinned development tools | Implemented; see [development](guides/development.md) |
@@ -33,9 +35,9 @@ design and historical plans are [available separately](reference/index.md).
 | Container/service configuration | Not yet designed |
 | GitHub Pages publication | Proposed in this documentation PR |
 
-`get-started.sh` only ensures Git and acquires the public checkout. An exit
-code of zero from the checkout's `scripts/bootstrap.sh` still means **inspection
-completed**, not that the machine has been configured.
+`get-started.sh` ensures Git and acquires the public checkout. The checkout
+bootstrap then checks `zsh` and `curl`. An exit code of zero does not mean the
+machine has a configured shell, mise, dotfiles or restored secrets.
 
 ## Start a new machine
 
