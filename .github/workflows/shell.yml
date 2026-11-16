@@ -25,8 +25,10 @@ jobs:
           install: false
       - name: Install development tools
         run: bash scripts/install-dev-tools.sh
-      - name: Check formatting and lint
-        run: bash scripts/shell.sh check
+      - name: Check formatting
+        run: bash scripts/format.sh --check
+      - name: Lint shell scripts
+        run: bash scripts/lint.sh
       - name: Test commit hooks and partial staging
         run: bash tests/hooks.sh
       - name: Test bootstrap scripts

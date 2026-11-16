@@ -14,11 +14,20 @@ run = "bash scripts/install-hooks.sh"
 
 [tasks.check]
 description = "Check tracked shell scripts without changing files or staging"
-run = "bash scripts/shell.sh check"
+run = """
+result=0
+bash scripts/format.sh --check || result=$?
+bash scripts/lint.sh || result=$?
+exit "$result"
+"""
 
 [tasks.format]
 description = "Format tracked shell scripts without staging changes"
-run = "bash scripts/shell.sh format"
+run = "bash scripts/format.sh"
+
+[tasks.lint]
+description = "Lint tracked shell scripts without changing files or staging"
+run = "bash scripts/lint.sh"
 
 [tasks."test:hooks"]
 description = "Test auto-formatting and partial staging in a disposable repository"

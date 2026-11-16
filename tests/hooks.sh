@@ -17,8 +17,9 @@ export MISE_TRUSTED_CONFIG_PATHS="$TEST_ROOT/repo"
 cp "$ROOT/mise.toml" "$ROOT/lefthook.yml" .
 mkdir -p scripts/lib
 cp "$ROOT/scripts/install-hooks.sh" scripts/
-cp "$ROOT/scripts/shell.sh" scripts/
+cp "$ROOT/scripts/format.sh" "$ROOT/scripts/lint.sh" scripts/
 cp "$ROOT/scripts/lib/common.sh" scripts/lib/
+cp "$ROOT/scripts/lib/shell-files.sh" scripts/lib/
 git init -q
 git config user.name 'Hook test'
 git config user.email 'hook-test@example.invalid'
@@ -52,6 +53,52 @@ greet
 SHELL
 git add .
 git commit -qm 'Seed fixture before hook installation'
+
+# Command help and unknown flags must not modify the fixture.
+bash scripts/format.sh --help >"$TEST_ROOT/format-help.log"
+bash scripts/lint.sh --help >"$TEST_ROOT/lint-help.log"
+grep -q 'Usage:' "$TEST_ROOT/format-help.log" || fail 'format help missing'
+grep -q 'Usage:' "$TEST_ROOT/lint-help.log" || fail 'lint help missing'
+if bash scripts/format.sh --unknown >"$TEST_ROOT/format-error.log" 2>&1; then
+    fail 'format accepted an unknown option'
+elif [[ $? -ne 2 ]]; then
+    fail 'format unknown option returned the wrong status'
+fi
+if bash scripts/lint.sh --unknown >"$TEST_ROOT/lint-error.log" 2>&1; then
+    fail 'lint accepted an unknown option'
+elif [[ $? -ne 2 ]]; then
+    fail 'lint unknown option returned the wrong status'
+fi
+
+# Selected paths, including spaces, use repository-relative names.
+bash scripts/format.sh --check -- 'partial file.sh'
+bash scripts/lint.sh -- 'partial file.sh'
+
+# A selected script can source a tracked helper that is not in the file list.
+(
+    cd "$TEST_ROOT"
+    bash "$TEST_ROOT/repo/scripts/format.sh" --check -- scripts/format.sh
+    bash "$TEST_ROOT/repo/scripts/lint.sh" -- scripts/lint.sh
+) || fail 'selected lint from another directory failed'
+
+# An empty tracked shell-file selection must succeed without invoking tools.
+empty="$TEST_ROOT/empty"
+mkdir -p "$empty/scripts/lib"
+cp scripts/format.sh scripts/lint.sh "$empty/scripts/"
+cp scripts/lib/shell-files.sh "$empty/scripts/lib/"
+git -C "$empty" init -q
+printf 'No shell scripts are tracked.\n' >"$empty/notes.md"
+git -C "$empty" add notes.md
+format_empty=$(cd "$empty" && bash scripts/format.sh --check)
+lint_empty=$(cd "$empty" && bash scripts/lint.sh)
+[[ "$format_empty" == 'No tracked shell scripts to format.' ]] ||
+    fail 'format empty selection was not reported'
+[[ "$lint_empty" == 'No tracked shell scripts to lint.' ]] ||
+    fail 'lint empty selection was not reported'
+git diff --quiet || fail 'format or lint command changed the fixture'
+git diff --cached --quiet || fail 'format or lint command changed the fixture'
+printf 'PASS: Format and lint command options, selected files and empty selection\n'
+
 mise exec -- lefthook install pre-commit >"$TEST_ROOT/install.log" 2>&1
 bash scripts/install-hooks.sh >"$TEST_ROOT/setup.log" 2>&1
 grep -q 'already installed' "$TEST_ROOT/setup.log" || fail 'repeat setup did not skip'
@@ -107,6 +154,10 @@ cmp "$TEST_ROOT/index.before" "$TEST_ROOT/index.after" || fail 'check changed st
 mise run format >"$TEST_ROOT/format.log" 2>&1
 git diff --cached --binary >"$TEST_ROOT/index.after"
 cmp "$TEST_ROOT/index.before" "$TEST_ROOT/index.after" || fail 'format staged changes'
+if mise run check >"$TEST_ROOT/lint-check.log" 2>&1; then
+    fail 'read-only check accepted ShellCheck errors'
+fi
+grep -q SC2086 "$TEST_ROOT/lint-check.log" || fail 'read-only check omitted ShellCheck error'
 printf 'PASS: Check is read-only; explicit formatting leaves staging alone\n'
 
 git rm --cached -q bad.sh
