@@ -1,7 +1,8 @@
 # Add or change a tool
 
-**Status: planned.** The committed `.config/mise/config.toml` currently has
-only an empty `[tools]` table. Tool installation is not yet implemented.
+**Status: planned.** Bootstrap can install mise itself, but the committed
+`.config/mise/config.toml` currently has only an empty `[tools]` table. Tool
+installation is not yet implemented.
 
 1. Decide whether the tool belongs in mise or the OS package manager.
 2. For shared versions, propose a small mise declaration in a PR; for

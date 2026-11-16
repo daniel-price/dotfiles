@@ -6,7 +6,7 @@ This is a map of **what exists**, with future responsibilities labelled.
 | --- | --- |
 | `README.md`, `AGENTS.md` | Human and agent entry points. |
 | `get-started.sh` | Standalone download: ensure Git and acquire the checkout. |
-| `scripts/bootstrap.sh` | Installs missing `zsh` and `curl` after individual approval. |
+| `scripts/bootstrap.sh` | Installs missing `zsh`, `curl` and pinned mise after individual approval. |
 | `scripts/update.sh` | Read-only checkout scaffold today. |
 | `scripts/` | Visible checkout scripts for setup, shared checks and docs builds. |
 | `scripts/lib/` | OS detection and interactive confirmation helpers. |

@@ -91,7 +91,10 @@ if confirm '' </dev/null >"$TEST_ROOT/out" 2>"$TEST_ROOT/err"; then
 fi
 printf 'PASS: Confirmation refuses noninteractive approval\n'
 
-mkdir "$TEST_ROOT/home" "$TEST_ROOT/elsewhere"
+mkdir "$TEST_ROOT/bin" "$TEST_ROOT/home" "$TEST_ROOT/elsewhere"
+printf '%s\n' '#!/usr/bin/env bash' 'printf "%s\n" "2026.11.9 fake"' \
+    >"$TEST_ROOT/bin/mise"
+chmod +x "$TEST_ROOT/bin/mise"
 for entry in bootstrap update; do
     for help in -h --help; do
         output=$(bash "$ROOT/scripts/$entry.sh" "$help")
@@ -105,8 +108,10 @@ for entry in bootstrap update; do
     fi
     # Run twice from elsewhere, with an isolated HOME, on a supported host only.
     if detect_os >/dev/null 2>&1; then
-        output=$(cd "$TEST_ROOT/elsewhere" && HOME="$TEST_ROOT/home" bash "$ROOT/scripts/$entry.sh")
-        repeated=$(cd "$TEST_ROOT/elsewhere" && HOME="$TEST_ROOT/home" bash "$ROOT/scripts/$entry.sh")
+        output=$(cd "$TEST_ROOT/elsewhere" && HOME="$TEST_ROOT/home" \
+            PATH="$TEST_ROOT/bin:$PATH" bash "$ROOT/scripts/$entry.sh")
+        repeated=$(cd "$TEST_ROOT/elsewhere" && HOME="$TEST_ROOT/home" \
+            PATH="$TEST_ROOT/bin:$PATH" bash "$ROOT/scripts/$entry.sh")
         assert_equal "$output" "$repeated" "$entry repeatability"
         if [[ "$entry" == bootstrap ]]; then
             [[ "$output" == *'Detected platform:'* && "$output" == *'Bootstrap complete.'* &&

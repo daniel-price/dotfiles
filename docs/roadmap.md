@@ -6,13 +6,13 @@ task acceptance criteria are deliberately kept in
 
 ## Current status
 
-**Git acquisition and baseline prerequisites are implemented; full environment
-setup remains scaffolded.**
+**Git acquisition and baseline tools are implemented; full environment setup
+remains scaffolded.**
 The standalone `get-started.sh` installs missing Git after approval, clones
 once, and asks separately before running the checkout bootstrap. The documented
 temporary download cleans itself up. `scripts/bootstrap.sh` installs only
-missing `zsh` and `curl`, asking separately for each. `scripts/update.sh`
-remains read-only.
+missing `zsh`, `curl` and verified mise, asking separately for each operation.
+`scripts/update.sh` remains read-only.
 
 Checkout development tooling is available separately: pinned shfmt, ShellCheck
 and Lefthook, opt-in pre-commit formatting with partial staging, and Linux/macOS
@@ -26,7 +26,8 @@ CI. See [development](guides/development.md) for setup and read-only checks.
 | 1b | Confirmed delegation to the checkout bootstrap | Implemented |
 | 1c | Install missing `zsh` and `curl` prerequisites with separate approval | Implemented |
 | 1d | Remaining machine configuration | Planned |
-| 2 | Install mise and provision one tool at a time with confirmation | Planned |
+| 2 | Install verified mise `v2026.11.9` with separate download and execution approval | Implemented |
+| 2a | Provision one tool at a time with confirmation | Planned |
 | 3 | Add guarded Git updates and a truthful change report | Planned |
 | 4 | Deploy one harmless dotfile via native mise; then migrate configs gradually | Planned |
 | 5 | Prototype an optional, approved private configuration overlay with explicit opt-in and precedence/conflict tests | Planned |

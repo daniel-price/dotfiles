@@ -1,6 +1,6 @@
 # ADR-0001: Use mise and age for development environment management
 
-**Status:** Accepted as an architectural direction; implementation pending  
+**Status:** Mise installation implemented; tool, dotfile and encryption work pending
 **Date:** 2026-11-15
 
 ## Context
@@ -36,6 +36,14 @@ One primary tool reduces coordination and conceptual overhead. Mise dotfiles
 and encryption are newer capabilities, so their version and conflict/restore
 semantics must be tested carefully. Encryption is **not yet configured**;
 machine-specific SSH private keys and age recovery identities stay outside Git.
+
+Bootstrap pins mise `v2026.11.9`. With separate approval for download and
+execution, it downloads that immutable GitHub Release installer to a temporary
+file, verifies its committed SHA-256, and runs it with GitHub-only release
+downloads. The release installer verifies the selected binary before writing
+`~/.local/bin/mise`. Existing mise installations are not upgraded or replaced.
+Bootstrap does not activate mise, trust configuration, install a tool, or
+modify shell startup files.
 
 ## Follow-up
 
