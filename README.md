@@ -26,6 +26,7 @@ recurring sync is not implemented, and secrets are not restored.
 - [Public/private/local configuration layers](docs/architecture/private-configuration.md)
 - [Roadmap](docs/roadmap.md)
 - [Development tools and Git hooks](docs/guides/development.md)
+- [OpenCode CLI, permissions and sandboxing](docs/guides/opencode.md)
 - [Detailed reference & decisions](docs/reference/index.md)
 
 ## Start on a new machine
