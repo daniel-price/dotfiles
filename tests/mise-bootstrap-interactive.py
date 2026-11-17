@@ -205,7 +205,7 @@ esac
     # Prompt is offered separately, after machine tools, with one approval.
     prompt_target = home / ".local/share/dotfiles/powerlevel10k"
     assert not prompt_target.exists()
-    theme_approved = run("y\\n")
+    theme_approved = run("y\n")
     assert theme_approved.returncode == 0, theme_approved.stdout
     assert (prompt_target / "powerlevel10k.zsh-theme").exists()
     assert any(line.startswith(str(ROOT / "scripts/setup/prompt.toml") + "|-C / bootstrap repos apply --yes")
