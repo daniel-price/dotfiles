@@ -11,7 +11,6 @@ ROOT = Path(__file__).resolve().parents[2]
 COMMANDS = (
     ("Initial setup", "get-started.sh"),
     ("Update and bootstrap", "bin/,bootstrap"),
-    ("Machine bootstrap", "scripts/setup/bootstrap.sh"),
     ("Update checkout", "scripts/setup/update.sh"),
     ("Cleanup", "scripts/setup/cleanup.sh"),
     ("Install prompt", "scripts/setup/setup-prompt.sh"),
