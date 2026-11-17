@@ -15,6 +15,7 @@ root `mise.toml` describes checkout development only.
 | zsh, when missing | `apt:zsh` via `mise bootstrap --only packages` | `brew:zsh` via mise if macOS's built-in zsh is missing and Homebrew exists |
 | Neovim `0.12.6` | `mise install neovim`, opt-in | Same |
 | Zellij `0.46.0` | `mise install zellij`, opt-in | Same |
+| zoxide `0.10.0` | `mise install zoxide`, opt-in | Same |
 | Reviewed `~/.zshrc` | Native `mise dot apply`, offered early with separate approval | Same |
 
 The initial bootstrap uses a small shell wrapper to install mise with a
@@ -23,16 +24,26 @@ component. Once mise is present, the script selects the declarative machine
 configuration using `MISE_GLOBAL_CONFIG_FILE` and invokes mise with
 `-C /`: this **excludes checkout development tools**. It does not silently activate Zsh, trust private repositories or update
 software. After mise and Zsh are available, bootstrap calls the separately
-runnable reviewed Zsh deployment script, **before** Neovim and Zellij setup.
+runnable reviewed Zsh deployment script, **before** zoxide, Neovim and Zellij setup.
 Deployment only proceeds after a preview and explicit confirmation. Bootstrap
 skips conflicting existing `~/.zshrc` files/symlinks without preventing tool
 installation. Native mise can repoint a foreign symlink, so its wrapper retains
 the conflict-refusal checks.
 
+## Shell integration
+
+The reviewed Zsh source resolves its own symlink target to locate the machine
+manifest, setting `MISE_GLOBAL_CONFIG_FILE` unless the user already set a
+different value. That makes pinned machine tools visible in new Zsh sessions,
+even outside this checkout. After mise activation, it runs `zoxide init zsh`
+only when zoxide is available; this defines the `z` shell function.
+Missing zoxide does not break shell startup. The machine manifest remains
+separate from the root `mise.toml` for checkout development.
+
 ## Selective cleanup
 
 `bash scripts/setup/cleanup.sh` previews removal of the reviewed zsh symlink
-and the exact declared Neovim/Zellij mise versions; `--apply` prompts for each.
+and the exact declared zoxide/Neovim/Zellij mise versions; `--apply` prompts for each.
 It never removes system packages, mise, unrelated tool versions, private
 overlays, or the checkout. Other projects may rely on the same mise version;
 there is no installation-ownership ledger.

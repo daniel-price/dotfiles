@@ -10,7 +10,7 @@ task acceptance criteria are deliberately kept in
 remains scaffolded.**
 The standalone `get-started.sh` installs missing Git after approval, clones
 once, and asks separately before running the checkout bootstrap. The documented
-temporary download cleans itself up. `scripts/setup/bootstrap.sh` installs verified mise, then delegates packages and pinned Neovim/Zellij
+temporary download cleans itself up. `scripts/setup/bootstrap.sh` installs verified mise, then delegates packages and pinned zoxide/Neovim/Zellij
 versions to declarative mise configuration while preserving separate approvals.
 Curl is a stage-zero prerequisite. Bootstrap also offers the reviewed Zsh
 startup symlink after mise and Zsh, before Neovim/Zellij, with explicit approval
@@ -30,10 +30,11 @@ CI. See [development](guides/development.md) for setup and read-only checks.
 | 1c | Install missing zsh through native mise after approval; require curl for stage zero | Implemented |
 | 1d | Remaining machine configuration | Planned |
 | 2 | Install verified mise `v2026.11.9` with separate download and execution approval | Implemented |
-| 2a | Provision declared Neovim and Zellij using mise with confirmation per tool | Implemented |
+| 2a | Provision declared zoxide, Neovim and Zellij using mise with confirmation per tool | Implemented |
 | 3 | Add guarded Git updates and a truthful change report | Planned |
 | 3a | Preview-first, selective cleanup of reviewed symlink and pinned mise tools | Implemented |
 | 4a | Deploy one declared zsh dotfile via native mise with preview and conflict refusal | Implemented |
+| 4b | Initialise zoxide (`z`) using the reviewed machine manifest in Zsh | Implemented |
 | 4 | Migrate further dotfiles gradually via native mise | Planned |
 | 5a | Narrow one-target private config directory overlay with explicit source, conflict preflight and synthetic tests | Implemented |
 | 5 | Full private configuration profiles, precedence and merge tests | Planned |

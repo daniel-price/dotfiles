@@ -2,7 +2,7 @@
 
 The one-command installer ensures Git, acquires the public repository and
 **offers to run its bootstrap with a separate confirmation**. Bootstrap then
-checks `zsh`, `curl`, mise, Neovim and Zellij, asking separately before each
+checks `zsh`, `curl`, mise, zoxide, Neovim and Zellij, asking separately before each
 missing installation. An optional explicit overlay can deploy one selected private
 configuration directory. The full development-environment setup remains
 unimplemented.
@@ -77,8 +77,14 @@ and Zellij. It previews the symlink and requires its own confirmation. Existing
 non-managed `~/.zshrc` files or symlinks are preserved and reported without
 blocking remaining setup. Accepting activates mise in **new Zsh sessions**, not
 in the currently running shell. A declined offer can be retried independently.
-Bootstrap then asks individually before installing the pinned Neovim and Zellij
-versions from `scripts/setup/mise.toml`. It never silently upgrades tools.
+Bootstrap then asks individually before installing pinned zoxide `0.10.0`,
+Neovim and Zellij versions from `scripts/setup/mise.toml`. It never silently upgrades tools.
+
+After approving zoxide installation, open a new Zsh session (`exec zsh`)
+and visit a directory with `cd` to teach zoxide its location. For example,
+`cd ~/.dotfiles` then `z dot`. zoxide learns visited directories; installing it
+alone does not populate its history. If you declined zoxide installation,
+the reviewed Zsh startup skips its initialization.
 
 To deploy a private Neovim configuration, explicitly select an already-present
 source directory and target directory after reviewing
@@ -103,8 +109,10 @@ bash ~/.dotfiles/scripts/setup/deploy-zsh-config.sh
 ```
 
 Expected: mise shows a diff and a dry-run first, then the script asks once before
-applying a symlink to `.config/zsh/zshrc`. The public source prepends `~/.local/bin` to `PATH` once and then activates
-mise; it does not copy a private shell config. If
+applying a symlink to `.config/zsh/zshrc`. The public source prepends `~/.local/bin` to `PATH` once, selects the machine-only mise manifest from
+its own resolved source path (unless explicitly overridden), then activates
+mise and initialises zoxide when installed. This defines the `z` function; it
+does not copy a private shell config. If
 `~/.zshrc` already exists as a real file or a symlink to somewhere else, the
 script refuses and makes no change. Merge or back up your existing file
 yourself, then rerun. A repeat run with the correct symlink exits without a
@@ -169,7 +177,7 @@ documentation for the version you check out before running it on a live machine.
    separate approval (implemented). It does not activate mise.
 6. After mise and Zsh are available, offer to deploy the reviewed Zsh startup
    symlink with its own confirmation, while preserving conflicts (implemented).
-7. Provision pinned Neovim and Zellij from declarative mise configuration,
+7. Provision pinned zoxide, Neovim and Zellij from declarative mise configuration,
    with separate approvals (implemented).
 8. Explicitly deploy one reviewed private configuration directory through the
    mise overlay (narrow prototype implemented).
@@ -210,7 +218,7 @@ Only the following are eligible:
 
 - The reviewed `~/.zshrc` symlink, **if it still points to this checkout's
   reviewed source**. Ordinary files or symlinks to another source are left alone.
-- The exact Neovim and Zellij versions declared in
+- The exact zoxide, Neovim and Zellij versions declared in
   `scripts/setup/mise.toml`. These mise installations may be shared by other
   projects, and this script **cannot establish whether they existed before
   bootstrap**. Review that warning before approving a removal.
