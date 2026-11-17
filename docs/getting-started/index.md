@@ -100,8 +100,8 @@ bash ~/.dotfiles/scripts/setup/deploy-zsh-config.sh
 ```
 
 Expected: mise shows a diff and a dry-run first, then the script asks once before
-applying a symlink to `.config/zsh/zshrc`. The public source only activates mise
-from `PATH` or `~/.local/bin/mise`; it does not copy a private shell config. If
+applying a symlink to `.config/zsh/zshrc`. The public source prepends `~/.local/bin` to `PATH` once and then activates
+mise; it does not copy a private shell config. If
 `~/.zshrc` already exists as a real file or a symlink to somewhere else, the
 script refuses and makes no change. Merge or back up your existing file
 yourself, then rerun. A repeat run with the correct symlink exits without a
@@ -114,6 +114,22 @@ changing a shell, run:
 ```sh
 "$HOME/.local/bin/mise" exec neovim@0.12.6 -- nvim --version
 ```
+
+## Set up development hooks (optional)
+
+If you want to develop the dotfiles repository, first trust the reviewed
+**checkout-only** tool configuration and install the pinned developer tools:
+
+```sh
+bash ~/.dotfiles/scripts/dev/run-mise.sh trust ~/.dotfiles/mise.toml
+bash ~/.dotfiles/scripts/dev/install-dev-tools.sh
+```
+
+The second command offers to install the pre-commit hook when run from a
+terminal. It requires a separate yes/no approval, refuses existing conflicting
+hooks, and does nothing to Git hooks in CI. It uses the installed mise binary
+even if the current Bash shell has no mise on `PATH`. Git-hook execution uses
+that same fallback.
 
 ## Inspect the checkout scaffold
 

@@ -53,9 +53,10 @@ declaration only after its own confirmation. An existing checkout is neither
 overwritten nor automatically updated.
 
 After installing mise, run `bash scripts/setup/deploy-zsh-config.sh` from the checkout
-if you want a reviewed `~/.zshrc` that activates mise. That step is deliberately
+if you want a reviewed `~/.zshrc` that adds `~/.local/bin` to `PATH` once and activates mise. That step is deliberately
 separate, previews both mise checks and refuses to overwrite an existing shell
-configuration. It does not affect an already-running Bash shell.
+configuration. It does not affect an already-running Bash shell. Development scripts and
+Git hooks resolve the pinned mise executable even without that Zsh activation.
 
 Do **not** use `curl ... | bash`: stdin must remain connected to your terminal
 for confirmations, and the download must finish before execution.
@@ -79,6 +80,19 @@ Scripts are grouped by purpose: `scripts/setup/` installs and configures the mac
 `scripts/dev/` maintains this checkout (format, lint, hooks, CI and docs); and
 `scripts/lib/` holds shared internal Bash functions. Personal commands can go
 in `bin/` when there is a useful executable to expose on `PATH`.
+
+## Develop this checkout (optional)
+
+```sh
+bash scripts/dev/run-mise.sh trust mise.toml
+bash scripts/dev/install-dev-tools.sh
+```
+
+The second command installs the developer tools and offers to enable the
+pre-commit Git hook with an **additional yes/no confirmation**. Noninteractive
+runs (including CI) skip hook installation. The separate
+`bash scripts/dev/install-hooks.sh` command remains available to enable
+hooks independently.
 
 ## Preview or remove managed setup items
 

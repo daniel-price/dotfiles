@@ -16,9 +16,9 @@ cd "$TEST_ROOT/repo"
 export MISE_TRUSTED_CONFIG_PATHS="$TEST_ROOT/repo"
 cp "$ROOT/mise.toml" "$ROOT/lefthook.yml" .
 mkdir -p scripts/dev scripts/lib
-cp "$ROOT/scripts/dev/install-hooks.sh" scripts/dev/
+cp "$ROOT/scripts/dev/install-hooks.sh" "$ROOT/scripts/dev/run-mise.sh" scripts/dev/
 cp "$ROOT/scripts/dev/format.sh" "$ROOT/scripts/dev/lint.sh" scripts/dev/
-cp "$ROOT/scripts/lib/common.sh" scripts/lib/
+cp "$ROOT/scripts/lib/common.sh" "$ROOT/scripts/lib/mise.sh" scripts/lib/
 cp "$ROOT/scripts/lib/shell-files.sh" scripts/lib/
 git init -q
 git config user.name 'Hook test'
@@ -99,7 +99,7 @@ git diff --quiet || fail 'format or lint command changed the fixture'
 git diff --cached --quiet || fail 'format or lint command changed the fixture'
 printf 'PASS: Format and lint command options, selected files and empty selection\n'
 
-mise exec -- lefthook install pre-commit >"$TEST_ROOT/install.log" 2>&1
+bash scripts/dev/run-mise.sh exec -- lefthook install pre-commit >"$TEST_ROOT/install.log" 2>&1
 bash scripts/dev/install-hooks.sh >"$TEST_ROOT/setup.log" 2>&1
 grep -q 'already installed' "$TEST_ROOT/setup.log" || fail 'repeat setup did not skip'
 
@@ -112,7 +112,7 @@ greet
 SHELL
 git add 'partial file.sh'
 git show ':partial file.sh' >"$TEST_ROOT/expected.sh"
-mise exec -- shfmt -w -i 4 "$TEST_ROOT/expected.sh"
+bash scripts/dev/run-mise.sh exec -- shfmt -w -i 4 "$TEST_ROOT/expected.sh"
 printf '# Unstaged work in progress\n' >>'partial file.sh'
 git commit -qm 'Format only staged content' >"$TEST_ROOT/commit.log" 2>&1 || {
     cat "$TEST_ROOT/commit.log"
@@ -144,17 +144,17 @@ printf 'PASS: ShellCheck blocks an invalid commit\n'
 printf '#!/usr/bin/env bash\nprintf    "format me\\n"\n' >'partial file.sh'
 git diff --binary >"$TEST_ROOT/work.before"
 git diff --cached --binary >"$TEST_ROOT/index.before"
-if mise run check >"$TEST_ROOT/check.log" 2>&1; then
+if bash scripts/dev/run-mise.sh run check >"$TEST_ROOT/check.log" 2>&1; then
     fail 'read-only check accepted invalid scripts'
 fi
 git diff --binary >"$TEST_ROOT/work.after"
 git diff --cached --binary >"$TEST_ROOT/index.after"
 cmp "$TEST_ROOT/work.before" "$TEST_ROOT/work.after" || fail 'check changed working files'
 cmp "$TEST_ROOT/index.before" "$TEST_ROOT/index.after" || fail 'check changed staging'
-mise run format >"$TEST_ROOT/format.log" 2>&1
+bash scripts/dev/run-mise.sh run format >"$TEST_ROOT/format.log" 2>&1
 git diff --cached --binary >"$TEST_ROOT/index.after"
 cmp "$TEST_ROOT/index.before" "$TEST_ROOT/index.after" || fail 'format staged changes'
-if mise run check >"$TEST_ROOT/lint-check.log" 2>&1; then
+if bash scripts/dev/run-mise.sh run check >"$TEST_ROOT/lint-check.log" 2>&1; then
     fail 'read-only check accepted ShellCheck errors'
 fi
 grep -q SC2086 "$TEST_ROOT/lint-check.log" || fail 'read-only check omitted ShellCheck error'

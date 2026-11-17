@@ -16,15 +16,27 @@ downloads the declared pinned tools into mise's tool storage, and the final step
 asks before writing the checkout's Git hook.
 
 ```sh
-mise trust mise.toml
+bash scripts/dev/run-mise.sh trust mise.toml
 bash scripts/dev/install-dev-tools.sh
-mise run hooks:install
 ```
 
-Answer `y` to enable the hook. The default answer is no; piped answers and
-noninteractive input cannot approve installation. Repeating setup skips an
+The first command explicitly trusts the reviewed checkout config. The second
+installs the pinned development tools and, **only from an interactive terminal**,
+offers to enable the checkout's pre-commit hook. Answer `y` to enable it.
+The default is no. Piped answers and noninteractive input cannot approve hook
+installation, and CI never installs the hook. Repeating setup skips an
 already-installed hook. Existing unrelated hooks, symlinked hooks and a
 configured `core.hooksPath` are refused so you can resolve the conflict yourself.
+
+You can manage hooks independently at any time:
+```sh
+bash scripts/dev/install-hooks.sh
+```
+
+`run-mise.sh` locates mise on `PATH` or at `~/.local/bin/mise`, then runs
+it from the checkout root. This lets setup, linting, formatting and the Git
+hook work even before Zsh activation (or from a shell that doesn't load
+`~/.zshrc`). It does not trust configurations or install tools implicitly.
 
 The root `mise.toml` pins development tools and tasks. It is separate from
 `scripts/setup/mise.toml`, the declarative machine configuration used only during setup. Automatic
@@ -68,8 +80,8 @@ root, and names containing spaces are supported. The scripts can be invoked
 from another directory by passing their full path. Shared file selection lives
 in `scripts/lib/shell-files.sh`.
 
-Lefthook runs through mise even when Git is launched from a shell without mise
-activation, so the `mise` executable must be on that application's `PATH`.
+Lefthook runs through the same versioned `scripts/dev/run-mise.sh` wrapper,
+so Git hooks can resolve `~/.local/bin/mise` without relying on shell activation.
 The formatter and linter run sequentially on commit to avoid reading a file
 while the formatter is changing it. ShellCheck errors block the commit.
 

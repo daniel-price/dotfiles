@@ -46,11 +46,14 @@ done
 printf 'PASS: Checkout script layout and executable modes\n'
 # Validate the real machine manifest with mise without installing anything.
 # This must not accidentally include the root checkout's developer tools.
-if command -v mise >/dev/null 2>&1; then
+# Resolve mise as setup does: it may be installed outside the current PATH.
+# shellcheck source=scripts/lib/mise.sh
+source "$ROOT/scripts/lib/mise.sh"
+if mise=$(mise_command); then
     machine_config="$ROOT/scripts/setup/mise.toml"
-    MISE_GLOBAL_CONFIG_FILE="$machine_config" mise -C / config ls >/dev/null ||
+    MISE_GLOBAL_CONFIG_FILE="$machine_config" "$mise" -C / config ls >/dev/null ||
         fail 'mise could not parse the machine-only manifest'
-    tool_listing=$(MISE_GLOBAL_CONFIG_FILE="$machine_config" mise -C / ls --current) ||
+    tool_listing=$(MISE_GLOBAL_CONFIG_FILE="$machine_config" "$mise" -C / ls --current) ||
         fail 'mise could not resolve machine tool declarations'
     [[ "$tool_listing" == *neovim* && "$tool_listing" == *zellij* ]] ||
         fail 'machine versions are missing from mise config'
@@ -169,6 +172,7 @@ if command -v python3 >/dev/null 2>&1; then
     python3 "$ROOT/tests/zsh-deploy-interactive.py"
     python3 "$ROOT/tests/mise-bootstrap-interactive.py"
     python3 "$ROOT/tests/cleanup-interactive.py"
+    python3 "$ROOT/tests/dev-setup-interactive.py"
 else
     printf 'SKIP: interactive bootstrap tests (python3 not found)\n'
 fi

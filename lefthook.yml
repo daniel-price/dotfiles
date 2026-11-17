@@ -1,5 +1,5 @@
 # Git hooks must use this checkout's pinned tools, including outside mise shells.
-lefthook: mise exec -- lefthook
+lefthook: bash scripts/dev/run-mise.sh exec -- lefthook
 assert_lefthook_installed: true
 # Only the explicit setup command installs hooks; check/format remain opt-in.
 no_auto_install: true
