@@ -15,7 +15,7 @@ fd = "10.5.2"
 
 [dotfiles]
 "~/.zshrc" = { source = "../../.config/zsh/zshrc", mode = "symlink" }
-"~/.gitconfig" = { source = "../../.config/git/config", mode = "symlink" }
+"~/.config/git/config" = { source = "../../.config/git/config", mode = "symlink" }
 "~/.config/zellij/config.kdl" = { source = "../../.config/zellij/config.kdl", mode = "symlink" }
 
 [settings]
