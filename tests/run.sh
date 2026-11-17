@@ -187,6 +187,7 @@ if command -v python3 >/dev/null 2>&1; then
     python3 "$ROOT/tests/mise-bootstrap-interactive.py"
     python3 "$ROOT/tests/cleanup-interactive.py"
     python3 "$ROOT/tests/opencode-sandbox.py"
+    python3 "$ROOT/tests/podman-setup.py"
     python3 "$ROOT/tests/dev-setup-interactive.py"
 else
     printf 'SKIP: interactive bootstrap tests (python3 not found)\n'

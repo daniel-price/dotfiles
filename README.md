@@ -27,15 +27,17 @@ recurring sync is not implemented, and secrets are not restored.
 - [Roadmap](docs/roadmap.md)
 - [Development tools and Git hooks](docs/guides/development.md)
 - [OpenCode rootless Podman sandbox on Pop!_OS](docs/guides/opencode.md)
+- [Optional Podman prerequisite for container workloads](docs/guides/podman.md)
 - [Detailed reference & decisions](docs/reference/index.md)
 
 ## Isolated coding agents on Pop!_OS
 
 OpenCode is deliberately launched through `bin/opencode-sandbox` in a
 rootless Podman container, not installed as an unsandboxed mise host CLI.
-After installing Podman explicitly and starting a new reviewed Zsh session,
-run `opencode-sandbox --dry-run` in a personal Git repository, then
-`opencode-sandbox` to approve the image setup and agent launch.
+After starting a new reviewed Zsh session, run `opencode-sandbox --dry-run`
+in a personal Git repository. `opencode-sandbox` offers the optional shared
+Podman prerequisite if it is missing, then asks before image setup and launch.
+The main machine bootstrap does not install Podman.
 The agent can modify that repository and access the network. Read the
 [security and credential guide](docs/guides/opencode.md) before using it.
 

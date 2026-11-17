@@ -14,6 +14,8 @@ commands are distinct from both.
 | `scripts/setup/mise.toml` | Declarative machine packages, pinned tools and the opt-in zsh dotfile entry; deliberately separate from developer tooling. |
 | `.config/` | Reviewed home configuration: zsh startup (which adds the repo's `bin/` to PATH) and future application defaults. |
 | `containers/opencode/` | Reviewed minimal OpenCode image recipe; built only after separate interactive approval, without the developer checkout as build context. |
+| `containers/podman/mise.toml` | Shared optional declaration for the Podman system package; separate from the always-offered machine manifest. |
+| `scripts/setup/setup-podman.sh` | Reusable preview-first, consent-gated package setup and rootless verification for container workloads. |
 | `tests/` | Temporary-fixture and interactive integration tests, never host-changing by default. |
 | `docs/` | Current handbook and separately labelled historical planning notes. |
 | `.github/` | CI orchestration and pull request template. |

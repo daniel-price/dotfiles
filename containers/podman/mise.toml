@@ -1,0 +1,7 @@
+# Shared, optional container runtime prerequisite. Not included in the
+# machine bootstrap; selected container workloads explicitly opt into it.
+[bootstrap.packages]
+"apt:podman" = { os = "linux" }
+
+[settings]
+auto_install = false

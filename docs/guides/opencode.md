@@ -12,19 +12,22 @@ the checkout's `bin/` directory to PATH.
 
 ## Prerequisites (Pop!_OS / Ubuntu)
 
-Podman is a system-level container runtime, not a mise language tool.
-Install it **explicitly**, not through an automatic bootstrap action:
+Podman is a shared, **optional system prerequisite**, declared once in
+[`containers/podman/mise.toml`](../../containers/podman/mise.toml).
+It is **not installed by the main machine bootstrap**. The launcher offers
+to install it via mise/apt only when it is missing, with a preview and an
+individual confirmation first. You can also inspect or install it explicitly:
 
 ```sh
-sudo apt update
-sudo apt install podman
+bash scripts/setup/setup-podman.sh          # Read-only preview / rootless check
+bash scripts/setup/setup-podman.sh --apply  # Ask before missing apt:podman install
 podman info --format '{{.Host.Security.Rootless}}'
 ```
 
-The final command should print `true` when invoked as a normal user.
-Don't run `sudo podman` or enable a rootful daemon. Rootless setup may
-require a valid `/etc/subuid` and `/etc/subgid` configuration. No system
-settings are changed automatically by these dotfiles.
+The final command must return `true` as your normal user. Never use
+`sudo podman`; if rootless configuration is broken, the setup refuses to
+proceed rather than silently changing system security settings. See the
+[shared Podman prerequisite guide](podman.md) for details and future workloads.
 
 The launcher pins the official published OpenCode image
 `ghcr.io/anomalyco/opencode:2.3.0`. The reviewed
