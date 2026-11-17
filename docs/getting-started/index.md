@@ -83,7 +83,13 @@ and Zellij. It previews the symlink and requires its own confirmation. Existing
 non-managed `~/.zshrc` files or symlinks are preserved and reported without
 blocking remaining setup. Accepting activates mise in **new Zsh sessions**, not
 in the currently running shell. A declined offer can be retried independently.
-Bootstrap then asks individually before installing any missing tools from
+After provisioning tools, bootstrap also offers to change the account's default
+login shell to Zsh through `chsh`. This is an independent yes/no decision:
+bootstrap checks the registered system shell, current account and login shell,
+leaves already-correct settings alone, and never changes root's shell.
+The new login shell takes effect after logging out and back in; it does not
+switch an existing Bash process.
+Bootstrap asks individually before installing any missing tools from
 the exact versions in `scripts/setup/mise.toml`. Add another pinned tool to
 that manifest and it is discovered automatically; no setup script changes are
 needed. It never silently upgrades tools.
@@ -126,9 +132,12 @@ script refuses and makes no change. Merge or back up your existing file
 yourself, then rerun. A repeat run with the correct symlink exits without a
 prompt.
 
-This step does not change your current shell or a Bash session. Start a new zsh
-session, or run `exec zsh`, to use the activated tools. To verify without
-changing a shell, run:
+Deploying the Zsh startup file alone does not change the default login shell.
+The **main bootstrap** now separately offers to configure Zsh as the account's
+login shell using `chsh`, if the user approves. Existing Bash sessions remain
+Bash; after approval, log out of the desktop session and back in for new login
+shells to use Zsh. A terminal configured to force Bash may still override the
+account preference. To verify mise without switching shell, run:
 
 ```sh
 "$HOME/.local/bin/mise" exec neovim@0.12.6 -- nvim --version
@@ -165,7 +174,8 @@ bash ~/.dotfiles/tests/run.sh
 checks the reviewed `~/.zshrc` **before** proposing declared machine-tool installations.
 It previews and offers the Zsh symlink if the destination is free, skips an
 already-correct link, and preserves any conflicting file or other symlink.
-Each missing tool requires separate approval. The final message reports the
+Each missing tool requires separate approval. After tools, bootstrap offers
+a separate login-shell change when needed. The final message reports the
 Zsh configuration status. Tests use temporary fixtures and finish with
 `All bootstrap checks passed.`
 
@@ -188,12 +198,14 @@ documentation for the version you check out before running it on a live machine.
    symlink with its own confirmation, while preserving conflicts (implemented).
 7. Provision every pinned machine tool from declarative mise configuration,
    with separate approvals (implemented).
-8. Explicitly deploy one reviewed private configuration directory through the
+8. Offer to set Zsh as the user's default login shell with `chsh` after a
+   separate confirmation; already configured accounts are skipped (implemented).
+9. Explicitly deploy one reviewed private configuration directory through the
    mise overlay (narrow prototype implemented).
-9. Provision further reviewed tools and apply further reviewed dotfiles.
-10. Restore authorised encrypted settings using a **separately recovered** age
-   identity; keep machine-specific SSH credentials local.
-11. Re-run without unnecessary changes; upgrades remain an explicit action.
+10. Provision further reviewed tools and apply further reviewed dotfiles.
+11. Restore authorised encrypted settings using a **separately recovered** age
+    identity; keep machine-specific SSH credentials local.
+12. Re-run without unnecessary changes; upgrades remain an explicit action.
 
 **Not implemented:** SSH registration, further tool provisioning, broad dotfile
 deployment, full private profiles and encrypted restore. Git installation, the

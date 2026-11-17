@@ -9,6 +9,8 @@ source "$ROOT/scripts/lib/os.sh"
 source "$ROOT/scripts/lib/mise.sh"
 # shellcheck source=scripts/lib/machine-tools.sh
 source "$ROOT/scripts/lib/machine-tools.sh"
+# shellcheck source=scripts/lib/login-shell.sh
+source "$ROOT/scripts/lib/login-shell.sh"
 trap 'report_error "$?" "$LINENO"' ERR
 
 MISE_VERSION='v2026.11.9'
@@ -17,7 +19,8 @@ MISE_INSTALLER_SHA256='60adf5460b19a791b964c414a2fff9d46990c9f2b1dfc0e4ba8c2b865
 
 usage() {
     printf '%s\n' 'Usage: bash scripts/setup/bootstrap.sh [--help]' \
-        'Install missing mise and zsh, offer reviewed shell activation, then provision tools.' \
+        'Install missing mise and zsh, offer reviewed shell activation and tool versions.' \
+        'After provisioning, offer to set Zsh as the default login shell.' \
         'Every missing component requires its own interactive approval.'
 }
 
@@ -209,5 +212,10 @@ while IFS= read -r spec <&3; do
         log "Skipped $spec installation."
     fi
 done 3<<<"$tool_specs"
+
+# Changing the login shell is independent of package and dotfile setup.
+# Run this last so any earlier approval answers cannot apply to chsh.
+# chsh changes only this user's login account and may ask for a password.
+offer_default_zsh "$platform" /etc/shells
 
 log "Bootstrap complete. Zsh configuration: $zsh_config_status."

@@ -21,6 +21,7 @@ maintain a second list or require edits when adding or removing a tool.
 | zsh, when missing | `apt:zsh` via `mise bootstrap --only packages` | `brew:zsh` via mise if macOS's built-in zsh is missing and Homebrew exists |
 | Machine CLI tools from [`[tools]`](../../scripts/setup/mise.toml) | Each exact pinned version offered individually through mise | Same |
 | Reviewed `~/.zshrc` | Native `mise dot apply`, offered early with separate approval | Same |
+| Default Zsh login shell | `chsh -s` with separate confirmation, account and `/etc/shells` checks | Same; account read through `dscl` |
 
 The initial bootstrap uses a small shell wrapper to install mise with a
 verified installer and preserve independent confirmations for each missing
@@ -56,6 +57,17 @@ even outside this checkout. After mise activation, it runs `zoxide init zsh`
 only when zoxide is available; this defines the `z` shell function.
 Missing zoxide does not break shell startup. The machine manifest remains
 separate from the root `mise.toml` for checkout development.
+
+## Default login shell
+
+Bootstrap checks the current user's configured login shell independently of
+`$SHELL` or the current Bash process. When Zsh is installed, executable and
+registered in `/etc/shells`, it offers `chsh -s` **once, after tool setup**,
+with a separate interactive confirmation. The target is restricted to an
+executable registered Zsh, the account home must match the current HOME,
+and the root account is never modified. An already-correct login shell is left
+alone. The change affects subsequent login sessions, not an existing Bash
+process; terminal-specific shell overrides may take precedence.
 
 ## Selective cleanup
 
