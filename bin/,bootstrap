@@ -1,30 +1,156 @@
 #!/usr/bin/env bash
-# Primary dotfiles bootstrap command: update the reviewed checkout first,
-# then provision from that exact revision. --no-update is for stage-zero
-# handoff and compatibility with older scripts; it never fetches.
 set -euo pipefail
-
 ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
+# shellcheck source=scripts/lib/common.sh
+source "$ROOT/scripts/lib/common.sh"
+# shellcheck source=scripts/lib/os.sh
+source "$ROOT/scripts/lib/os.sh"
+# shellcheck source=scripts/lib/mise.sh
+source "$ROOT/scripts/lib/mise.sh"
+# shellcheck source=scripts/lib/machine-tools.sh
+source "$ROOT/scripts/lib/machine-tools.sh"
+# shellcheck source=scripts/lib/login-shell.sh
+source "$ROOT/scripts/lib/login-shell.sh"
+trap 'report_error "$?" "$LINENO"' ERR
+
+MISE_VERSION='v2026.11.9'
+MISE_INSTALLER_URL="https://github.com/jdx/mise/releases/download/$MISE_VERSION/install.sh"
+MISE_INSTALLER_SHA256='60adf5460b19a791b964c414a2fff9d46990c9f2b1dfc0e4ba8c2b865f882a2b'
 
 usage() {
-    printf '%s\\n' \\
-        'Usage: ,bootstrap [--no-update|--help]' \\
-        'Offer to fetch and fast-forward the reviewed main branch, then provision.' \\
-        '--no-update: provision the checked-out version without fetching (for stage-zero setup).'
+    printf '%s\n' 'Usage: ,bootstrap [--no-update|--help]' \
+        'Offer approved update, then install missing mise, zsh and pinned tools.' \
+        '--no-update: provision checked-out version without fetching (stage-zero handoff).' \
+        'Every missing component requires its own interactive approval.'
 }
 
+mise_version() {
+    local executable=$1 output
+    output=$("$executable" --version 2>/dev/null) || return 1
+    printf '%s\n' "${output%% *}"
+}
+
+installer_sha256() {
+    local platform=$1 installer=$2 output
+    case "$platform" in
+    debian)
+        command -v sha256sum >/dev/null 2>&1 ||
+            return 1
+        output=$(sha256sum "$installer") || return 1
+        ;;
+    macos)
+        command -v shasum >/dev/null 2>&1 ||
+            return 1
+        output=$(shasum -a 256 "$installer") || return 1
+        ;;
+    *) return 1 ;;
+    esac
+    printf '%s\n' "${output%% *}"
+}
+
+ensure_mise() {
+    local platform=$1 target existing version installer checksum directory
+    [[ -n "${HOME:-}" && -d "$HOME" ]] ||
+        die 'HOME must be an existing directory before installing mise.'
+    target="$HOME/.local/bin/mise"
+    existing=$(command -v mise || :)
+    if [[ -n "$existing" ]]; then
+        version=$(mise_version "$existing") ||
+            die "Found mise at $existing but could not read its version; nothing changed."
+        log "Existing mise $version at $existing; skipped installation and upgrade."
+        return
+    fi
+
+    if [[ -e "$target" || -L "$target" ]]; then
+        [[ -f "$target" && ! -L "$target" ]] ||
+            die "Mise destination exists but is not a regular file: $target"
+        version=$(mise_version "$target") ||
+            die "Found mise destination at $target but could not read its version; nothing changed."
+        log "Existing mise $version at $target; skipped installation and upgrade."
+        return
+    fi
+    for directory in "$HOME/.local" "$HOME/.local/bin"; do
+        if [[ -e "$directory" || -L "$directory" ]]; then
+            [[ -d "$directory" && ! -L "$directory" ]] ||
+                die "Mise parent path is not a regular directory: $directory"
+        fi
+    done
+
+    command -v curl >/dev/null 2>&1 || die 'curl is required to download mise; install it first.'
+    if ! confirm "Download mise $MISE_VERSION installer from GitHub to a temporary file and verify its SHA-256?"; then
+        log 'Skipped mise installer download; mise remains unavailable.'
+        return
+    fi
+    installer=$(mktemp "${TMPDIR:-/tmp}/mise-installer.XXXXXX") ||
+        die 'Could not create a temporary mise installer file.'
+    if ! curl --fail --location --output "$installer" "$MISE_INSTALLER_URL"; then
+        rm -f -- "$installer"
+        die 'Could not download the mise installer.'
+    fi
+    if ! checksum=$(installer_sha256 "$platform" "$installer"); then
+        rm -f -- "$installer"
+        die 'Could not verify the mise installer SHA-256.'
+    fi
+    if [[ "$checksum" != "$MISE_INSTALLER_SHA256" ]]; then
+        rm -f -- "$installer"
+        die 'Mise installer SHA-256 did not match; nothing installed.'
+    fi
+    log "Verified mise $MISE_VERSION installer."
+
+    if ! confirm "Install mise $MISE_VERSION at $target? This creates missing parent directories and downloads the verified release binary."; then
+        rm -f -- "$installer"
+        log 'Skipped mise installation after verification; no mise was installed.'
+        return
+    fi
+    if ! MISE_VERSION="$MISE_VERSION" MISE_INSTALL_PATH="$target" \
+        MISE_INSTALL_FROM_GITHUB=1 MISE_INSTALL_SKIP_IF_EXISTS=1 sh "$installer"; then
+        rm -f -- "$installer"
+        die 'Mise installation failed; check the installer output.'
+    fi
+    rm -f -- "$installer"
+
+    version=$(mise_version "$target") ||
+        die "Mise was not executable at the expected path: $target"
+    [[ "$version" == "${MISE_VERSION#v}" ]] ||
+        die "Mise version mismatch: expected ${MISE_VERSION#v}, found $version."
+    log "Installed mise $version at $target."
+}
+
+case "${1:-}" in
+-h | --help)
+    [[ $# -eq 1 ]] || die 'Unexpected extra argument.'
+    usage
+    exit 0
+    ;;
+--no-update)
+    [[ $# -eq 1 ]] || die 'Unexpected extra argument.'
+    ;;
+'')
+    [[ $# -eq 0 ]] || die 'Unexpected argument.'
+    # The checkout can replace this file during fast-forward. Run the
+    # coordinator entirely in memory, then execute the new checkout code.
+    DOTFILES_BOOTSTRAP_ROOT="$ROOT" exec bash -c '
+        set -euo pipefail
+        root=$DOTFILES_BOOTSTRAP_ROOT
+        bash "$root/scripts/setup/update.sh" --apply --require-current
+        [[ "$(git -C "$root" symbolic-ref --quiet --short HEAD)" == main ]]
+        [[ "$(git -C "$root" rev-parse HEAD)" == "$(git -C "$root" rev-parse refs/remotes/origin/main)" ]]
+        [[ -z "$(git -C "$root" status --porcelain --untracked-files=all)" ]]
+        exec bash "$root/bin/,bootstrap" --no-update
+    ' dotfiles-bootstrap
+    ;;
+*) die 'Unknown argument. Use --help for usage.' ;;
+esac
 # shellcheck disable=SC2119
 platform=$(detect_os) || die 'Unsupported platform.'
 log "Detected platform: $platform."
 
-# Bootstrap never changes its own checkout. Warn when invoked directly from a
-# different branch; switching/fetching belongs to the separately approved
-# updater, before any bootstrap commands start.
+# Explicit --no-update provisioning can run from an existing feature checkout.
 if command -v git >/dev/null 2>&1 &&
     [[ "$(git -C "$ROOT" rev-parse --show-toplevel 2>/dev/null || :)" == "$ROOT" ]]; then
     checkout_branch=$(git -C "$ROOT" symbolic-ref --quiet --short HEAD 2>/dev/null || :)
     if [[ "$checkout_branch" != main ]]; then
-        log "Running checked-out bootstrap on ${checkout_branch:-detached HEAD} without updating."
+        log "Running bootstrap from ${checkout_branch:-detached HEAD} without updating."
     fi
 fi
 ensure_mise "$platform"
