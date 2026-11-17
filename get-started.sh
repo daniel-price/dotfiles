@@ -155,11 +155,13 @@ main() {
             info 'Update manually when ready, then rerun to enable safe update offers.'
         fi
     fi
-    local bootstrap='scripts/setup/bootstrap.sh'
-    # Do not update older checkouts implicitly. Use their original entry point
-    # (previously scripts/bootstrap.sh, and before that bootstrap.sh).
+    local bootstrap='bin/,bootstrap'
+    # Prefer the single canonical bootstrap implementation. Preserve the
+    # existing entrypoint fallback for previously cloned older revisions.
     if [[ ! -e "$target/$bootstrap" && ! -L "$target/$bootstrap" ]]; then
-        if [[ -e "$target/scripts/bootstrap.sh" || -L "$target/scripts/bootstrap.sh" ]]; then
+        if [[ -e "$target/scripts/setup/bootstrap.sh" || -L "$target/scripts/setup/bootstrap.sh" ]]; then
+            bootstrap='scripts/setup/bootstrap.sh'
+        elif [[ -e "$target/scripts/bootstrap.sh" || -L "$target/scripts/bootstrap.sh" ]]; then
             bootstrap='scripts/bootstrap.sh'
         elif [[ -e "$target/bootstrap.sh" || -L "$target/bootstrap.sh" ]]; then
             bootstrap='bootstrap.sh'
@@ -174,6 +176,10 @@ main() {
     fi
     info "Running bootstrap from $target."
     # Subshell leaves the original working directory unchanged.
-    (cd "$target" && bash "./$bootstrap") || fail 'Checkout bootstrap failed.'
+    if [[ "$bootstrap" == bin/,bootstrap ]]; then
+        (cd "$target" && bash "./$bootstrap" --no-update) || fail 'Checkout bootstrap failed.'
+    else
+        (cd "$target" && bash "./$bootstrap") || fail 'Checkout bootstrap failed.'
+    fi
 }
 main "$@"
