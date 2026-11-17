@@ -55,9 +55,8 @@ if mise=$(mise_command); then
         fail 'mise could not parse the machine-only manifest'
     tool_listing=$(MISE_GLOBAL_CONFIG_FILE="$machine_config" "$mise" -C / ls --current) ||
         fail 'mise could not resolve machine tool declarations'
-    [[ "$tool_listing" == *neovim* && "$tool_listing" == *zellij* &&
-        "$tool_listing" == *zoxide* ]] ||
-        fail 'machine versions are missing from mise config'
+    [[ -n "$tool_listing" ]] ||
+        fail 'machine manifest should expose at least one declared tool'
     [[ "$tool_listing" != *shellcheck* && "$tool_listing" != *lefthook* ]] ||
         fail 'developer tools leaked into machine setup'
     printf 'PASS: Native mise machine manifest loads without developer tools\n'

@@ -2,8 +2,9 @@
 
 The one-command installer ensures Git, acquires the public repository and
 **offers to run its bootstrap with a separate confirmation**. Bootstrap then
-checks `zsh`, `curl`, mise, zoxide, Neovim and Zellij, asking separately before each
-missing installation. An optional explicit overlay can deploy one selected private
+checks mise and Zsh, then offers the tools declared in the
+[reviewed machine manifest](../../scripts/setup/mise.toml) with separate
+confirmations for missing installations. An optional explicit overlay can deploy one selected private
 configuration directory. The full development-environment setup remains
 unimplemented.
 
@@ -77,8 +78,10 @@ and Zellij. It previews the symlink and requires its own confirmation. Existing
 non-managed `~/.zshrc` files or symlinks are preserved and reported without
 blocking remaining setup. Accepting activates mise in **new Zsh sessions**, not
 in the currently running shell. A declined offer can be retried independently.
-Bootstrap then asks individually before installing pinned zoxide `0.10.0`,
-Neovim and Zellij versions from `scripts/setup/mise.toml`. It never silently upgrades tools.
+Bootstrap then asks individually before installing any missing tools from
+the exact versions in `scripts/setup/mise.toml`. Add another pinned tool to
+that manifest and it is discovered automatically; no setup script changes are
+needed. It never silently upgrades tools.
 
 After approving zoxide installation, open a new Zsh session (`exec zsh`)
 and visit a directory with `cd` to teach zoxide its location. For example,
@@ -154,7 +157,7 @@ bash ~/.dotfiles/tests/run.sh
 ```
 
 **Expected:** bootstrap identifies the OS, checks mise and Zsh, and then
-checks the reviewed `~/.zshrc` **before** proposing Neovim/Zellij installs.
+checks the reviewed `~/.zshrc` **before** proposing declared machine-tool installations.
 It previews and offers the Zsh symlink if the destination is free, skips an
 already-correct link, and preserves any conflicting file or other symlink.
 Each missing tool requires separate approval. The final message reports the
@@ -177,7 +180,7 @@ documentation for the version you check out before running it on a live machine.
    separate approval (implemented). It does not activate mise.
 6. After mise and Zsh are available, offer to deploy the reviewed Zsh startup
    symlink with its own confirmation, while preserving conflicts (implemented).
-7. Provision pinned zoxide, Neovim and Zellij from declarative mise configuration,
+7. Provision every pinned machine tool from declarative mise configuration,
    with separate approvals (implemented).
 8. Explicitly deploy one reviewed private configuration directory through the
    mise overlay (narrow prototype implemented).
@@ -198,6 +201,10 @@ see [the private-profile guide](../guides/private-profiles.md).
 ## Preview and clean up managed items
 
 The machine setup is intentionally **not** a fully reversible installer.
+Removing a tool declaration does **not** automatically remove its previous
+installation: only tools still declared by the reviewed manifest are eligible
+for the selective cleanup below. The manifest is the source of truth for the
+current tool inventory, not an ownership ledger.
 You can preview removing items managed by the public mise manifest without
 modifying your laptop:
 
@@ -218,7 +225,7 @@ Only the following are eligible:
 
 - The reviewed `~/.zshrc` symlink, **if it still points to this checkout's
   reviewed source**. Ordinary files or symlinks to another source are left alone.
-- The exact zoxide, Neovim and Zellij versions declared in
+- Only the exact tool versions currently declared in
   `scripts/setup/mise.toml`. These mise installations may be shared by other
   projects, and this script **cannot establish whether they existed before
   bootstrap**. Review that warning before approving a removal.
