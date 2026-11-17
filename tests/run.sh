@@ -29,6 +29,8 @@ bash -n "$ROOT/bin/opencode-sandbox" || fail 'sandbox launcher has invalid Bash 
 printf 'PASS: Executable OpenCode launcher syntax and layout\n'
 if command -v zsh >/dev/null 2>&1; then
     zsh -n "$ROOT/.config/zsh/zshrc" || fail 'reviewed zsh file has invalid syntax'
+    zsh -n "$ROOT/.config/zsh/aliases.zsh" || fail 'reviewed zsh aliases have invalid syntax'
+    zsh -n "$ROOT/.config/zsh/p10k.zsh" || fail 'reviewed p10k config has invalid syntax'
     printf 'PASS: Reviewed zsh syntax\n'
 else
     printf 'SKIP: Reviewed zsh syntax (zsh not found)\n'
@@ -184,11 +186,13 @@ if command -v python3 >/dev/null 2>&1; then
     python3 "$ROOT/tests/bootstrap-interactive.py"
     python3 "$ROOT/tests/tool-overlay-interactive.py"
     python3 "$ROOT/tests/zsh-deploy-interactive.py"
+    python3 "$ROOT/tests/zsh-profile.py"
     python3 "$ROOT/tests/mise-bootstrap-interactive.py"
     python3 "$ROOT/tests/login-shell.py"
     python3 "$ROOT/tests/cleanup-interactive.py"
     python3 "$ROOT/tests/opencode-sandbox.py"
     python3 "$ROOT/tests/podman-setup.py"
+    python3 "$ROOT/tests/prompt-setup.py"
     python3 "$ROOT/tests/dev-setup-interactive.py"
 else
     printf 'SKIP: interactive bootstrap tests (python3 not found)\n'

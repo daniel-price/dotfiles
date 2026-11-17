@@ -26,6 +26,7 @@ recurring sync is not implemented, and secrets are not restored.
 - [Public/private/local configuration layers](docs/architecture/private-configuration.md)
 - [Roadmap](docs/roadmap.md)
 - [Development tools and Git hooks](docs/guides/development.md)
+- [Zsh aliases and Powerlevel10k prompt](docs/guides/zsh.md)
 - [OpenCode rootless Podman sandbox on Pop!_OS](docs/guides/opencode.md)
 - [Optional Podman prerequisite for container workloads](docs/guides/podman.md)
 - [Detailed reference & decisions](docs/reference/index.md)
@@ -80,6 +81,13 @@ retry after resolving a conflict or declining the offer. New Zsh sessions add
 `~/.local/bin` to `PATH` once, load the reviewed machine tool versions,
 activate mise and enable zoxide’s `z` function when installed. The current Bash
 shell is unchanged. Development scripts and Git hooks also resolve mise independently.
+
+The reviewed Zsh startup now restores portable aliases such as `zj`, `za`,
+`zar` and `g`, along with the original Powerlevel10k appearance from `.cfg`.
+Once the reviewed `~/.zshrc` is active, bootstrap separately offers to clone
+the **commit-pinned** theme via native mise repository management. This remains
+optional; missing theme files never interrupt shell startup. See the
+[Zsh setup guide](docs/guides/zsh.md).
 
 Do **not** use `curl ... | bash`: stdin must remain connected to your terminal
 for confirmations, and the download must finish before execution.

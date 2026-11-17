@@ -1,3 +1,14 @@
+# Powerlevel10k instant prompt must load before other interactive setup.
+# Keep VS Code's terminal behaviour as in the previous .cfg configuration.
+if [[ -o interactive && "${TERM_PROGRAM:-}" != vscode &&
+      -r "$HOME/.local/share/dotfiles/powerlevel10k/powerlevel10k.zsh-theme" ]]; then
+  _dotfiles_p10k_cache="${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${USER}.zsh"
+  if [[ -r "$_dotfiles_p10k_cache" ]]; then
+    source "$_dotfiles_p10k_cache"
+  fi
+  unset _dotfiles_p10k_cache
+fi
+
 # The verified mise installer uses ~/.local/bin rather than a system directory.
 # Add it once so the pinned mise binary is available in future zsh sessions.
 if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
@@ -35,3 +46,23 @@ fi
 if (( $+commands[zoxide] )); then
   eval "$(zoxide init zsh)"
 fi
+
+# Restore only the reviewed, cross-platform aliases from the old .cfg profile.
+_dotfiles_zsh_dir=${${(%):-%x}:A:h}
+if [[ -r "$_dotfiles_zsh_dir/aliases.zsh" ]]; then
+  source "$_dotfiles_zsh_dir/aliases.zsh"
+fi
+
+# Use the exact reviewed Powerlevel10k prompt configuration from .cfg.
+# The theme is an optional, commit-pinned mise bootstrap repository; startup
+# must remain healthy when it hasn't been installed or is unavailable.
+if [[ -o interactive && "${TERM_PROGRAM:-}" != vscode ]]; then
+  _dotfiles_p10k_theme="$HOME/.local/share/dotfiles/powerlevel10k/powerlevel10k.zsh-theme"
+  if [[ -r "$_dotfiles_p10k_theme" && -r "$_dotfiles_zsh_dir/p10k.zsh" ]]; then
+    POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true
+    source "$_dotfiles_p10k_theme"
+    source "$_dotfiles_zsh_dir/p10k.zsh"
+  fi
+  unset _dotfiles_p10k_theme
+fi
+unset _dotfiles_zsh_dir

@@ -213,6 +213,14 @@ while IFS= read -r spec <&3; do
     fi
 done 3<<<"$tool_specs"
 
+# The prompt is an optional Git checkout, not a native installed executable.
+# Only offer it when our reviewed Zsh startup file is actually active.
+if [[ "$zsh_config_status" == 'already applied' || "$zsh_config_status" == applied* ]]; then
+    bash "$ROOT/scripts/setup/setup-prompt.sh" --apply
+else
+    log 'Skipping optional prompt installation: reviewed Zsh startup is not active.'
+fi
+
 # Changing the login shell is independent of package and dotfile setup.
 # Run this last so any earlier approval answers cannot apply to chsh.
 # chsh changes only this user's login account and may ask for a password.

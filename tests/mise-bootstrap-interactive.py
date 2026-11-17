@@ -54,6 +54,15 @@ shift 2
 case "$*" in
   "bootstrap --only packages --dry-run") exit 0 ;;
   "bootstrap --only packages") touch "$MOCK_STATE/zsh"; exit 0 ;;
+  "bootstrap repos apply --dry-run") exit 0 ;;
+  "bootstrap repos apply --yes")
+    mkdir -p "$HOME/.local/share/dotfiles/powerlevel10k/.git"
+    : > "$HOME/.local/share/dotfiles/powerlevel10k/powerlevel10k.zsh-theme"
+    exit 0
+    ;;
+  "bootstrap repos status --missing")
+    [[ -f "$HOME/.local/share/dotfiles/powerlevel10k/powerlevel10k.zsh-theme" ]]
+    ;;
   "ls --current --no-header --no-truncate")
     printf '%s\\n' "$MOCK_TOOL_ROWS"
     ;;
@@ -147,7 +156,7 @@ esac
     answers = ["y", "y"] + [
         "y" if name in approved_tools else "n" for name in pins
     ]
-    approved = run("\n".join(answers) + "\n")
+    approved = run("\n".join(answers + ["n"]) + "\n")
     assert approved.returncode == 0, approved.stdout
     assert (state / "zsh").exists() and (state / f"neovim@{pins['neovim']}").exists() and (state / f"zoxide@{pins['zoxide']}").exists(), (approved.stdout, log.read_text(), list(state.iterdir()), pins)
     assert all(
@@ -165,7 +174,10 @@ esac
     assert any(line.endswith(f"install zoxide@{pins['zoxide']}") for line in calls), calls
     assert any(line.endswith(f"install neovim@{pins['neovim']}") for line in calls), calls
     assert all(line.startswith(str(ROOT / "scripts/setup/mise.toml") + "|-C /")
-               for line in calls), calls
+               for line in calls if "bootstrap repos" not in line), calls
+    assert all(line.startswith(str(ROOT / "scripts/setup/prompt.toml") + "|-C /")
+               for line in calls if "bootstrap repos" in line), calls
+    assert any(line.endswith("bootstrap repos apply --dry-run") for line in calls), calls
     assert not any("scripts/dev" in line for line in calls), calls
 
     dot_before_repeat = sum("dot " in line for line in log.read_text().splitlines())
@@ -184,11 +196,24 @@ esac
         (name, version) for name, version in pins.items()
         if not (state / f"{name}@{version}").exists()
     ]
-    final = run("y\n" * len(remaining))
+    final = run("y\n" * len(remaining) + "n\n")
     assert final.returncode == 0, final.stdout
     assert (state / f"zellij@{pins['zellij']}").exists()
     assert "Bootstrap complete" in final.stdout
     assert all((state / f"{name}@{version}").exists() for name, version in pins.items())
+
+    # Prompt is offered separately, after machine tools, with one approval.
+    prompt_target = home / ".local/share/dotfiles/powerlevel10k"
+    assert not prompt_target.exists()
+    theme_approved = run("y\\n")
+    assert theme_approved.returncode == 0, theme_approved.stdout
+    assert (prompt_target / "powerlevel10k.zsh-theme").exists()
+    assert any(line.startswith(str(ROOT / "scripts/setup/prompt.toml") + "|-C / bootstrap repos apply --yes")
+               for line in log.read_text().splitlines()), log.read_text()
+    before_prompt_repeat = sum("bootstrap repos apply --yes" in line for line in log.read_text().splitlines())
+    prompt_repeat = run()
+    assert prompt_repeat.returncode == 0
+    assert sum("bootstrap repos apply --yes" in line for line in log.read_text().splitlines()) == before_prompt_repeat
 
     # An unrelated ~/.zshrc must not abort the remaining tool setup.
     target.unlink()
