@@ -6,6 +6,6 @@
 - [Develop the repo and use Git hooks](development.md)
 - [Private configuration](private-profiles.md)
 - [OpenCode sandbox](opencode.md) · [Podman prerequisite](podman.md)
-- [Encrypted secrets (planned)](manage-secret.md)
+- [Encrypted environment values (experimental POC)](age-env-poc.md) · [Secrets management (planned)](manage-secret.md)
 
 For initial setup see [Getting started](../getting-started/index.md). For unfinished work see the [roadmap](../roadmap.md).
