@@ -10,6 +10,7 @@ sys.path.insert(0, str(ROOT / "scripts/docs"))
 import zsh  # noqa: E402
 import zellij  # noqa: E402
 import tools  # noqa: E402
+import cli  # noqa: E402
 
 zsh_page = zsh.render()
 assert "# Zsh" in zsh_page
@@ -66,4 +67,23 @@ with tempfile.TemporaryDirectory() as temporary:
     assert "| `neovim` | `99.1.0` |" in changed
     assert changed != tool_page
 
-print("PASS: Generated Zsh/Zellij/tool inventory references track configuration and reject stale annotations")
+cli_page = cli.render()
+assert "## Machine bootstrap" in cli_page
+assert "Usage: bash scripts/setup/bootstrap.sh" in cli_page
+assert "## OpenCode sandbox" in cli_page
+assert "ANTHROPIC_API_KEY" in cli_page
+assert "## Cleanup" in cli_page
+assert "No secrets" not in cli_page
+with tempfile.TemporaryDirectory() as temporary:
+    root = Path(temporary)
+    (root / "demo.sh").write_text("#!/usr/bin/env bash\\nif [[ \${1:-} == --help ]]; then printf 'Usage: demo.sh [--help]\\n'; exit 0; fi\\nexit 1\\n")
+    assert cli.help_text(root, "demo.sh").startswith("Usage: demo.sh")
+    (root / "demo.sh").write_text("#!/usr/bin/env bash\\nif [[ \${1:-} == --help ]]; then touch \\"$HOME/mutated\\"; printf 'Usage: demo.sh\\n'; fi\\n")
+    try:
+        cli.help_text(root, "demo.sh")
+    except ValueError as error:
+        assert "temporary HOME" in str(error)
+    else:
+        raise AssertionError("Side-effecting help command was accepted")
+
+print("PASS: Generated Zsh/Zellij/tool/CLI references track configuration and reject invalid sources")
