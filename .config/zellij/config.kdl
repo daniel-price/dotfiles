@@ -1,3 +1,6 @@
+// doc: note clipboard | Clipboard support uses pbcopy (macOS), wl-copy (Wayland), xclip or xsel (X11).
+// doc: note navigation | Ctrl+H/J/K/L in locked mode uses the vim-zellij-navigator plugin.
+// doc: note modes | Press Ctrl+A from locked mode to enter normal mode, then Y to enter move (yank) mode.
 keybinds clear-defaults=true {
     unbind "Alt right"
     normal {
@@ -63,6 +66,9 @@ keybinds clear-defaults=true {
         }
     }
     // Yank chord (reuses emptied built-in "move" mode): Ctrl a → y → l|a|p
+    // doc: binding move:l | Copy the most recent shell command and output (requires atuin).
+    // doc: binding move:a | Copy the active pane scrollback.
+    // doc: binding move:p | Open the interactive command picker (requires atuin and fzf).
     move {
         bind "l" {
             Run "bash" "-c" "bash \"$HOME/.dotfiles/bin/,copy-last\"" {

@@ -3,16 +3,14 @@
 
 from pathlib import Path
 import re
-import sys
 
 ROOT = Path(__file__).resolve().parents[2]
 ZSH = ROOT / ".config" / "zsh"
-OUTPUT = ROOT / "docs" / "guides" / "zsh.md"
 ANNOTATION = re.compile(r"^# doc: (option|prompt|alias) ([^|]+)\| (.+)$")
 ALIAS = re.compile(r"^\s*alias\s+([^=\s]+)='([^']*)'\s*$")
 
 
-def main() -> None:
+def render() -> str:
     comments: dict[tuple[str, str], str] = {}
     for filename in ("zshrc", "aliases.zsh"):
         for line in (ZSH / filename).read_text().splitlines():
@@ -76,12 +74,5 @@ def main() -> None:
         lines += ["", "## Prompt", ""]
         lines += [f"- {description}" for description in prompts]
 
-    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT.write_text("\n".join(lines) + "\n")
+    return "\n".join(lines) + "\n"
 
-
-if __name__ == "__main__":
-    try:
-        main()
-    except (OSError, ValueError) as exc:
-        sys.exit(f"Zsh documentation generation failed: {exc}")

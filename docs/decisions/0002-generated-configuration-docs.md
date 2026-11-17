@@ -5,24 +5,28 @@
 
 ## Context
 
-The Zsh guide repeated alias definitions and configuration comments. The
-published handbook needs a concise reference to the current configuration,
-not the history of its migration.
+Handwritten Zsh and Zellij references repeated settings and keybindings
+already declared in the source files. This duplication became stale as the
+configurations changed. Published references should describe what is currently
+configured, not narrate migration history.
 
 ## Decision
 
-Generate the Zsh reference from the checked-in Zsh configuration during the
-existing documentation build. Extract alias definitions without evaluating Zsh
-and publish only explicitly marked `# doc:` annotations for behaviour that
-cannot be inferred from declarations. Do not commit the generated Markdown.
+Generate configuration references when building documentation, not in Git.
+Use one local entrypoint (`scripts/docs/generate.py`) to invoke small,
+format-specific extractors for Zsh and Zellij. Read the checked-in configuration
+as data, without executing it. Derive aliases, keybindings and simple settings
+from declarations; keep only short `# doc:` / `// doc:` annotations where
+user-facing behaviour needs clarification. Omit historical migration details.
 
-Keep implementation comments in source and historical explanations in Git/PR
-history, rather than copying them into the public guide. Use the same local
-build script in CI and for manual previews.
+The same local build script generates references for CI and GitHub Pages.
+Generated files are ignored, removed after each build, and never maintained
+by hand.
 
 ## Consequences
 
-Alias changes automatically update the reference; published documentation
-reflects the configuration used for that build. The generator is intentionally
-small and tailored to these files rather than a general shell parser. If the
-configuration format changes, update the extractor and its tests together.
+Changing a binding or alias updates the published reference on the next build.
+Extractors intentionally support the project's current source syntax, rather
+than becoming general-purpose language parsers. Fail loudly on unsupported
+structures or orphaned annotations, and test the extractors when config syntax
+changes. Narrative architecture and installation guides remain handwritten.
