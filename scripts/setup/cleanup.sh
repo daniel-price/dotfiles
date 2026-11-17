@@ -15,8 +15,8 @@ trap 'report_error "$?" "$LINENO"' ERR
 usage() {
     printf '%s\n' \
         'Usage: bash scripts/setup/cleanup.sh [--apply|--help]' \
-        'Default: preview removal of the reviewed zsh symlink and pinned mise tools.' \
-        '--apply: approve each eligible removal interactively (defaults to no).' \
+        'Default: preview removal of mise-managed dotfiles and pinned tools.' \
+        '--apply: approve dotfile removal and each pinned tool interactively (defaults to no).' \
         'Never removes system packages, mise, Git, the checkout or private overlays.'
 }
 
@@ -45,7 +45,7 @@ mise_supports_dot "$mise" ||
 # Prevent repo-development settings from affecting cleanup. Only the explicit
 # reviewed machine manifest is active, even when invoked from another directory.
 export MISE_GLOBAL_CONFIG_FILE="$manifest"
-log 'Only the reviewed ~/.zshrc and exact pinned tools in the machine manifest are eligible.'
+log 'Only dotfiles and exact pinned tools declared in the machine manifest are eligible.'
 log 'Versions installed by mise are shared with other projects; uninstalling them may affect those projects.'
 log 'System packages, mise, the Git checkout and private profiles are always preserved.'
 
@@ -54,27 +54,14 @@ log 'System packages, mise, the Git checkout and private profiles are always pre
 tool_specs=$(machine_tool_specs "$mise" "$manifest") ||
     die 'Could not read exact pinned machine tool declarations; no cleanup action was taken.'
 
-target="$HOME/.zshrc"
-source_file="$ROOT/.config/zsh/zshrc"
-[[ -f "$source_file" && ! -L "$source_file" ]] ||
-    die 'Reviewed zsh source file is missing.'
-if [[ -L "$target" && "$target" -ef "$source_file" ]]; then
-    log "Preview removal of reviewed zsh symlink: $target"
-    "$mise" -C / dot unapply --dry-run "$target" ||
-        die 'mise could not preview the reviewed zsh removal.'
-    if [[ "$mode" == apply ]] && confirm "Remove the reviewed symlink at $target?"; then
-        # Recheck immediately before acting; mise itself refuses changed links.
-        [[ -L "$target" && "$target" -ef "$source_file" ]] ||
-            die 'The reviewed zsh symlink changed after preview; refusing removal.'
-        "$mise" -C / dot unapply --yes "$target" ||
-            die 'mise failed to unapply the reviewed zsh link.'
-        [[ ! -L "$target" ]] || die 'The reviewed zsh symlink still exists.'
-        log 'Removed the reviewed zsh symlink.'
-    fi
-elif [[ -L "$target" || -e "$target" ]]; then
-    log "Preserving existing ~/.zshrc: not the reviewed managed symlink."
-else
-    log 'No reviewed ~/.zshrc symlink to remove.'
+# Mise discovers targets from the reviewed manifest and removes only entries it
+# recognises as managed. Never force removal of unrelated files or symlinks.
+"$mise" -C / dot unapply --dry-run ||
+    die 'mise could not preview reviewed dotfile removal.'
+if [[ "$mode" == apply ]] && confirm 'Remove the reviewed mise-managed dotfiles shown above?'; then
+    "$mise" -C / dot unapply --yes ||
+        die 'mise failed to remove reviewed dotfiles.'
+    log 'Removed approved mise-managed dotfiles.'
 fi
 
 # Keep the caller's terminal on fd 0: confirm() must see an interactive TTY.
