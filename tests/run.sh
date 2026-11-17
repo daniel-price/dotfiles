@@ -38,7 +38,7 @@ else
     printf 'SKIP: Reviewed zsh syntax (zsh not found)\n'
 fi
 
-for moved in bootstrap apply-private-overlay cleanup update; do
+for moved in apply-private-overlay cleanup update; do
     [[ ! -e "$ROOT/scripts/$moved.sh" ]] || fail "obsolete setup path remains: $moved"
     [[ -x "$ROOT/scripts/setup/$moved.sh" ]] || fail "setup script is not executable: $moved"
 done
@@ -157,13 +157,13 @@ esac
 MISE
 chmod +x "$TEST_ROOT/bin/mise"
 for help in -h --help; do
-    output=$(bash "$ROOT/scripts/setup/bootstrap.sh" "$help")
+    output=$(bash "$ROOT/bin/,bootstrap" "$help")
     [[ "$output" == *'Usage:'* ]] || fail 'bootstrap help missing'
 done
-if bash "$ROOT/scripts/setup/bootstrap.sh" --unknown >"$TEST_ROOT/out" 2>"$TEST_ROOT/err"; then
+if bash "$ROOT/bin/,bootstrap" --unknown >"$TEST_ROOT/out" 2>"$TEST_ROOT/err"; then
     fail 'bootstrap accepted unknown argument'
 fi
-if bash "$ROOT/scripts/setup/bootstrap.sh" --help extra >"$TEST_ROOT/out" 2>"$TEST_ROOT/err"; then
+if bash "$ROOT/bin/,bootstrap" --help extra >"$TEST_ROOT/out" 2>"$TEST_ROOT/err"; then
     fail 'bootstrap accepted extra argument'
 fi
 # Run twice from elsewhere, with an isolated HOME, on a supported host only.
