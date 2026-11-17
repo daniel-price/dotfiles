@@ -275,6 +275,10 @@ else
     log 'Skipping optional prompt installation: reviewed Zsh startup is not active.'
 fi
 
+# Desktop keyboard preferences are independent of mise-managed dotfiles.
+# The helper only offers a mapping for a detected supported Linux desktop.
+bash "$ROOT/scripts/setup/keyboard.sh" --apply
+
 # Changing the login shell is independent of package and dotfile setup.
 # Run this last so any earlier approval answers cannot apply to chsh.
 # chsh changes only this user's login account and may ask for a password.
