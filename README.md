@@ -8,8 +8,8 @@ repository may provide non-public configuration on selected machines.
 **Current status: bootstrap with one managed tool and opt-in shell activation.**
 The self-contained `get-started.sh` can install Git (when missing, after
 approval) and clone this public repository once over HTTPS. `scripts/bootstrap.sh`
-can install missing `zsh`, `curl`, pinned mise and Neovim `0.12.6`, with separate
-approval for each operation. Separate opt-in scripts can deploy a reviewed zsh
+can install missing `zsh`, `curl`, pinned mise, Neovim `0.12.6` and Zellij
+`0.46.0`, with separate approval for each operation. Separate opt-in scripts can deploy a reviewed zsh
 startup file or one selected private configuration directory through mise.
 `scripts/update.sh` remains read-only; secrets are not restored.
 

@@ -2,8 +2,8 @@
 
 The one-command installer ensures Git, acquires the public repository and
 **offers to run its bootstrap with a separate confirmation**. Bootstrap then
-checks `zsh`, `curl`, mise and Neovim, asking separately before each missing
-installation. An optional explicit overlay can deploy one selected private
+checks `zsh`, `curl`, mise, Neovim and Zellij, asking separately before each
+missing installation. An optional explicit overlay can deploy one selected private
 configuration directory. The full development-environment setup remains
 unimplemented.
 
@@ -65,8 +65,9 @@ the release only from GitHub and verifies that release before installation. An
 existing mise found on `PATH` or at that destination is reported and left
 unchanged, even when it is an older version. Bootstrap then calls
 `scripts/provision-tool.sh neovim`, which reads the checked-in `0.12.6`
-declaration and asks once before running `mise install`. Bootstrap does not
-activate mise or edit shell startup files; use the separate step below.
+declaration and asks once before running `mise install`. It repeats this for
+pinned Zellij. Bootstrap does not activate mise or edit shell startup files; use
+the separate step below.
 
 To deploy a private Neovim configuration, explicitly select an already-present
 source directory and target directory after reviewing
@@ -118,10 +119,10 @@ bash ~/.dotfiles/scripts/update.sh
 bash ~/.dotfiles/tests/run.sh
 ```
 
-**Expected:** bootstrap identifies the OS, skips available `zsh`, `curl`, mise
-and Neovim, or asks separately before installing a missing component. Mise
-requires separate download/verification and execution confirmation; Neovim has
-its own install prompt. It then lists the unimplemented steps. Update still
+**Expected:** bootstrap identifies the OS, skips available `zsh`, `curl`, mise,
+Neovim and Zellij, or asks separately before installing a missing component. Mise
+requires separate download/verification and execution confirmation; Neovim and
+Zellij each have their own install prompt. It then lists the unimplemented steps. Update still
 reports `No changes made.` The tests use temporary fixtures and should finish
 with `All bootstrap checks passed.`
 
@@ -139,8 +140,8 @@ documentation for the version you check out before running it on a live machine.
    `curl` (implemented).
 5. Bootstrap can download, verify and install missing mise `v2026.11.9` after
    separate approval (implemented). It does not activate mise.
-6. Bootstrap can provision pinned Neovim through mise after a separate approval
-   (implemented).
+6. Bootstrap can provision pinned Neovim and Zellij through mise after separate
+   approvals (implemented).
 7. Optionally deploy the reviewed zsh startup file that activates mise
    (implemented).
 8. Explicitly deploy one reviewed private configuration directory through the
@@ -153,8 +154,9 @@ documentation for the version you check out before running it on a live machine.
 **Not implemented:** SSH registration, further tool provisioning, broad dotfile
 deployment, full private profiles and encrypted restore. Git installation, the
 initial clone, a confirmed bootstrap handoff, individually approved
-`zsh`/`curl` installs, verified mise installation, Neovim provisioning, the
-reviewed zsh activation file and the narrow overlay are implemented.
+`zsh`/`curl` installs, verified mise installation, Neovim and Zellij
+provisioning, the reviewed zsh activation file and the narrow overlay are
+implemented.
 No private repositories should be discovered or cloned automatically;
 see [the private-profile guide](../guides/private-profiles.md).
 
