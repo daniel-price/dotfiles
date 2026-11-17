@@ -15,6 +15,7 @@ fd = "10.5.2"
 
 [dotfiles]
 "~/.zshrc" = { source = "../../.config/zsh/zshrc", mode = "symlink" }
+"~/.config/zellij/config.kdl" = { source = "../../.config/zellij/config.kdl", mode = "symlink" }
 
 [settings]
 auto_install = false

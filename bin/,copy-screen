@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
+lib="$(cd "$(dirname "$0")" && pwd)/lib"
+# shellcheck source=lib/copy_to_clipboard
+source "$lib/copy_to_clipboard"
+# shellcheck source=lib/zellij_dump_screen
+source "$lib/zellij_dump_screen"
+
+lines=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --lines)
+      lines=${2:?--lines requires N}
+      shift 2
+      ;;
+    --lines=*)
+      lines=${1#--lines=}
+      shift
+      ;;
+    -h|--help)
+      printf 'Usage: ,copy-screen [--lines N]\n' >&2
+      exit 0
+      ;;
+    *)
+      printf 'unknown arg: %s\n' "$1" >&2
+      exit 1
+      ;;
+  esac
+done
+
+if [[ -n "$lines" && ! "$lines" =~ ^[0-9]+$ ]]; then
+  printf -- '--lines must be a positive integer\n' >&2
+  exit 1
+fi
+
+dump=$(zellij_dump_screen) || exit 1
+
+# Drop a trailing typed ",copy-screen ..." line when present
+dump=$(printf '%s\n' "$dump" | awk '
+  { lines[NR]=$0 }
+  END {
+    end=NR
+    re = "(^| ),copy-(last|screen|pick)( |$)"
+    while (end>=1 && lines[end] ~ /^[[:space:]]*$/) end--
+    if (end>=1 && lines[end] ~ re) end--
+    for (i=1;i<=end;i++) print lines[i]
+  }
+')
+
+if [[ -n "$lines" ]]; then
+  dump=$(printf '%s\n' "$dump" | tail -n "$lines")
+fi
+
+printf '%s\n' "$dump" | copy_to_clipboard

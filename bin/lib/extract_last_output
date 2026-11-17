@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# extract_last_output <cmd>  — stdin: scrollback dump; stdout: output after last cmd
+# source "$(dirname "${BASH_SOURCE[0]}")/extract_last_output"
+
+extract_last_output() {
+  local cmd=$1
+  AWKcmd=$cmd awk '
+    BEGIN { cmd = ENVIRON["AWKcmd"] }
+
+    function is_copy_cmd(l) {
+      return l ~ /(^| )(,copy-last|,copy-screen|,copy-pick)( |$)/
+    }
+
+    # p10k multiline connectors, prompt_char, and powerline separators
+    function is_prompt(l) {
+      return l ~ /^[╭├╰]/ || l ~ /^❯/ || l ~ // || l ~ /^% /
+    }
+
+    {
+      lines[NR] = $0
+    }
+    END {
+      start = 0
+      for (i = 1; i <= NR; i++) {
+        n = length(cmd)
+        if (lines[i] == cmd || (n > 0 && length(lines[i]) >= n && substr(lines[i], length(lines[i]) - n + 1) == cmd)) {
+          if (is_copy_cmd(lines[i])) continue
+          start = i + 1
+        }
+      }
+      if (start == 0) exit 0
+
+      end = NR
+      for (i = start; i <= NR; i++) {
+        if (is_prompt(lines[i]) || is_copy_cmd(lines[i])) {
+          end = i - 1
+          break
+        }
+      }
+
+      while (end >= start) {
+        l = lines[end]
+        if (is_copy_cmd(l) || is_prompt(l) || l == "" || l ~ /^[[:space:]]*$/) {
+          end--
+          continue
+        }
+        break
+      }
+
+      for (i = start; i <= end; i++) print lines[i]
+    }
+  '
+}

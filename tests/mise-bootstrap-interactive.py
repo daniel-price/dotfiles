@@ -88,11 +88,13 @@ case "$*" in
     touch "$MOCK_STATE/$spec"
     ;;
   "dot status --missing")
-    [[ -L "$HOME/.zshrc" ]] && exit 0 || exit 1
+    [[ -L "$HOME/.zshrc" && -L "$HOME/.config/zellij/config.kdl" ]] && exit 0 || exit 1
     ;;
   "dot apply --dry-run") exit 0 ;;
   "dot apply --yes")
+    mkdir -p "$HOME/.config/zellij"
     if [[ ! -e "$HOME/.zshrc" && ! -L "$HOME/.zshrc" ]]; then ln -s "$MOCK_DOT_SOURCE" "$HOME/.zshrc"; fi
+    if [[ ! -e "$HOME/.config/zellij/config.kdl" && ! -L "$HOME/.config/zellij/config.kdl" ]]; then ln -s "$MOCK_ZELLIJ_SOURCE" "$HOME/.config/zellij/config.kdl"; fi
     exit 0
     ;;
   *) exit 21 ;;
@@ -120,6 +122,7 @@ esac
     env = dict(os.environ, HOME=str(home), PATH=str(bin_dir) + ":/usr/bin:/bin",
                MOCK_STATE=str(state), MOCK_LOG=str(log),
                MOCK_DOT_SOURCE=str(ROOT / ".config" / "zsh" / "zshrc"),
+               MOCK_ZELLIJ_SOURCE=str(ROOT / ".config" / "zellij" / "config.kdl"),
                MOCK_TOOL_ROWS=tool_rows, MOCK_TOOL_PINS=tool_pins)
 
     def run(answers=None):
@@ -152,7 +155,7 @@ esac
     assert "Zsh configuration: skipped (zsh unavailable)" in declined.stdout
     assert not any("dot apply --yes" in line for line in log.read_text().splitlines())
 
-    # The two initial approvals are for Zsh and the mise-managed dotfile.
+    # The two initial approvals are for Zsh and both mise-managed dotfiles.
     # Generate tool approvals from the manifest so adding a tool doesn't
     # silently approve it or hang an interactive test waiting for input.
     approved_tools = {"neovim", "zoxide"}
@@ -167,6 +170,8 @@ esac
         for name, version in pins.items() if name not in approved_tools
     )
     assert target.is_symlink() and target.resolve() == (ROOT / ".config/zsh/zshrc").resolve()
+    zellij_target = home / ".config/zellij/config.kdl"
+    assert zellij_target.is_symlink() and zellij_target.resolve() == (ROOT / ".config/zellij/config.kdl").resolve()
     assert "Zsh configuration: applied" in approved.stdout
     calls = log.read_text().splitlines()
     assert any("dot apply --dry-run" in line for line in calls)
@@ -252,4 +257,4 @@ esac
     old = run()
     assert old.returncode != 0, old.stdout
     assert "2026.11.9 or newer" in old.stdout, old.stdout
-    print("PASS: Native mise packages, Zsh dotfile, consent and tools")
+    print("PASS: Native mise packages, Zsh/Zellij dotfiles, consent and tools")

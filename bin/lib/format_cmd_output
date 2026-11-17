@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# format_cmd_output prints: $ <cmd>\n<output>
+# source "$(dirname "${BASH_SOURCE[0]}")/format_cmd_output"
+
+format_cmd_output() {
+  local cmd=$1
+  local output=${2-}
+  printf '$ %s\n' "$cmd"
+  if [[ -n "$output" ]]; then
+    printf '%s' "$output"
+    [[ "$output" == *$'\n' ]] || printf '\n'
+  fi
+}

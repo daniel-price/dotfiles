@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# zellij_dump_screen — dump focused/origin pane scrollback
+# source "$(dirname "${BASH_SOURCE[0]}")/zellij_dump_screen"
+
+_zellij_pane_id() {
+  if [[ -n "${ZELLIJ_ORIGIN_PANE_ID:-}" ]]; then
+    printf '%s\n' "$ZELLIJ_ORIGIN_PANE_ID"
+    return 0
+  fi
+  if [[ -n "${ZELLIJ_PANE_ID:-}" ]]; then
+    # Background Run sets ZELLIJ_PANE_ID to the origin terminal number only
+    if [[ "$ZELLIJ_PANE_ID" == terminal_* || "$ZELLIJ_PANE_ID" == plugin_* ]]; then
+      printf '%s\n' "$ZELLIJ_PANE_ID"
+    else
+      printf 'terminal_%s\n' "$ZELLIJ_PANE_ID"
+    fi
+    return 0
+  fi
+  return 1
+}
+
+zellij_dump_screen() {
+  if [[ -z "${ZELLIJ:-}" ]] && ! _zellij_pane_id >/dev/null 2>&1; then
+    printf 'not inside zellij\n' >&2
+    return 1
+  fi
+
+  local pane_id
+  pane_id=$(_zellij_pane_id 2>/dev/null || true)
+
+  if [[ -n "$pane_id" ]]; then
+    zellij action dump-screen --full --pane-id "$pane_id"
+  else
+    zellij action dump-screen --full
+  fi
+}

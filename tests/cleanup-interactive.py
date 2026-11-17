@@ -85,6 +85,7 @@ case "$1" in
     if [[ "$3" == --yes ]]; then
       # Approximate mise's conservative unapply: only links to reviewed sources.
       if [[ -L "$HOME/.zshrc" && "$HOME/.zshrc" -ef "$MOCK_DOT_SOURCE" ]]; then rm -f -- "$HOME/.zshrc"; fi
+      [[ -L "$HOME/.config/zellij/config.kdl" && "$HOME/.config/zellij/config.kdl" -ef "$MOCK_ZELLIJ_SOURCE" ]] && rm -f -- "$HOME/.config/zellij/config.kdl"
     elif [[ "$3" == --dry-run ]]; then
       :
     else
@@ -102,6 +103,7 @@ esac
         "MOCK_LOG": str(log),
         "MOCK_STATE": str(state),
         "MOCK_DOT_SOURCE": str(SOURCE),
+        "MOCK_ZELLIJ_SOURCE": str(ROOT / ".config/zellij/config.kdl"),
         "MOCK_TOOL_ROWS": "\n".join(
             f"{name} {version} (missing)" for name, version in pins.items()
         ),
@@ -110,6 +112,9 @@ esac
         ),
     })
     target = home / ".zshrc"
+    zellij_target = home / ".config/zellij/config.kdl"
+    zellij_target.parent.mkdir(parents=True)
+    zellij_target.symlink_to(ROOT / ".config/zellij/config.kdl")
 
     def run_quiet(args, input_text=None, overrides=None):
         return subprocess.run(
@@ -157,7 +162,7 @@ esac
     preview = run_quiet([])
     assert preview.returncode == 0, preview.stdout
     assert "Preview only; no changes were made" in preview.stdout
-    assert target.is_symlink()
+    assert target.is_symlink() and zellij_target.is_symlink()
     assert all((state / f"{name}@{version}").exists() for name, version in pins.items())
     assert any("dot unapply --dry-run" in line for line in operations())
     for name, version in pins.items():
@@ -169,7 +174,7 @@ esac
     reset_log()
     piped = run_quiet(["--apply"], "yes\n" * (len(pins) + 1))
     assert piped.returncode == 0, piped.stdout
-    assert target.is_symlink() and not destructive(), operations()
+    assert target.is_symlink() and zellij_target.is_symlink() and not destructive(), operations()
     assert all((state / f"{name}@{version}").exists() for name, version in pins.items())
 
     # Unrelated shell files and foreign symlinks are never removed.
@@ -196,7 +201,7 @@ esac
     answers = "n\n" + "".join("y\n" if name == first else "n\n" for name in pins)
     code, out = run_tty(["--apply"], answers)
     assert code == 0, out
-    assert target.is_symlink()
+    assert target.is_symlink() and zellij_target.is_symlink()
     assert not (state / f"{first}@{pins[first]}").exists()
     assert all((state / f"{name}@{version}").exists()
                for name, version in pins.items() if name != first)
@@ -207,7 +212,7 @@ esac
     remaining = [(name, version) for name, version in pins.items() if name != first]
     code, out = run_tty(["--apply"], "y\n" * (len(remaining) + 1))
     assert code == 0, out
-    assert not target.exists()
+    assert not target.exists() and not zellij_target.exists()
     assert not any(state.iterdir())
     assert destructive() == [
         "-C / dot unapply --yes",
