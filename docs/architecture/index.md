@@ -19,4 +19,4 @@ The boundaries matter more than the implementation details:
 - **Keep secrets and identities out of public Git.** A private repository is not equivalent to encryption or permission to store work files.
 - **Containerise selectively.** Host CLI tools, desktop apps, short-lived agents and persistent services have different needs.
 
-Read more only when relevant: [platforms](platforms.md), [configuration layers](private-configuration.md), [secrets](secrets.md), [apps and containers](applications.md), [repository layout](repository-layout.md) and [architecture decisions](../decisions/0001-mise-age.md). For implementation status and POCs, use the [roadmap](../roadmap.md).
+Read more only when relevant: [platforms](platforms.md), [configuration layers](private-configuration.md), [secrets](secrets.md), [apps and containers](applications.md), [repository layout](repository-layout.md) and [architecture decisions](../decisions/0001-mise-age.md) (including [generated documentation](../decisions/0002-generated-configuration-docs.md)). For implementation status and POCs, use the [roadmap](../roadmap.md).

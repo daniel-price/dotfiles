@@ -11,12 +11,15 @@ alias za='zellij action'
 alias zar='zellij action rename-tab'
 alias hl='rg --passthru'
 
+# doc: alias m | Only when mise is installed.
 if (( $+commands[mise] )); then
   alias m='mise'
 fi
+# doc: alias p | Only when pnpm is installed.
 if (( $+commands[pnpm] )); then
   alias p='pnpm'
 fi
+# doc: alias ls | Only when eza is installed.
 # Only replace ls if eza is actually installed; never break stock ls.
 if (( $+commands[eza] )); then
   alias ls='eza'

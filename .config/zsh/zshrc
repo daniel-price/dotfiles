@@ -9,6 +9,7 @@ if [[ -o interactive && "${TERM_PROGRAM:-}" != vscode &&
   unset _dotfiles_p10k_cache
 fi
 
+# doc: option interactivecomments | Allows pasted commands containing # comments in interactive sessions; noninteractive sessions are unaffected.
 # Allow pasted commands with # comments in interactive Zsh sessions.
 if [[ -o interactive ]]; then
   setopt interactivecomments
@@ -58,6 +59,8 @@ if [[ -r "$_dotfiles_zsh_dir/aliases.zsh" ]]; then
   source "$_dotfiles_zsh_dir/aliases.zsh"
 fi
 
+# doc: prompt theme | Powerlevel10k is loaded for interactive Zsh outside VS Code when installed; otherwise the default prompt remains.
+# doc: prompt font | Use a Nerd Font in your terminal to display prompt glyphs correctly.
 # Use the exact reviewed Powerlevel10k prompt configuration from .cfg.
 # The theme is an optional, commit-pinned mise bootstrap repository; startup
 # must remain healthy when it hasn't been installed or is unavailable.
