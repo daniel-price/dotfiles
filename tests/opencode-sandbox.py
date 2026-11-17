@@ -133,7 +133,7 @@ case "$1" in -u) echo 1000 ;; -g) echo 1000 ;; *) /usr/bin/id "$@" ;; esac
     for required in ("--userns=keep-id", "--cap-drop=ALL", "--security-opt=no-new-privileges",
                      "--read-only", "--rm", "--pull=never", "--pids-limit=256",
                      "--memory=4g", "--workdir /workspace", "--env HOME=/tmp",
-                     "--env OPENAI_API_KEY", f"--volume {project}:/workspace:rw"):
+                     "--env OPENAI_API_KEY", f"--volume {project.resolve()}:/workspace:rw"):
         assert required in launch, (required, launch)
     for forbidden in (str(home), str(sibling), ".ssh", "docker.sock", "synth-token-not-real"):
         assert forbidden not in launch, (forbidden, launch)
