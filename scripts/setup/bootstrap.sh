@@ -222,8 +222,12 @@ apply_reviewed_dotfiles() {
     return 1
 }
 
-# Let mise decide whether any declared dotfiles need attention.
-if "$mise" -C / dot status --missing >/dev/null 2>&1; then
+# Refuse a foreign Zellij symlink before consulting mise status: a status
+# command may consider a symlink present even when its source is unrelated.
+zellij_target="$HOME/.config/zellij/config.kdl"
+if [[ -L "$zellij_target" && ! "$zellij_target" -ef "$ROOT/.config/zellij/config.kdl" ]]; then
+    log "Zellij config is a foreign symlink; leaving it untouched: $zellij_target"
+elif "$mise" -C / dot status --missing >/dev/null 2>&1; then
     log 'Reviewed mise-managed dotfiles are already applied.'
 elif "$mise" -C / dot apply --dry-run; then
     if confirm 'Apply the reviewed dotfiles (backing up an existing regular Zellij config)?'; then
