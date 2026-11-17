@@ -59,6 +59,16 @@ if mise=$(mise_command); then
         fail 'machine manifest should expose at least one declared tool'
     [[ "$tool_listing" != *shellcheck* && "$tool_listing" != *lefthook* ]] ||
         fail 'developer tools leaked into machine setup'
+    # Exercise the real mise CLI (rather than just synthetic fixtures) to
+    # ensure the shared enumerator handles requested-but-missing versions.
+    # shellcheck source=scripts/lib/machine-tools.sh
+    source "$ROOT/scripts/lib/machine-tools.sh"
+    machine_specs=$(MISE_GLOBAL_CONFIG_FILE="$machine_config" \
+        machine_tool_specs "$mise" "$machine_config") ||
+        fail 'machine tool enumerator could not read the reviewed mise config'
+    [[ -n "$machine_specs" ]] || fail 'machine tool inventory is unexpectedly empty'
+    [[ "$machine_specs" != *lefthook* && "$machine_specs" != *shellcheck* ]] ||
+        fail 'developer tools leaked into the machine tool inventory'
     printf 'PASS: Native mise machine manifest loads without developer tools\n'
 fi
 
