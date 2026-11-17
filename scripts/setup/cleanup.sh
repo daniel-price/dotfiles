@@ -77,7 +77,8 @@ else
     log 'No reviewed ~/.zshrc symlink to remove.'
 fi
 
-while IFS= read -r spec; do
+# Keep the caller's terminal on fd 0: confirm() must see an interactive TTY.
+while IFS= read -r spec <&3; do
     [[ -n "$spec" ]] || continue
     log "Preview removal of shared mise tool version: $spec"
     if "$mise" -C / uninstall --dry-run-code "$spec"; then
@@ -91,7 +92,7 @@ while IFS= read -r spec; do
         "$mise" -C / uninstall --yes "$spec" || die "mise could not uninstall $spec."
         log "Uninstalled $spec."
     fi
-done <<<"$tool_specs"
+done 3<<<"$tool_specs"
 
 if [[ "$mode" == preview ]]; then
     log 'Preview only; no changes were made. Rerun with --apply to review removals.'

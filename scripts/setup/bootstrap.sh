@@ -177,10 +177,11 @@ if command -v zsh >/dev/null 2>&1 && zsh --version >/dev/null 2>&1; then
 fi
 
 # Enumerate the reviewed machine manifest, including missing installations.
+# Read inventory from fd 3 so stdin stays the real terminal for confirmations.
 # Capture errors before any installation so a malformed declaration fails closed.
 tool_specs=$(machine_tool_specs "$mise" "$MISE_GLOBAL_CONFIG_FILE") ||
     die 'Could not read the reviewed machine tool declarations.'
-while IFS= read -r spec; do
+while IFS= read -r spec <&3; do
     [[ -n "$spec" ]] || continue
     if "$mise" -C / install --dry-run-code "$spec"; then
         log "$spec is already installed."
@@ -196,6 +197,6 @@ while IFS= read -r spec; do
     else
         log "Skipped $spec installation."
     fi
-done <<<"$tool_specs"
+done 3<<<"$tool_specs"
 
 log "Bootstrap complete. Zsh configuration: $zsh_config_status."
