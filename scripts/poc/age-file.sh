@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # POC 1B: prove mise encrypted file history without touching the real machine.
 set -euo pipefail
+ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 
 usage() {
     printf '%s\n' 'Usage: bash scripts/poc/age-file.sh [--apply|--help]' \
         'Default: preview only; --apply runs an isolated synthetic-file experiment.' \
-        'Requires git, mise with encrypted dotfile history, and age-keygen.'
+        'Requires git and mise; offers pinned age if age-keygen is missing.'
 }
 case "${1:-}" in
 -h | --help) usage; exit 0 ;;
@@ -19,7 +20,7 @@ printf '%s\n' 'POC 1B: encrypt two versions of a FAKE file in a disposable mise 
     'No public Git repository, actual HOME, bootstrap manifest, or remote is changed.'
 [[ "$mode" == apply ]] || exit 0
 [[ -t 0 && -t 1 ]] || { printf '%s\n' 'Interactive terminal required.' >&2; exit 1; }
-for tool in git mise age-keygen; do
+for tool in git mise; do
     command -v "$tool" >/dev/null 2>&1 || {
         printf 'Missing prerequisite: %s\n' "$tool" >&2
         exit 1
@@ -32,9 +33,40 @@ IFS= read -r answer
     exit 0
 }
 
+# Reuse POC 1A's reviewed, separately approved age installation.
+# This runs BEFORE isolating mise's directories, so the pinned tool can be found.
+age_keygen=(age-keygen)
+if ! command -v age-keygen >/dev/null 2>&1; then
+    manifest="$ROOT/scripts/poc/age-tools.toml"
+    [[ -f "$manifest" && ! -L "$manifest" ]] || {
+        printf '%s\\n' 'Missing reviewed age POC tool manifest.' >&2
+        exit 1
+    }
+    mise_bin=$(command -v mise)
+    if MISE_GLOBAL_CONFIG_FILE="$manifest" "$mise_bin" -C / install --dry-run-code age@1.3.2; then
+        printf '%s\\n' 'Pinned age@1.3.2 is already installed through mise.'
+    else
+        result=$?
+        [[ "$result" -eq 1 ]] || {
+            printf '%s\\n' 'Unable to inspect mise age installation status.' >&2
+            exit 1
+        }
+        printf 'Install pinned age@1.3.2 through mise for this POC? [y/N] '
+        IFS= read -r install_answer
+        if [[ "$install_answer" != y && "$install_answer" != Y && "$install_answer" != yes ]]; then
+            printf '%s\\n' 'Declined; age was not installed and no demo files were created.'
+            exit 0
+        fi
+        MISE_GLOBAL_CONFIG_FILE="$manifest" "$mise_bin" -C / install age@1.3.2
+    fi
+    age_keygen=(env "MISE_GLOBAL_CONFIG_FILE=$manifest" "$mise_bin" -C / exec -- age-keygen)
+fi
+
 # Important: isolate every mise data/config/state directory, not just HOME.
 umask 077
 work=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-age-file-poc.XXXXXXXX")
+# Generate the identity while the POC tool manifest is still accessible.
+"${age_keygen[@]}" -o "$work/identity.txt" >"$work/keygen.log" 2>&1
 export HOME="$work/home"
 export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_DATA_HOME="$HOME/.local/share"
@@ -48,7 +80,6 @@ export MISE_CACHE_DIR="$XDG_CACHE_HOME/mise"
 export MISE_AGE_KEY_FILE="$work/identity.txt"
 export MISE_HISTORY_SYNC=manual
 mkdir -p "$MISE_CONFIG_DIR" "$HOME/.config/poc"
-age-keygen -o "$MISE_AGE_KEY_FILE" >"$work/keygen.log" 2>&1
 recipient=$(sed -n 's/^# public key: //p' "$MISE_AGE_KEY_FILE")
 [[ "$recipient" == age1* ]] || { printf '%s\n' 'Cannot read age recipient.' >&2; exit 1; }
 
