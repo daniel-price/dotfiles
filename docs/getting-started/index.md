@@ -23,7 +23,13 @@ Bootstrap then offers the reviewed mise, Zsh and pinned machine tools. It also o
 
 ## Re-run or update an existing installation
 
+From Zsh with the reviewed dotfiles configuration, run `,bootstrap` to offer
+an update to the latest `main`, then bootstrap from the updated checkout.
+If the fetch, branch switch or fast-forward is declined or fails, it stops
+without running bootstrap. The command preserves your existing Git changes.
+
 ```sh
+,bootstrap                 # Update (with approval), then bootstrap
 bash ~/.dotfiles/scripts/setup/update.sh          # Local status (no network)
 bash ~/.dotfiles/scripts/setup/update.sh --apply  # Approve fetch/update
 bash ~/.dotfiles/scripts/setup/bootstrap.sh       # Check missing components
