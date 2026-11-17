@@ -45,3 +45,5 @@ id_ed25519*
 # Generated documentation site and Zensical local cache.
 /site/
 /.cache/
+# Generated at documentation build time.
+/docs/guides/zsh.md
