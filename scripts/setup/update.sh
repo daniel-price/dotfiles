@@ -4,7 +4,22 @@
 # alter an unclean checkout. Safe to run independently of machine bootstrap.
 set -euo pipefail
 
-ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
+# In apply mode Git may replace this file mid-execution. Run the complete
+# updater from an in-memory Bash program first, rather than reading a script
+# file while its own Git checkout is being fast-forwarded. Status mode does
+# not need a snapshot and remains entirely read-only.
+if [[ "${DOTFILES_UPDATE_SNAPSHOT:-}" == 1 ]]; then
+    ROOT=${DOTFILES_UPDATE_ROOT:?Internal snapshot missing checkout root}
+else
+    ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
+    if [[ "${1:-}" == --apply ]]; then
+        snapshot=$(<"$ROOT/scripts/setup/update.sh") ||
+            { printf '[error] Could not snapshot the updater.\n' >&2; exit 1; }
+        DOTFILES_UPDATE_SNAPSHOT=1 DOTFILES_UPDATE_ROOT="$ROOT" \
+            bash -c "$snapshot" dotfiles-update "$@"
+        exit $?
+    fi
+fi
 # shellcheck source=scripts/lib/common.sh
 source "$ROOT/scripts/lib/common.sh"
 
