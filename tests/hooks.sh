@@ -16,9 +16,9 @@ cd "$TEST_ROOT/repo"
 export MISE_TRUSTED_CONFIG_PATHS="$TEST_ROOT/repo"
 cp "$ROOT/mise.toml" "$ROOT/lefthook.yml" .
 mkdir -p scripts/dev scripts/lib
-cp "$ROOT/scripts/dev/install-hooks.sh" scripts/dev/
+cp "$ROOT/scripts/dev/install-hooks.sh" "$ROOT/scripts/dev/run-mise.sh" scripts/dev/
 cp "$ROOT/scripts/dev/format.sh" "$ROOT/scripts/dev/lint.sh" scripts/dev/
-cp "$ROOT/scripts/lib/common.sh" scripts/lib/
+cp "$ROOT/scripts/lib/common.sh" "$ROOT/scripts/lib/mise.sh" scripts/lib/
 cp "$ROOT/scripts/lib/shell-files.sh" scripts/lib/
 git init -q
 git config user.name 'Hook test'

@@ -37,4 +37,4 @@ if [[ ${#files[@]} -eq 0 ]]; then
     printf 'No tracked shell scripts to format.\n'
     exit 0
 fi
-exec mise exec -- shfmt "$mode" -i 4 -- "${files[@]}"
+exec "$ROOT/scripts/dev/run-mise.sh" exec -- shfmt "$mode" -i 4 -- "${files[@]}"

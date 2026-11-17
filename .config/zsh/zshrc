@@ -1,3 +1,9 @@
+# The verified mise installer uses ~/.local/bin rather than a system directory.
+# Add it once so the pinned mise binary is available in future zsh sessions.
+if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+  export PATH="$HOME/.local/bin:$PATH"
+fi
+
 if (( $+commands[mise] )); then
   eval "$(mise activate zsh)"
 elif [[ -x "$HOME/.local/bin/mise" ]]; then

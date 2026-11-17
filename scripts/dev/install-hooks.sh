@@ -29,11 +29,10 @@ if [[ -e "$hook" || -L "$hook" ]]; then
         die "An existing pre-commit hook is not managed by Lefthook: $hook"
 fi
 
-command -v mise >/dev/null 2>&1 || die 'Install mise, then follow docs/guides/development.md.'
 for tool in lefthook shfmt shellcheck; do
-    mise which "$tool" >/dev/null || die 'Install the pinned tools first; see docs/guides/development.md.'
+    "$ROOT/scripts/dev/run-mise.sh" which "$tool" >/dev/null || die 'Install the pinned tools first; see docs/guides/development.md.'
 done
-if [[ -x "$hook" ]] && mise exec -- lefthook check-install >/dev/null 2>&1; then
+if [[ -x "$hook" ]] && "$ROOT/scripts/dev/run-mise.sh" exec -- lefthook check-install >/dev/null 2>&1; then
     log 'Lefthook is already installed for this checkout; no changes made.'
     exit 0
 fi
@@ -41,5 +40,5 @@ if ! confirm "Install or update this checkout's pre-commit hook at $hook?"; then
     log 'Hook installation declined; no changes made.'
     exit 0
 fi
-mise exec -- lefthook install pre-commit
+"$ROOT/scripts/dev/run-mise.sh" exec -- lefthook install pre-commit
 log 'Enabled automatic shell formatting and ShellCheck for this checkout.'
