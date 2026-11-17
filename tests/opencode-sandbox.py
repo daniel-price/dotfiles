@@ -27,6 +27,7 @@ with tempfile.TemporaryDirectory(prefix="dotfiles-agent-sandbox-") as scratch:
     podman.write_text('''#!/usr/bin/env bash
 printf '%s\\n' "$*" >> "$MOCK_PODMAN_LOG"
 case "$1" in
+  --version) echo "podman (fake)" ;;
   info) printf '%s\\n' "${MOCK_ROOTLESS:-true}" ;;
   image)
     [[ "$2" == exists ]] || exit 30
@@ -144,5 +145,41 @@ case "$1" in -u) echo 1000 ;; -g) echo 1000 ;; *) /usr/bin/id "$@" ;; esac
     assert repeated.returncode == 0 and "AGENT_MOCK_LAUNCHED" in repeated.stdout
     assert not any(line.startswith(("pull ", "build ")) for line in operations())
     assert sum(line.startswith("run ") for line in operations()) == 1
+
+    # Missing runtime is offered through the reusable mise-backed prerequisite,
+    # not an inline apt command or a silent Podman installation.
+    podman_template = bin_dir / "podman-template"
+    podman.rename(podman_template)
+    fake_mise = bin_dir / "mise"
+    fake_mise.write_text('''#!/usr/bin/env bash
+if [[ "$1" == --version ]]; then echo '2026.11.9 fake'; exit 0; fi
+printf '%s|%s\n' "$MISE_GLOBAL_CONFIG_FILE" "$*" >> "$MOCK_MISE_LOG"
+case "$*" in
+  "-C / bootstrap --only packages --dry-run") exit 0 ;;
+  "-C / bootstrap --only packages")
+    cp "$MOCK_PODMAN_TEMPLATE" "$MOCK_BIN/podman"
+    chmod +x "$MOCK_BIN/podman"
+    ;;
+  *) exit 83 ;;
+esac
+''')
+    fake_mise.chmod(0o755)
+    env.update({"MOCK_PODMAN_TEMPLATE": str(podman_template),
+                "MOCK_BIN": str(bin_dir), "MOCK_MISE_LOG": str(log)})
+    log.write_text("")
+    refused_runtime = run(answers="n\n")
+    assert refused_runtime.returncode != 0 and "was not installed" in refused_runtime.stdout
+    assert not podman.exists()
+    assert not any(line.startswith("run ") for line in operations())
+
+    log.write_text("")
+    approved_runtime = run(answers="y\ny\n")
+    assert approved_runtime.returncode == 0, approved_runtime.stdout
+    assert "AGENT_MOCK_LAUNCHED" in approved_runtime.stdout
+    assert podman.exists()
+    scoped = str(ROOT / "containers/podman/mise.toml")
+    assert f"{scoped}|-C / bootstrap --only packages --dry-run" in operations()
+    assert f"{scoped}|-C / bootstrap --only packages" in operations()
+    assert any(line.startswith("run ") for line in operations())
 
     print("PASS: OpenCode rootless scope, dry-run, consent, explicit credentials and repeatability")

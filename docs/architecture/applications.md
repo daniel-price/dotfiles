@@ -19,7 +19,8 @@ The choice between Docker/Compose and alternatives is **not yet accepted**.
 
 A reviewed **rootless OpenCode CLI container launcher** is implemented as an
 explicit personal-workflow option, not a daemon or background service. It
-requires a manually installed Podman runtime and gives the agent write access
+uses the [shared optional Podman prerequisite](../guides/podman.md) through
+an explicit per-workload confirmation and gives the agent write access
 to a single selected Git checkout; see the [security guide](../guides/opencode.md).
 No long-running service containers are installed by this repo. Before adding
 one, create a focused decision record and manual test plan.

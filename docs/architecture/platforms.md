@@ -69,11 +69,14 @@ there is no installation-ownership ledger.
 
 OpenCode is deliberately **not** in the host mise machine-tool manifest. The
 reviewed `bin/opencode-sandbox` launcher uses rootless Podman and only the
-selected personal Git checkout as a writable mount. Podman must be installed
-explicitly through apt; its packages and images are **not** installed or
-removed by bootstrap/cleanup. A default read-only preview and separate
+selected personal Git checkout as a writable mount. Podman is declared in a separate optional mise manifest and offered
+via apt only when a workload needs it; the main bootstrap and cleanup do
+not install or remove Podman or its images. A default read-only preview and separate
 prompts for pull/build/run prevent unattended provisioning. This container
-launcher is Linux-only; no macOS runtime is claimed. See the
+launcher is Linux-only; no macOS runtime is claimed. A separate
+[optional shared Podman setup](../guides/podman.md) offers the declared
+`apt:podman` package on demand after preview and explicit approval;
+future workloads can reuse it. See the
 [OpenCode sandbox guide](../guides/opencode.md).
 
 ## Checkout development tools
