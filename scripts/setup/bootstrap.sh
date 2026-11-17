@@ -7,6 +7,8 @@ source "$ROOT/scripts/lib/common.sh"
 source "$ROOT/scripts/lib/os.sh"
 # shellcheck source=scripts/lib/mise.sh
 source "$ROOT/scripts/lib/mise.sh"
+# shellcheck source=scripts/lib/machine-tools.sh
+source "$ROOT/scripts/lib/machine-tools.sh"
 trap 'report_error "$?" "$LINENO"' ERR
 
 MISE_VERSION='v2026.11.9'
@@ -136,6 +138,10 @@ mise_supports_dot "$mise" || die 'mise 2026.11.9 or newer is required for native
 export MISE_GLOBAL_CONFIG_FILE="$ROOT/scripts/setup/mise.toml"
 [[ -f "$MISE_GLOBAL_CONFIG_FILE" ]] || die 'Missing declarative machine config.'
 
+# Fail closed on unpinned or undeclared entries before package or dotfile setup.
+tool_specs=$(machine_tool_specs "$mise" "$MISE_GLOBAL_CONFIG_FILE") ||
+    die 'Could not read the reviewed machine tool declarations.'
+
 if command -v zsh >/dev/null 2>&1 && zsh --version >/dev/null 2>&1; then
     log 'zsh is available; no package installation needed.'
 else
@@ -174,22 +180,23 @@ if command -v zsh >/dev/null 2>&1 && zsh --version >/dev/null 2>&1; then
     fi
 fi
 
-for tool in zoxide neovim zellij; do
-    # Tool pins come only from scripts/setup/mise.toml. Zoxide enables `z` in Zsh.
-    if "$mise" -C / install --dry-run-code "$tool"; then
-        log "$tool is already installed."
+# Iterate via fd 3 to leave terminal stdin available for per-tool approval.
+while IFS= read -r spec <&3; do
+    [[ -n "$spec" ]] || continue
+    if "$mise" -C / install --dry-run-code "$spec"; then
+        log "$spec is already installed."
         continue
     else
         status=$?
     fi
-    [[ "$status" -eq 1 ]] || die "Could not inspect the installed $tool version."
-    if confirm "Install missing $tool from the reviewed mise machine config?"; then
-        "$mise" -C / install "$tool" || die "mise could not install $tool."
-        "$mise" -C / install --dry-run-code "$tool" ||
-            die "mise did not report $tool installed after the approved command."
+    [[ "$status" -eq 1 ]] || die "Could not inspect the installed $spec version."
+    if confirm "Install missing $spec from the reviewed machine manifest?"; then
+        "$mise" -C / install "$spec" || die "mise could not install $spec."
+        "$mise" -C / install --dry-run-code "$spec" ||
+            die "mise did not report $spec installed after the approved command."
     else
-        log "Skipped $tool installation."
+        log "Skipped $spec installation."
     fi
-done
+done 3<<<"$tool_specs"
 
 log "Bootstrap complete. Zsh configuration: $zsh_config_status."

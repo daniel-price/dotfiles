@@ -7,15 +7,19 @@ root `mise.toml` describes checkout development only.
 
 ## Installed tool inventory
 
+The authoritative current list of machine tool names and versions is the
+[`[tools]` section of the reviewed machine manifest](../../scripts/setup/mise.toml).
+Bootstrap and cleanup enumerate that section using mise; this document does not
+maintain a second list or require edits when adding or removing a tool.
+
+
 | Component | Pop!_OS / Ubuntu | macOS |
 | --- | --- | --- |
 | Git, only if missing at stage zero | `apt-get install git` after approval | Apple Command Line Tools dialog |
 | curl, stage-zero prerequisite | Must already be available | Built into standard macOS |
 | mise `2026.11.9` | Verified pinned GitHub installer, opt-in | Same installer, opt-in |
 | zsh, when missing | `apt:zsh` via `mise bootstrap --only packages` | `brew:zsh` via mise if macOS's built-in zsh is missing and Homebrew exists |
-| Neovim `0.12.6` | `mise install neovim`, opt-in | Same |
-| Zellij `0.46.0` | `mise install zellij`, opt-in | Same |
-| zoxide `0.10.0` | `mise install zoxide`, opt-in | Same |
+| Machine CLI tools from [`[tools]`](../../scripts/setup/mise.toml) | Each exact pinned version offered individually through mise | Same |
 | Reviewed `~/.zshrc` | Native `mise dot apply`, offered early with separate approval | Same |
 
 The initial bootstrap uses a small shell wrapper to install mise with a
@@ -24,11 +28,24 @@ component. Once mise is present, the script selects the declarative machine
 configuration using `MISE_GLOBAL_CONFIG_FILE` and invokes mise with
 `-C /`: this **excludes checkout development tools**. It does not silently activate Zsh, trust private repositories or update
 software. After mise and Zsh are available, bootstrap calls the separately
-runnable reviewed Zsh deployment script, **before** zoxide, Neovim and Zellij setup.
+runnable reviewed Zsh deployment script, **before** iterating over the declared machine tools.
 Deployment only proceeds after a preview and explicit confirmation. Bootstrap
 skips conflicting existing `~/.zshrc` files/symlinks without preventing tool
 installation. Native mise can repoint a foreign symlink, so its wrapper retains
 the conflict-refusal checks.
+
+## Manifest-driven tool management
+
+`scripts/lib/machine-tools.sh` uses `mise ls --current` to enumerate the
+machine-only configuration, then `mise config get --file` to read each literal
+pinned version from the reviewed manifest. Bash does not parse TOML or list
+specific tools. Only exact numeric version pins are accepted; floating ranges,
+aliases, undeclared tools and external overrides cannot become install or
+cleanup targets. Bootstrap previews installed status and asks before each
+missing installation; cleanup previews exactly pinned versions and asks
+before each removal. Neither process infers who originally installed a version.
+Removing a tool from the manifest means it is no longer eligible for
+manifest-driven cleanup; previously installed versions are not tracked.
 
 ## Shell integration
 
@@ -43,7 +60,7 @@ separate from the root `mise.toml` for checkout development.
 ## Selective cleanup
 
 `bash scripts/setup/cleanup.sh` previews removal of the reviewed zsh symlink
-and the exact declared zoxide/Neovim/Zellij mise versions; `--apply` prompts for each.
+and the exact versions declared in the machine manifest; `--apply` prompts for each.
 It never removes system packages, mise, unrelated tool versions, private
 overlays, or the checkout. Other projects may rely on the same mise version;
 there is no installation-ownership ledger.

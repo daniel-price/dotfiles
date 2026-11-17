@@ -3,6 +3,7 @@
 import os
 import platform
 import pty
+import re
 import subprocess
 import tempfile
 from pathlib import Path
@@ -47,18 +48,36 @@ echo 'zsh fake'
     fake_mise = bin_dir / "mise"
     fake_mise.write_text("""#!/usr/bin/env bash
 if [[ "$1" == --version ]]; then echo '2026.11.9 fake'; exit 0; fi
-printf '%s|%s\n' "$MISE_GLOBAL_CONFIG_FILE" "$*" >> "$MOCK_LOG"
+printf '%s|%s\\n' "$MISE_GLOBAL_CONFIG_FILE" "$*" >> "$MOCK_LOG"
 [[ "$1" == -C && "$2" == / ]] || exit 20
 shift 2
 case "$*" in
   "bootstrap --only packages --dry-run") exit 0 ;;
   "bootstrap --only packages") touch "$MOCK_STATE/zsh"; exit 0 ;;
-  "install --dry-run-code neovim") [[ -e "$MOCK_STATE/neovim" ]] && exit 0 || exit 1 ;;
-  "install --dry-run-code zellij") [[ -e "$MOCK_STATE/zellij" ]] && exit 0 || exit 1 ;;
-  "install neovim") touch "$MOCK_STATE/neovim"; exit 0 ;;
-  "install zellij") touch "$MOCK_STATE/zellij"; exit 0 ;;
-  "install --dry-run-code zoxide") [[ -e "$MOCK_STATE/zoxide" ]] && exit 0 || exit 1 ;;
-  "install zoxide") touch "$MOCK_STATE/zoxide"; exit 0 ;;
+  "ls --current --no-header --no-truncate")
+    printf '%s\\n' "$MOCK_TOOL_ROWS"
+    ;;
+  "config get --file "*)
+    key="${!#}"
+    tool="${key#tools.}"
+    tool="${tool#\\\"}"
+    tool="${tool%\\\"}"
+    while IFS='=' read -r name version; do
+      if [[ "$name" == "$tool" ]]; then
+        printf '%s\\n' "$version"
+        exit 0
+      fi
+    done <<< "$MOCK_TOOL_PINS"
+    exit 9
+    ;;
+  "install --dry-run-code "*)
+    spec="$3"
+    [[ -e "$MOCK_STATE/$spec" ]] && exit 0 || exit 1
+    ;;
+  "install "*)
+    spec="$2"
+    touch "$MOCK_STATE/$spec"
+    ;;
   "dot diff"|"dot apply --dry-run") exit 0 ;;
   "dot apply")
     ln -s "$MOCK_DOT_SOURCE" "$HOME/.zshrc"
@@ -68,9 +87,28 @@ case "$*" in
 esac
 """)
     fake_mise.chmod(0o755)
+    # Fake mise enumerates checked-in [tools] declarations; tests never need
+    # an extra named-tool fixture when a new tool is added.
+    pins = {}
+    within_tools = False
+    for item in (ROOT / "scripts/setup/mise.toml").read_text().splitlines():
+        if item.strip() == "[tools]":
+            within_tools = True
+            continue
+        if item.startswith("["):
+            within_tools = False
+        if within_tools:
+            match = re.fullmatch(r'([A-Za-z0-9_-]+)\s*=\s*"([^"]+)"', item.strip())
+            if match:
+                pins[match.group(1)] = match.group(2)
+    assert pins, "machine manifest missing tool declarations"
+    tool_rows = "\n".join(f"{name} {version} (missing)" for name, version in pins.items())
+    tool_pins = "\n".join(f"{name}={version}" for name, version in pins.items())
+
     env = dict(os.environ, HOME=str(home), PATH=str(bin_dir) + ":/usr/bin:/bin",
                MOCK_STATE=str(state), MOCK_LOG=str(log),
-               MOCK_DOT_SOURCE=str(ROOT / ".config" / "zsh" / "zshrc"))
+               MOCK_DOT_SOURCE=str(ROOT / ".config" / "zsh" / "zshrc"),
+               MOCK_TOOL_ROWS=tool_rows, MOCK_TOOL_PINS=tool_pins)
 
     def run(answers=None):
         if answers is None:
@@ -102,39 +140,39 @@ esac
     assert "Zsh configuration: skipped (zsh unavailable)" in declined.stdout
     assert not any("dot " in line for line in log.read_text().splitlines())
 
-    approved = run("y\ny\ny\ny\nn\n")
+    approved = run("y\ny\ny\nn\ny\n")
     assert approved.returncode == 0, approved.stdout
-    assert (state / "zsh").exists() and (state / "neovim").exists() and (state / "zoxide").exists()
-    assert not (state / "zellij").exists()
+    assert (state / "zsh").exists() and (state / f"neovim@{pins['neovim']}").exists() and (state / f"zoxide@{pins['zoxide']}").exists(), (approved.stdout, log.read_text(), list(state.iterdir()), pins)
+    assert not (state / f"zellij@{pins['zellij']}").exists()
     assert target.is_symlink() and target.resolve() == (ROOT / ".config/zsh/zshrc").resolve()
     assert "Zsh configuration: applied" in approved.stdout
     calls = log.read_text().splitlines()
     assert any("dot apply --dry-run" in line for line in calls)
     assert sum(line.endswith("dot apply") for line in calls) == 1
     assert next(i for i, line in enumerate(calls) if line.endswith("dot apply")) < next(
-        i for i, line in enumerate(calls) if line.endswith("install neovim")
+        i for i, line in enumerate(calls) if line.endswith(f"install neovim@{pins['neovim']}")
     ), calls
-    assert any(line.endswith("install zoxide") for line in calls), calls
-    assert any(line.endswith("install neovim") for line in calls), calls
+    assert any(line.endswith(f"install zoxide@{pins['zoxide']}") for line in calls), calls
+    assert any(line.endswith(f"install neovim@{pins['neovim']}") for line in calls), calls
     assert all(line.startswith(str(ROOT / "scripts/setup/mise.toml") + "|-C /")
                for line in calls), calls
     assert not any("scripts/dev" in line for line in calls), calls
 
     dot_before_repeat = sum("dot " in line for line in log.read_text().splitlines())
-    zoxide_before_repeat = sum(line.endswith("install zoxide") for line in calls)
+    zoxide_before_repeat = sum(line.endswith(f"install zoxide@{pins['zoxide']}") for line in calls)
     repeated = run()
     assert repeated.returncode == 0, repeated.stdout
     assert "Zsh configuration: already applied" in repeated.stdout
     assert sum("dot " in line for line in log.read_text().splitlines()) == dot_before_repeat
-    assert sum(line.endswith("install zoxide") for line in log.read_text().splitlines()) == zoxide_before_repeat
-    assert not (state / "zellij").exists(), repeated.stdout
-    assert "Skipped zellij" in repeated.stdout
+    assert sum(line.endswith(f"install zoxide@{pins['zoxide']}") for line in log.read_text().splitlines()) == zoxide_before_repeat
+    assert not (state / f"zellij@{pins['zellij']}").exists(), repeated.stdout
+    assert f"Skipped zellij@{pins['zellij']}" in repeated.stdout
 
     final = run("y\n")
     assert final.returncode == 0, final.stdout
-    assert (state / "zellij").exists()
+    assert (state / f"zellij@{pins['zellij']}").exists()
     assert "Bootstrap complete" in final.stdout
-    assert (state / "zoxide").exists()
+    assert (state / f"zoxide@{pins['zoxide']}").exists()
 
     # An unrelated ~/.zshrc must not abort the remaining tool setup.
     target.unlink()
