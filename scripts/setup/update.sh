@@ -14,7 +14,10 @@ else
     ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
     if [[ "${1:-}" == --apply ]]; then
         snapshot=$(<"$ROOT/scripts/setup/update.sh") ||
-            { printf '[error] Could not snapshot the updater.\n' >&2; exit 1; }
+            {
+                printf '[error] Could not snapshot the updater.\n' >&2
+                exit 1
+            }
         DOTFILES_UPDATE_SNAPSHOT=1 DOTFILES_UPDATE_ROOT="$ROOT" \
             bash -c "$snapshot" dotfiles-update "$@"
         exit $?
