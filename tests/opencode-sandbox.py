@@ -27,7 +27,7 @@ with tempfile.TemporaryDirectory(prefix="dotfiles-agent-sandbox-") as scratch:
     podman.write_text('''#!/usr/bin/env bash
 printf '%s\\n' "$*" >> "$MOCK_PODMAN_LOG"
 case "$1" in
-  info) printf '%s\\n' "$${MOCK_ROOTLESS:-true}" ;;
+  info) printf '%s\\n' "${MOCK_ROOTLESS:-true}" ;;
   image)
     [[ "$2" == exists ]] || exit 30
     case "$3" in
@@ -45,7 +45,7 @@ esac
     podman.chmod(0o755)
     uname = bin_dir / "uname"
     uname.write_text('''#!/usr/bin/env bash
-if [[ "$1" == -s ]]; then echo "$${MOCK_KERNEL:-Linux}"; else /usr/bin/uname "$@"; fi
+if [[ "$1" == -s ]]; then echo "${MOCK_KERNEL:-Linux}"; else /usr/bin/uname "$@"; fi
 ''')
     uname.chmod(0o755)
     fake_id = bin_dir / "id"

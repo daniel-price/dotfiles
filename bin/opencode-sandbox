@@ -3,7 +3,7 @@
 # Linux rootless Podman only. No host HOME, SSH keys or container socket mounts.
 set -euo pipefail
 
-ROOT=$(CDPATH='' cd -- "$(dirname "$${BASH_SOURCE[0]}")/.." && pwd -P)
+ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
 # shellcheck source=scripts/lib/common.sh
 source "$ROOT/scripts/lib/common.sh"
 
@@ -41,7 +41,7 @@ while [[ $# -gt 0 ]]; do
         ANTHROPIC_API_KEY|OPENAI_API_KEY|OPENROUTER_API_KEY) ;;
         *) die 'Unsupported credential name; see --help.' ;;
         esac
-        [[ -n "$${!2:-}" ]] || die "Credential variable $2 is not set or is empty."
+        [[ -n "${!2:-}" ]] || die "Credential variable $2 is not set or is empty."
         credential_names+=("$2")
         shift 2
         ;;
@@ -59,7 +59,7 @@ done
 project=$(CDPATH='' cd -- "$project" && pwd -P) || die 'Could not resolve project path.'
 [[ "$project" != / && "$project" != *:* && "$project" != *$'\n'* ]] ||
     die 'Unsafe workspace path (root, colon, or newline); refusing mount.'
-[[ -n "$${HOME:-}" && -d "$HOME" ]] || die 'HOME must be an existing directory.'
+[[ -n "${HOME:-}" && -d "$HOME" ]] || die 'HOME must be an existing directory.'
 home=$(CDPATH='' cd -- "$HOME" && pwd -P) || die 'Could not resolve HOME.'
 [[ "$project" != "$home" ]] || die 'Refusing to mount the host home directory.'
 # Require a normal Git root, not its parent or a linked worktree pointing at
@@ -76,8 +76,8 @@ log "Workspace: $project (read/write inside the container)."
 log "Base image: $base_image; local image: $image."
 log "Container home: ephemeral /tmp; no host home, SSH, Git credentials or sockets mounted."
 log 'Default rootless container network allows outbound traffic; project files can be sent to providers.'
-if [[ $${#credential_names[@]} -gt 0 ]]; then
-    log "Explicitly forwarded credential variable names: $${credential_names[*]} (values not printed)."
+if [[ ${#credential_names[@]} -gt 0 ]]; then
+    log "Explicitly forwarded credential variable names: ${credential_names[*]} (values not printed)."
 fi
 if [[ "$dry_run" == true ]]; then
     log 'Read-only preview; no image pull, build or container launch.'
@@ -123,7 +123,7 @@ run_args=(
     --env XDG_CACHE_HOME=/tmp/.cache --env XDG_DATA_HOME=/tmp/.local/share
     --volume "$project:/workspace:rw" --workdir /workspace
 )
-for name in "$${credential_names[@]}"; do
+for name in "${credential_names[@]}"; do
     run_args+=(--env "$name")
 done
-podman "$${run_args[@]}" "$image"
+podman "${run_args[@]}" "$image"
