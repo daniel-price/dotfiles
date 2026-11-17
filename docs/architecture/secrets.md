@@ -1,42 +1,17 @@
 # Secrets and encryption
 
-The dotfiles repository is **public**. Encrypting secrets at rest in Git is
-the intended solution, but the feature has **not been implemented or tested**
-in this repository yet.
+**Not implemented. Do not use real credentials for experiments yet.**
 
-## What lives where?
+The public repository may eventually contain reviewed **age-encrypted values**. Mise also offers encrypted **whole-file tracking**, but those files use a *separate history store*, not this public Git checkout. The two mechanisms need distinct POCs.
 
-| Material | Intended location |
+| Data | Location |
 | --- | --- |
-| Public config and documentation | This Git repository |
-| Non-public configuration, not necessarily a secret | Optional approved private configuration repo |
-| Reviewed age-encrypted values | Public source only after validation |
-| Mise's encrypted tracked-file history | A separately configured Git origin, preferably private |
-| age private/recovery identities | Secure backup outside every Git repository |
-| Per-machine SSH authentication private keys | Local machine; not shared by default |
-| Unencrypted local overrides | Ignored local files, never published |
+| Public configuration | This repository |
+| Approved non-public settings | Explicitly selected private source |
+| Encrypted values | Only after testing ciphertext-only history |
+| Encrypted tracked files | Separate, explicitly configured history origin |
+| age identities and per-machine SSH private keys | Outside Git, with secure recovery backup |
 
-## Two different mise features
+Both POCs must prove first-encryption safety, missing-key failure, restore on a second machine and no plaintext in commits or logs. **A private Git repository is not encryption.** Work-owned content also requires employer-approved storage.
 
-1. **Encrypted environment values** (mise's age integration): config can hold
-   encrypted individual values. This has been documented as experimental; test
-   the selected mise version and plaintext-handling behaviour first.
-2. **Encrypted tracked files** (`mise dot track --encrypt`): encrypted versions
-   are placed in mise's **separate tracked-file Git history**, not magically
-   inside the normal public dotfiles checkout. Do not assume that making this
-   source repository public makes the history store safe to push publicly.
-
-The **optional private configuration source is a third, different repository**,
-not mise's encrypted tracked-file history. Private repository access alone
-is not secret encryption, nor authorisation to store employer-owned data in
-a personal account. See [configuration layers](private-configuration.md).
-
-Neither mechanism is currently configured here. Never test with real keys.
-Validate first encryption, history inspection, a second-machine restore, a
-missing-key failure and the recovery-key backup before enabling a sync process.
-If plaintext has already been committed publicly, treat the credential as
-compromised and rotate it.
-
-For the design rationale, see [ADR-0001](../decisions/0001-mise-age.md);
-for experiments yet to run, see the [historical implementation
-plan](../reference/scaffold-roadmap.md).
+See [the capability roadmap](../roadmap.md) and [the secret-management guide](../guides/manage-secret.md).
