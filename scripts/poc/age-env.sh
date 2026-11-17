@@ -31,9 +31,18 @@ printf '%s\n' 'POC: generate a new age identity in a temporary directory, encryp
     'test injection, reject a missing key, and document how to restore on another machine.' \
     'No machine manifest, login shell, Git configuration, or bootstrap files are changed.'
 [[ "$mode" == apply ]] || exit 0
-[[ -t 0 && -t 1 ]] || { printf '%s\n' 'Interactive terminal required.' >&2; exit 1; }
-command -v mise >/dev/null 2>&1 || { printf '%s\n' 'Missing mise.' >&2; exit 1; }
-command -v age-keygen >/dev/null 2>&1 || { printf '%s\n' 'Missing age-keygen (age package).' >&2; exit 1; }
+[[ -t 0 && -t 1 ]] || {
+    printf '%s\n' 'Interactive terminal required.' >&2
+    exit 1
+}
+command -v mise >/dev/null 2>&1 || {
+    printf '%s\n' 'Missing mise.' >&2
+    exit 1
+}
+command -v age-keygen >/dev/null 2>&1 || {
+    printf '%s\n' 'Missing age-keygen (age package).' >&2
+    exit 1
+}
 printf 'Create an isolated synthetic demo directory? [y/N] '
 IFS= read -r answer
 [[ "$answer" == y || "$answer" == Y || "$answer" == yes ]] || {
