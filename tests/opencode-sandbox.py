@@ -2,6 +2,7 @@
 """Isolated rootless Podman launcher tests; synthetic Podman, never pull/build/run."""
 import os
 import pty
+import shutil
 import subprocess
 import tempfile
 from pathlib import Path
@@ -150,6 +151,15 @@ case "$1" in -u) echo 1000 ;; -g) echo 1000 ;; *) /usr/bin/id "$@" ;; esac
     # not an inline apt command or a silent Podman installation.
     podman_template = bin_dir / "podman-template"
     podman.rename(podman_template)
+    # Use a deliberately minimal PATH so a CI runner's real Podman cannot
+    # hide the missing-runtime branch of the launcher.
+    for name in ("bash", "git", "dirname", "cp", "chmod"):
+        target = shutil.which(name)
+        assert target is not None, name
+        link = bin_dir / name
+        if not link.exists():
+            link.symlink_to(target)
+    env["PATH"] = str(bin_dir)
     fake_mise = bin_dir / "mise"
     fake_mise.write_text('''#!/usr/bin/env bash
 if [[ "$1" == --version ]]; then echo '2026.11.9 fake'; exit 0; fi
