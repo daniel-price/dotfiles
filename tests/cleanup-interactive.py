@@ -138,7 +138,7 @@ esac
     unrelated.write_text("my own configuration\n")
     target.symlink_to(unrelated)
     foreign = run_quiet(["--apply"], "yes\nyes\nyes\n")
-    assert foreign.returncode == 0 and target.is_symlink() and target.resolve() == unrelated
+    assert foreign.returncode == 0 and target.is_symlink() and target.resolve() == unrelated.resolve(), foreign.stdout
     assert not any("dot unapply" in line for line in operations()), operations()
     target.unlink()
     target.write_text("custom config\n")
