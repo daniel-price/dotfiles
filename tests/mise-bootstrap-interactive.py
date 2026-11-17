@@ -71,11 +71,11 @@ case "$*" in
     exit 9
     ;;
   "install --dry-run-code "*)
-    spec="${*#install --dry-run-code }"
+    spec="$3"
     [[ -e "$MOCK_STATE/$spec" ]] && exit 0 || exit 1
     ;;
   "install "*)
-    spec="${*#install }"
+    spec="$2"
     touch "$MOCK_STATE/$spec"
     ;;
   "dot diff"|"dot apply --dry-run") exit 0 ;;
