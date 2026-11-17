@@ -15,7 +15,8 @@ mise configuration while preserving separate approvals.
 Curl is a stage-zero prerequisite. Bootstrap also offers the reviewed Zsh
 startup symlink after mise and Zsh, before declared tool installation, with explicit approval
 and conflict preservation. A separate opt-in script deploys one selected
-private configuration directory. A recurring update command has not been implemented.
+private configuration directory. An opt-in, guarded Git update command is
+implemented; unattended recurring updates are not.
 
 Checkout development tooling is available separately: pinned shfmt, ShellCheck
 and Lefthook, opt-in pre-commit formatting with partial staging, and Linux/macOS
@@ -31,7 +32,7 @@ CI. See [development](guides/development.md) for setup and read-only checks.
 | 1d | Remaining machine configuration | Planned |
 | 2 | Install verified mise `v2026.11.9` with separate download and execution approval | Implemented |
 | 2a | Provision all declaratively pinned machine tools with individual confirmation | Implemented |
-| 3 | Add guarded Git updates and a truthful change report | Planned |
+| 3 | Add guarded Git updates, branch switching and a truthful local status report | Implemented |
 | 3a | Preview-first, selective cleanup of reviewed symlink and pinned mise tools | Implemented |
 | 4a | Deploy one declared zsh dotfile via native mise with preview and conflict refusal | Implemented |
 | 4b | Initialise zoxide (`z`) using the reviewed machine manifest in Zsh | Implemented |

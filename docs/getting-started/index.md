@@ -40,9 +40,13 @@ into `~/.dotfiles`, then **asks a third time before running** the checkout's
 changing your terminal's working directory.
 
 On macOS, complete the Command Line Tools installer and rerun if Git was
-missing. An existing matching checkout is reused without fetching or
-updating it. Existing conflicting destinations are never overwritten.
-Declining any prompt skips that operation.
+missing. An existing matching checkout is reused without cloning again.
+If it contains the reviewed updater, stage zero offers to fetch `origin/main`
+then separately offers a safe switch/fast-forward if needed, **before**
+choosing which bootstrap script to run. An old checkout without the updater
+remains usable, with instructions to update it manually. Conflicting
+destinations are never overwritten. Declining an update does not prevent
+bootstrap from running on the existing code.
 
 The checkout bootstrap installs verified mise first, then uses the
 **machine-only** `scripts/setup/mise.toml` for `[bootstrap.packages]`,
@@ -58,8 +62,9 @@ This keeps system package management in mise, rather than maintaining a
 second general-purpose apt/Homebrew installer in Bash.
 
 Older checkouts with `scripts/bootstrap.sh` or the original root
-`bootstrap.sh` are still supported by the standalone entry point, which
-never updates an existing checkout automatically.
+`bootstrap.sh` are still supported. They are never silently updated;
+checkouts missing `scripts/setup/update.sh` are left on their existing
+revision and can be upgraded manually.
 
 The [per-platform installed tool inventory](../architecture/platforms.md#installed-tool-inventory)
 lists every tool this repository currently installs, its installer and its
@@ -172,7 +177,8 @@ documentation for the version you check out before running it on a live machine.
 1. Download the standalone `get-started.sh` to a temporary directory and
    run it interactively; the wrapper automatically cleans up.
 2. Ensure Git only if missing, with explicit approval.
-3. Clone the public repository once and separately approve its bootstrap
+3. Clone the public repository once. On an existing checkout, optionally
+   fetch/switch/fast-forward with separate approvals, then approve bootstrap
    (implemented in stage zero).
 4. Bootstrap checks and, with separate approvals, installs missing `zsh` and
    `curl` (implemented).
@@ -239,11 +245,37 @@ No installation-state journal is maintained. This is selective cleanup,
 `--all`, `--force`, `mise implode` or package-manager prune operation.
 It is safe to run from outside the checkout, but uses its reviewed manifest.
 
-## Existing machine: intended future flow
+## Update an existing machine checkout safely
 
-A recurring update command has not been implemented. A future one should check
-the remote, guard dirty/diverged state, fast-forward only after approval and
-preview each configuration change before applying it.
+You can review the checkout without network access or mutations:
+
+```sh
+bash ~/.dotfiles/scripts/setup/update.sh
+```
+
+To offer to fetch `origin/main` and then switch to `main` or fast-forward:
+
+```sh
+bash ~/.dotfiles/scripts/setup/update.sh --apply
+```
+
+Every network fetch requires terminal approval. Branch switching and
+fast-forwarding require a second approval, and only work in a clean checkout
+with the expected GitHub origin and a local `main` that is not ahead or
+diverged from `origin/main`. A missing local `main` can be created from the
+fetched remote with its own confirmation. A dirty or detached checkout is
+never modified, and a failed fetch (including offline operation) leaves the
+checkout usable. The updater never resets, force-checks out, auto-stashes or
+merges divergent history. The default status may compare against a **cached**
+remote ref, which can be stale until you approve a fetch.
+
+The standalone `get-started.sh` offers this update when it encounters an
+existing compatible checkout with an updater, and then asks separately before
+executing the resulting bootstrap script. A direct
+`bash scripts/setup/bootstrap.sh` invocation does not update Git; it warns
+if you are on a branch other than `main`.
+
+A scheduled or unattended recurring update mechanism is still out of scope.
 
 ## Documentation preview
 
