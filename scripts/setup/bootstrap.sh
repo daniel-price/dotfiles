@@ -122,6 +122,7 @@ esac
 
 # Stage zero requires curl; it is also needed to verify and install mise.
 command -v curl >/dev/null 2>&1 || die 'curl is required to download mise; install it first.'
+# shellcheck disable=SC2119
 platform=$(detect_os) || die 'Unsupported platform.'
 log "Detected platform: $platform."
 ensure_mise "$platform"
@@ -130,7 +131,7 @@ mise=$(mise_command) || die 'mise was not found; run bootstrap again after appro
 mise_supports_dot "$mise" || die 'mise 2026.11.9 or newer is required for native machine bootstrap.'
 # Run from / so the checkout's root mise.toml (dev tooling) is never loaded.
 # The single reviewed machine config is the only global config for these calls.
-export MISE_GLOBAL_CONFIG_FILE="$ROOT/.config/mise/config.toml"
+export MISE_GLOBAL_CONFIG_FILE="$ROOT/scripts/setup/mise.toml"
 [[ -f "$MISE_GLOBAL_CONFIG_FILE" ]] || die 'Missing declarative machine config.'
 
 if command -v zsh >/dev/null 2>&1 && zsh --version >/dev/null 2>&1; then
@@ -140,13 +141,15 @@ else
         die 'Could not preview the zsh package install.'
     if confirm 'Install missing zsh using the native package manager via mise?'; then
         "$mise" -C / bootstrap --only packages || die 'mise could not install zsh.'
+        command -v zsh >/dev/null 2>&1 && zsh --version >/dev/null 2>&1 ||
+            die 'Mise package installation finished but zsh is still unavailable.'
     else
         log 'Skipped zsh package installation.'
     fi
 fi
 
 for tool in neovim zellij; do
-    # Tool pins come only from .config/mise/config.toml.
+    # Tool pins come only from scripts/setup/mise.toml.
     if "$mise" -C / install --dry-run-code "$tool"; then
         log "$tool is already installed."
         continue

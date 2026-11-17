@@ -95,7 +95,7 @@ esac
     assert (state / "zsh").exists() and (state / "neovim").exists()
     assert not (state / "zellij").exists()
     calls = log.read_text().splitlines()
-    assert all(line.startswith(str(ROOT / ".config/mise/config.toml") + "|-C /")
+    assert all(line.startswith(str(ROOT / "scripts/setup/mise.toml") + "|-C /")
                for line in calls), calls
     assert not any("scripts/dev" in line for line in calls), calls
 

@@ -27,7 +27,7 @@ already-installed hook. Existing unrelated hooks, symlinked hooks and a
 configured `core.hooksPath` are refused so you can resolve the conflict yourself.
 
 The root `mise.toml` pins development tools and tasks. It is separate from
-`.config/mise/config.toml`, the declarative machine configuration used only during setup. Automatic
+`scripts/setup/mise.toml`, the declarative machine configuration used only during setup. Automatic
 tool installation is disabled in this checkout: use `mise install` explicitly
 when installing missing tools or adopting a reviewed version change.
 

@@ -11,7 +11,7 @@ commands are distinct from both.
 | `scripts/dev/` | Checkout maintenance: formatting, linting, Git hooks, documentation builds, dependency setup and CI checks. |
 | `scripts/lib/` | Source-only Bash helpers shared by setup and development scripts. |
 | `bin/` (future) | Everyday executable commands, once there is an actual personal utility to install or expose on `PATH`. |
-| `.config/mise/config.toml` | Declarative machine packages, pinned tools and the opt-in zsh dotfile entry; deliberately separate from developer tooling. |
+| `scripts/setup/mise.toml` | Declarative machine packages, pinned tools and the opt-in zsh dotfile entry; deliberately separate from developer tooling. |
 | `.config/` | Reviewed home configuration: zsh startup and future application defaults. |
 | `tests/` | Temporary-fixture and interactive integration tests, never host-changing by default. |
 | `docs/` | Current handbook and separately labelled historical planning notes. |

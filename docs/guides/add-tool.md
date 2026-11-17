@@ -1,12 +1,12 @@
 # Add or change a tool
 
 Machine tools now have **one version source**:
-`.config/mise/config.toml`. It declares Neovim `0.12.6` and Zellij
+`scripts/setup/mise.toml`. It declares Neovim `0.12.6` and Zellij
 `0.46.0`, independently of the root `mise.toml`, which is only for
 developing this checkout.
 
 1. Add or change a pinned version under `[tools]` in
-   `.config/mise/config.toml`. Review its source and release.
+   `scripts/setup/mise.toml`. Review its source and release.
 2. If it is a system package instead, add a platform-specific
    `[bootstrap.packages]` declaration in the same file.
 3. For a new version-managed tool, extend the reviewed name list in

@@ -8,7 +8,7 @@ not a list of installed or working features.**
 | --- | --- | --- |
 | Fresh setup | Bash stage zero + native mise | Verified mise installer; declarative package and pinned tool provisioning with per-component approvals |
 | Recurring update | Not implemented | Planned; no updater executable exists |
-| Runtime and suitable developer tool versions | mise | Neovim and Zellij declared in `.config/mise/config.toml`; development tools remain in root `mise.toml` |
+| Runtime and suitable developer tool versions | mise | Neovim and Zellij declared in `scripts/setup/mise.toml`; development tools remain in root `mise.toml` |
 | Checkout development tools and shell Git hooks | mise + Lefthook | Implemented; opt-in developer setup |
 | Managed dotfiles and templating | Native mise dotfiles | Zsh target is declared; explicit conflict preflight and optional private-directory overlay remain |
 | Encrypted values and tracked files | age through mise | Planned; separate mechanisms |

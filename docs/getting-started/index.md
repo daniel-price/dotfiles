@@ -44,7 +44,7 @@ updating it. Existing conflicting destinations are never overwritten.
 Declining any prompt skips that operation.
 
 The checkout bootstrap installs verified mise first, then uses the
-**machine-only** `.config/mise/config.toml` for `[bootstrap.packages]`,
+**machine-only** `scripts/setup/mise.toml` for `[bootstrap.packages]`,
 `[tools]` and `[dotfiles]`. That config is selected explicitly; the root
 `mise.toml` for Git hooks and development tools is not loaded during setup.
 A missing zsh is installed by mise using apt on Debian-derived Linux or,
@@ -72,7 +72,7 @@ SHA-256, then asks again before running it. The installer writes only
 the release only from GitHub and verifies that release before installation. An
 existing mise found on `PATH` or at that destination is reported and left
 unchanged, even when it is an older version. Bootstrap then asks individually before installing the pinned Neovim and
-Zellij versions declared in `.config/mise/config.toml`. It uses mise's
+Zellij versions declared in `scripts/setup/mise.toml`. It uses mise's
 installed-state checks and never upgrades working installations silently.
 The reviewed zsh startup file is declared in the same config but is **not
 automatically deployed by bootstrap**: use the separate step below.

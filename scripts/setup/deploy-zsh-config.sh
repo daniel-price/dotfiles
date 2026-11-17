@@ -34,7 +34,7 @@ fi
 
 mise=$(mise_command) || die 'mise is unavailable; bootstrap it first.'
 mise_supports_dot "$mise" || die 'mise 2026.11.9 or newer is required for dotfile deployment.'
-export MISE_GLOBAL_CONFIG_FILE="$ROOT/.config/mise/config.toml"
+export MISE_GLOBAL_CONFIG_FILE="$ROOT/scripts/setup/mise.toml"
 "$mise" -C / dot diff || die 'mise dot diff failed.'
 "$mise" -C / dot apply --dry-run || die 'mise dot dry run failed.'
 if ! confirm "Apply the reviewed ~/.zshrc symlink at $target?"; then

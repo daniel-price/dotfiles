@@ -2,7 +2,7 @@
 
 The supported baseline is **Pop!_OS / Debian-derived Linux** and **macOS**.
 The machine inventory is declared in
-[`.config/mise/config.toml`](../../.config/mise/config.toml). The
+[`scripts/setup/mise.toml`](../../scripts/setup/mise.toml). The
 root `mise.toml` describes checkout development only.
 
 ## Installed tool inventory
