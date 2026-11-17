@@ -1,5 +1,7 @@
 # Reviewed machine-only manifest. Not discovered when maintaining this checkout.
 # Setup selects it via MISE_GLOBAL_CONFIG_FILE and runs mise from /.
+# Machine tool entries must be exact numeric versions; bootstrap and cleanup
+# enumerate them automatically and require individual consent.
 [tools]
 neovim = "0.12.6"
 zellij = "0.46.0"

@@ -8,6 +8,8 @@ ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 source "$ROOT/scripts/lib/common.sh"
 # shellcheck source=scripts/lib/mise.sh
 source "$ROOT/scripts/lib/mise.sh"
+# shellcheck source=scripts/lib/machine-tools.sh
+source "$ROOT/scripts/lib/machine-tools.sh"
 trap 'report_error "$?" "$LINENO"' ERR
 
 usage() {
@@ -43,9 +45,14 @@ mise_supports_dot "$mise" ||
 # Prevent repo-development settings from affecting cleanup. Only the explicit
 # reviewed machine manifest is active, even when invoked from another directory.
 export MISE_GLOBAL_CONFIG_FILE="$manifest"
-log 'Only the reviewed ~/.zshrc and exact pinned Zoxide/Neovim/Zellij versions are eligible.'
+log 'Only the reviewed ~/.zshrc and exact pinned tools in the machine manifest are eligible.'
 log 'Versions installed by mise are shared with other projects; uninstalling them may affect those projects.'
 log 'System packages, mise, the Git checkout and private profiles are always preserved.'
+
+# Validate every declared version before any potentially destructive cleanup.
+# A malformed/missing declaration must not remove even the managed symlink.
+tool_specs=$(machine_tool_specs "$mise" "$manifest") ||
+    die 'Could not read exact pinned machine tool declarations; no cleanup action was taken.'
 
 target="$HOME/.zshrc"
 source_file="$ROOT/.config/zsh/zshrc"
@@ -70,14 +77,8 @@ else
     log 'No reviewed ~/.zshrc symlink to remove.'
 fi
 
-for tool in neovim zellij zoxide; do
-    version=$("$mise" -C / config get --file "$manifest" "tools.$tool") ||
-        die "Cannot read pinned $tool version from the machine manifest."
-    # Never interpret 'latest', a range, or another unpinned request as a
-    # destructive uninstall target. Versions must be exact numeric releases.
-    [[ "$version" =~ ^[0-9]+([.][0-9]+)+$ ]] ||
-        die "Refusing to remove $tool: manifest version is not an exact release."
-    spec="$tool@$version"
+while IFS= read -r spec; do
+    [[ -n "$spec" ]] || continue
     log "Preview removal of shared mise tool version: $spec"
     if "$mise" -C / uninstall --dry-run-code "$spec"; then
         log "$spec is not installed; skipped."
@@ -90,7 +91,7 @@ for tool in neovim zellij zoxide; do
         "$mise" -C / uninstall --yes "$spec" || die "mise could not uninstall $spec."
         log "Uninstalled $spec."
     fi
-done
+done <<<"$tool_specs"
 
 if [[ "$mode" == preview ]]; then
     log 'Preview only; no changes were made. Rerun with --apply to review removals.'
