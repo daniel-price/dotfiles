@@ -45,7 +45,7 @@ for moved in format lint install-hooks install-dev-tools install-docs-deps build
     [[ -x "$ROOT/scripts/dev/$moved.sh" ]] || fail "development script is not executable: $moved"
 done
 [[ ! -e "$ROOT/scripts/update.sh" && ! -e "$ROOT/scripts/setup/provision-tool.sh" &&
-    ! -e "$ROOT/scripts/setup/deploy-zsh-config.sh" ]] ||
+    ! -e "$ROOT/scripts/setup/deploy-zsh-config.sh" && ! -e "$ROOT/scripts/setup/deploy-zellij-config.sh" ]] ||
     fail 'obsolete setup placeholders should not remain'
 [[ -f "$ROOT/get-started.sh" && -f "$ROOT/mise.toml" && -f "$ROOT/lefthook.yml" ]] ||
     fail 'expected root entry points or tool configuration missing'
