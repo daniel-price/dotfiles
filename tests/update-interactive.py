@@ -118,6 +118,8 @@ exec "@GIT@" "$@"
     assert git("-C", checkout, "rev-parse", "refs/remotes/origin/main") == old
     status, out = run([script, "--apply"])
     assert status == 0 and "Fetch declined" in out, out
+    status, out = run([script, "--apply", "--require-current"])
+    assert status != 0 and "bootstrap will not run" in out, out
     status, out = run([script, "--apply"], "n\n")
     assert status == 0 and "Fetch declined" in out, out
     assert git("-C", checkout, "rev-parse", "refs/remotes/origin/main") == old
