@@ -35,7 +35,7 @@ before running downloaded code.
 The script checks Git, asking before installation if needed (apt on Linux or
 Apple Command Line Tools on macOS). It asks separately before an HTTPS clone
 into `~/.dotfiles`, then **asks a third time before running** the checkout's
-`scripts/bootstrap.sh`. It runs bootstrap from the repository directory without
+`scripts/setup/bootstrap.sh`. It runs bootstrap from the repository directory without
 changing your terminal's working directory.
 
 On macOS, complete the Command Line Tools installer and rerun if Git was
@@ -43,14 +43,22 @@ missing. An existing matching checkout is reused without fetching or
 updating it. Existing conflicting destinations are never overwritten.
 Declining any prompt skips that operation.
 
-The current bootstrap is `scripts/bootstrap.sh`. It installs only a missing
-`zsh` or `curl`: `apt-get install --no-upgrade` on Debian-derived Linux, or
-`HOMEBREW_NO_AUTO_UPDATE=1 brew install` on macOS. It does not change the login
-shell or configure it. If Homebrew is needed but unavailable, it stops without
-making a change so it can be installed and reviewed separately. If a reused
-checkout still has the earlier root-level `bootstrap.sh`, the standalone entry
-point can run that version after the same separate approval; it does not update
-the checkout.
+The checkout bootstrap installs verified mise first, then uses the
+**machine-only** `scripts/setup/mise.toml` for `[bootstrap.packages]`,
+`[tools]` and `[dotfiles]`. That config is selected explicitly; the root
+`mise.toml` for Git hooks and development tools is not loaded during setup.
+A missing zsh is installed by mise using apt on Debian-derived Linux or,
+on macOS where zsh is usually already present, Homebrew if needed.
+There is a separate approval before each missing component.
+
+Curl is required for the initial standalone download and to fetch the mise
+installer if mise is missing. If curl is absent, install it manually first.
+This keeps system package management in mise, rather than maintaining a
+second general-purpose apt/Homebrew installer in Bash.
+
+Older checkouts with `scripts/bootstrap.sh` or the original root
+`bootstrap.sh` are still supported by the standalone entry point, which
+never updates an existing checkout automatically.
 
 The [per-platform installed tool inventory](../architecture/platforms.md#installed-tool-inventory)
 lists every tool this repository currently installs, its installer and its
@@ -63,11 +71,11 @@ SHA-256, then asks again before running it. The installer writes only
 `~/.local/bin/mise` and may create its missing parent directories. It downloads
 the release only from GitHub and verifies that release before installation. An
 existing mise found on `PATH` or at that destination is reported and left
-unchanged, even when it is an older version. Bootstrap then calls
-`scripts/provision-tool.sh neovim`, which reads the checked-in `0.12.6`
-declaration and asks once before running `mise install`. It repeats this for
-pinned Zellij. Bootstrap does not activate mise or edit shell startup files; use
-the separate step below.
+unchanged, even when it is an older version. Bootstrap then asks individually before installing the pinned Neovim and
+Zellij versions declared in `scripts/setup/mise.toml`. It uses mise's
+installed-state checks and never upgrades working installations silently.
+The reviewed zsh startup file is declared in the same config but is **not
+automatically deployed by bootstrap**: use the separate step below.
 
 To deploy a private Neovim configuration, explicitly select an already-present
 source directory and target directory after reviewing
@@ -87,8 +95,8 @@ as `nvim` are available in new interactive zsh sessions. This requires mise
 an explicit version message before any change:
 
 ```sh
-bash ~/.dotfiles/scripts/deploy-zsh-config.sh --help
-bash ~/.dotfiles/scripts/deploy-zsh-config.sh
+bash ~/.dotfiles/scripts/setup/deploy-zsh-config.sh --help
+bash ~/.dotfiles/scripts/setup/deploy-zsh-config.sh
 ```
 
 Expected: mise shows a diff and a dry-run first, then the script asks once before
@@ -104,7 +112,7 @@ session, or run `exec zsh`, to use the activated tools. To verify without
 changing a shell, run:
 
 ```sh
-"$HOME/.local/bin/mise" -C "$HOME/.dotfiles/.config/mise/tools" exec neovim@0.12.6 -- nvim --version
+"$HOME/.local/bin/mise" exec neovim@0.12.6 -- nvim --version
 ```
 
 ## Inspect the checkout scaffold
@@ -113,17 +121,15 @@ After approving the clone, the script offers to run the bootstrap.
 To inspect or rerun it later:
 
 ```sh
-bash ~/.dotfiles/scripts/bootstrap.sh --help
-bash ~/.dotfiles/scripts/bootstrap.sh
-bash ~/.dotfiles/scripts/update.sh
+bash ~/.dotfiles/scripts/setup/bootstrap.sh --help
+bash ~/.dotfiles/scripts/setup/bootstrap.sh
 bash ~/.dotfiles/tests/run.sh
 ```
 
-**Expected:** bootstrap identifies the OS, skips available `zsh`, `curl`, mise,
+**Expected:** bootstrap identifies the OS, skips available mise and zsh,
 Neovim and Zellij, or asks separately before installing a missing component. Mise
 requires separate download/verification and execution confirmation; Neovim and
-Zellij each have their own install prompt. It then lists the unimplemented steps. Update still
-reports `No changes made.` The tests use temporary fixtures and should finish
+Zellij each have their own install prompt. It then lists the unimplemented steps. The tests use temporary fixtures and should finish
 with `All bootstrap checks passed.`
 
 Every bootstrap change already requires its own confirmation. Read the code and
@@ -140,7 +146,7 @@ documentation for the version you check out before running it on a live machine.
    `curl` (implemented).
 5. Bootstrap can download, verify and install missing mise `v2026.11.9` after
    separate approval (implemented). It does not activate mise.
-6. Bootstrap can provision pinned Neovim and Zellij through mise after separate
+6. Bootstrap can provision pinned Neovim and Zellij from its declarative config after separate
    approvals (implemented).
 7. Optionally deploy the reviewed zsh startup file that activates mise
    (implemented).
@@ -154,7 +160,7 @@ documentation for the version you check out before running it on a live machine.
 **Not implemented:** SSH registration, further tool provisioning, broad dotfile
 deployment, full private profiles and encrypted restore. Git installation, the
 initial clone, a confirmed bootstrap handoff, individually approved
-`zsh`/`curl` installs, verified mise installation, Neovim and Zellij
+zsh package installation, verified mise installation, Neovim and Zellij
 provisioning, the reviewed zsh activation file and the narrow overlay are
 implemented.
 No private repositories should be discovered or cloned automatically;
@@ -162,9 +168,9 @@ see [the private-profile guide](../guides/private-profiles.md).
 
 ## Existing machine: intended future flow
 
-The eventual `scripts/update.sh` will check the remote, guard dirty/diverged state,
-fast-forward only when approved, and preview each configuration change before
-applying it. Today it only reports the detected OS.
+A recurring update command has not been implemented. A future one should check
+the remote, guard dirty/diverged state, fast-forward only after approval and
+preview each configuration change before applying it.
 
 ## Documentation preview
 

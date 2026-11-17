@@ -29,8 +29,8 @@ case "$1" in
     esac;;
   clone)
     printf '%s\\n' "$4" >> "$MOCK_CLONE_LOG"
-    mkdir -p "$4/scripts"
-    cat > "$4/scripts/bootstrap.sh" <<'BOOT'
+    mkdir -p "$4/scripts/setup"
+    cat > "$4/scripts/setup/bootstrap.sh" <<'BOOT'
 #!/usr/bin/env bash
 printf '%s\\n' "$PWD" > "$MOCK_BOOTSTRAP_MARKER"
 [[ "${MOCK_BOOTSTRAP_FAIL:-0}" != 1 ]]
@@ -76,7 +76,7 @@ esac
     # Clone approval does not imply permission to run cloned code.
     status, output = run_tty("y\nn\n")
     assert status == 0, output
-    assert (home / ".dotfiles" / "scripts" / "bootstrap.sh").exists()
+    assert (home / ".dotfiles" / "scripts" / "setup" / "bootstrap.sh").exists()
     assert not marker.exists(), output
     assert log.read_text().count("\n") == 1
     assert "Bootstrap execution declined" in output, output
@@ -95,12 +95,22 @@ esac
     status, output = run_tty("y\n", should_fail=True)
     assert status != 0 and "Checkout bootstrap failed" in output, output
 
-    # An existing pre-move checkout keeps working without an implicit update.
-    (home / ".dotfiles" / "scripts" / "bootstrap.sh").rename(legacy_bootstrap)
+    # A previous scripts/bootstrap.sh checkout still works without updating.
+    prior_bootstrap = home / ".dotfiles" / "scripts" / "bootstrap.sh"
+    (home / ".dotfiles" / "scripts" / "setup" / "bootstrap.sh").rename(prior_bootstrap)
+    (home / ".dotfiles" / "scripts" / "setup").rmdir()
+    marker.unlink()
+    status, output = run_tty("y\n")
+    assert status == 0, output
+    assert marker.read_text().strip() == str(home / ".dotfiles"), output
+    assert log.read_text().count("\n") == 1, "Prior checkout was cloned again"
+
+    # Even older root-level bootstrap.sh checkouts remain supported.
+    prior_bootstrap.rename(legacy_bootstrap)
     marker.unlink()
     status, output = run_tty("y\n")
     assert status == 0, output
     assert marker.read_text().strip() == str(home / ".dotfiles"), output
     assert log.read_text().count("\n") == 1, "Legacy checkout was cloned again"
 
-    print("PASS: PTY current/legacy handoff, confirmation, idempotence and failure propagation")
+    print("PASS: PTY current/older handoff, confirmation, idempotence and failure propagation")

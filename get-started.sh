@@ -4,7 +4,7 @@
 # This file is downloaded on its own (with curl), without requiring Git,
 # SSH configuration or any sibling scripts from the checkout.
 # Once Git is available, it clones the public repo and separately asks
-# permission before running the checkout's scripts/bootstrap.sh.
+# permission before running the checkout's scripts/setup/bootstrap.sh.
 # Bash 3.2+ is expected on our supported macOS and Pop!_OS installations.
 set -euo pipefail
 REMOTE='https://github.com/daniel-price/dotfiles.git'
@@ -130,12 +130,15 @@ main() {
         info 'No checkout available; bootstrap not run.'
         return
     fi
-    local bootstrap='scripts/bootstrap.sh'
-    # Reusing an older checkout must not require an automatic Git update.
-    # Prefer the current layout, and retain the root path only for old checkouts.
-    if [[ ! -e "$target/$bootstrap" && ! -L "$target/$bootstrap" &&
-        -f "$target/bootstrap.sh" && ! -L "$target/bootstrap.sh" ]]; then
-        bootstrap='bootstrap.sh'
+    local bootstrap='scripts/setup/bootstrap.sh'
+    # Do not update older checkouts implicitly. Use their original entry point
+    # (previously scripts/bootstrap.sh, and before that bootstrap.sh).
+    if [[ ! -e "$target/$bootstrap" && ! -L "$target/$bootstrap" ]]; then
+        if [[ -e "$target/scripts/bootstrap.sh" || -L "$target/scripts/bootstrap.sh" ]]; then
+            bootstrap='scripts/bootstrap.sh'
+        elif [[ -e "$target/bootstrap.sh" || -L "$target/bootstrap.sh" ]]; then
+            bootstrap='bootstrap.sh'
+        fi
     fi
     if [[ ! -f "$target/$bootstrap" || -L "$target/$bootstrap" ]]; then
         fail "Missing or non-regular bootstrap script at $target/$bootstrap; nothing executed."

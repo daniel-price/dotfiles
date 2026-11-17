@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
-ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
+ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 # shellcheck source=scripts/lib/common.sh
 source "$ROOT/scripts/lib/common.sh"
 # shellcheck source=scripts/lib/os.sh
 source "$ROOT/scripts/lib/os.sh"
+# shellcheck source=scripts/lib/mise.sh
+source "$ROOT/scripts/lib/mise.sh"
 trap 'report_error "$?" "$LINENO"' ERR
 
 MISE_VERSION='v2026.11.9'
@@ -13,71 +14,9 @@ MISE_INSTALLER_URL="https://github.com/jdx/mise/releases/download/$MISE_VERSION/
 MISE_INSTALLER_SHA256='60adf5460b19a791b964c414a2fff9d46990c9f2b1dfc0e4ba8c2b865f882a2b'
 
 usage() {
-    printf '%s\n' \
-        'Usage: bash scripts/bootstrap.sh [--help]' \
-        'Install missing zsh, curl, pinned mise, Neovim and Zellij after separate confirmation.' \
-        'Does not configure the shell, deploy dotfiles or upgrade software.'
-}
-
-tool_ready() {
-    command -v "$1" >/dev/null 2>&1 && "$1" --version >/dev/null 2>&1
-}
-
-install_debian_tool() {
-    local tool=$1
-    command -v apt-get >/dev/null 2>&1 ||
-        die "Cannot install missing $tool: apt-get is unavailable."
-
-    if [[ "$(id -u)" -eq 0 ]]; then
-        confirm "Install missing $tool with apt-get install --no-upgrade $tool?" || return 1
-        apt-get install --no-upgrade "$tool" || die "Failed to install $tool with apt-get."
-    else
-        command -v sudo >/dev/null 2>&1 ||
-            die "Cannot install missing $tool: sudo is unavailable."
-        confirm "Install missing $tool with sudo apt-get install --no-upgrade $tool?" ||
-            return 1
-        sudo apt-get install --no-upgrade "$tool" ||
-            die "Failed to install $tool with apt-get."
-    fi
-}
-
-install_macos_tool() {
-    local tool=$1
-    command -v brew >/dev/null 2>&1 ||
-        die "Cannot install missing $tool: Homebrew is unavailable. Install Homebrew separately, then rerun."
-
-    confirm "Install missing $tool with HOMEBREW_NO_AUTO_UPDATE=1 brew install $tool?" ||
-        return 1
-    HOMEBREW_NO_AUTO_UPDATE=1 brew install "$tool" ||
-        die "Failed to install $tool with Homebrew."
-}
-
-ensure_tool() {
-    local platform=$1
-    local tool=$2
-    if tool_ready "$tool"; then
-        log "$tool is available; no installation needed."
-        return
-    fi
-
-    case "$platform" in
-    debian)
-        if ! install_debian_tool "$tool"; then
-            log "Skipped $tool installation; $tool remains unavailable."
-            return
-        fi
-        ;;
-    macos)
-        if ! install_macos_tool "$tool"; then
-            log "Skipped $tool installation; $tool remains unavailable."
-            return
-        fi
-        ;;
-    *) die "Unsupported platform: $platform." ;;
-    esac
-
-    tool_ready "$tool" || die "$tool is still unavailable after installation."
-    log "Installed $tool."
+    printf '%s\n' 'Usage: bash scripts/setup/bootstrap.sh [--help]' \
+        'Install missing mise, then provision reviewed machine packages and tools.' \
+        'Every missing component requires its own interactive approval.'
 }
 
 mise_version() {
@@ -132,6 +71,7 @@ ensure_mise() {
         fi
     done
 
+    command -v curl >/dev/null 2>&1 || die 'curl is required to download mise; install it first.'
     if ! confirm "Download mise $MISE_VERSION installer from GitHub to a temporary file and verify its SHA-256?"; then
         log 'Skipped mise installer download; mise remains unavailable.'
         return
@@ -171,26 +111,62 @@ ensure_mise() {
     log "Installed mise $version at $target."
 }
 
-if [[ $# -gt 1 ]]; then
-    die 'Expected no arguments or --help.'
-fi
 case "${1:-}" in
 -h | --help)
+    [[ $# -eq 1 ]] || die 'Unexpected extra argument.'
     usage
     exit 0
     ;;
-'') ;;
+'') [[ $# -eq 0 ]] || die 'Unexpected argument.' ;;
 *) die 'Unknown argument. Use --help for usage.' ;;
 esac
 
-# No arguments selects host detection rather than test fixture parameters.
 # shellcheck disable=SC2119
-platform=$(detect_os)
+platform=$(detect_os) || die 'Unsupported platform.'
 log "Detected platform: $platform."
-ensure_tool "$platform" zsh
-ensure_tool "$platform" curl
 ensure_mise "$platform"
-bash "$ROOT/scripts/provision-tool.sh" neovim
-bash "$ROOT/scripts/provision-tool.sh" zellij
-log 'Bootstrap complete. Not implemented: SSH setup, other tool installation, dotfile deployment,'
-log 'Git updates, or shell configuration.'
+
+if ! mise=$(mise_command); then
+    log 'Mise is not installed; later provisioning was skipped.'
+    exit 0
+fi
+mise_supports_dot "$mise" || die 'mise 2026.11.9 or newer is required for native machine bootstrap.'
+# Run from / so the checkout's root mise.toml (dev tooling) is never loaded.
+# The single reviewed machine config is the only global config for these calls.
+export MISE_GLOBAL_CONFIG_FILE="$ROOT/scripts/setup/mise.toml"
+[[ -f "$MISE_GLOBAL_CONFIG_FILE" ]] || die 'Missing declarative machine config.'
+
+if command -v zsh >/dev/null 2>&1 && zsh --version >/dev/null 2>&1; then
+    log 'zsh is available; no package installation needed.'
+else
+    "$mise" -C / bootstrap --only packages --dry-run ||
+        die 'Could not preview the zsh package install.'
+    if confirm 'Install missing zsh using the native package manager via mise?'; then
+        "$mise" -C / bootstrap --only packages || die 'mise could not install zsh.'
+        if ! command -v zsh >/dev/null 2>&1 || ! zsh --version >/dev/null 2>&1; then
+            die 'Mise package installation finished but zsh is still unavailable.'
+        fi
+    else
+        log 'Skipped zsh package installation.'
+    fi
+fi
+
+for tool in neovim zellij; do
+    # Tool pins come only from scripts/setup/mise.toml.
+    if "$mise" -C / install --dry-run-code "$tool"; then
+        log "$tool is already installed."
+        continue
+    else
+        status=$?
+    fi
+    [[ "$status" -eq 1 ]] || die "Could not inspect the installed $tool version."
+    if confirm "Install missing $tool from the reviewed mise machine config?"; then
+        "$mise" -C / install "$tool" || die "mise could not install $tool."
+        "$mise" -C / install --dry-run-code "$tool" ||
+            die "mise did not report $tool installed after the approved command."
+    else
+        log "Skipped $tool installation."
+    fi
+done
+
+log 'Bootstrap complete. Dotfile deployment remains a separate opt-in action.'

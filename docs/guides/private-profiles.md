@@ -29,7 +29,7 @@ PRIVATE_TARGET="$HOME/.config/nvim"
 Review the preview and then answer the confirmation prompt:
 
 ```sh
-bash ~/.dotfiles/scripts/apply-private-overlay.sh \
+bash ~/.dotfiles/scripts/setup/apply-private-overlay.sh \
   --source "$PRIVATE_SOURCE" \
   --target "$PRIVATE_TARGET"
 ```

@@ -15,9 +15,9 @@ mkdir "$TEST_ROOT/repo"
 cd "$TEST_ROOT/repo"
 export MISE_TRUSTED_CONFIG_PATHS="$TEST_ROOT/repo"
 cp "$ROOT/mise.toml" "$ROOT/lefthook.yml" .
-mkdir -p scripts/lib
-cp "$ROOT/scripts/install-hooks.sh" scripts/
-cp "$ROOT/scripts/format.sh" "$ROOT/scripts/lint.sh" scripts/
+mkdir -p scripts/dev scripts/lib
+cp "$ROOT/scripts/dev/install-hooks.sh" scripts/dev/
+cp "$ROOT/scripts/dev/format.sh" "$ROOT/scripts/dev/lint.sh" scripts/dev/
 cp "$ROOT/scripts/lib/common.sh" scripts/lib/
 cp "$ROOT/scripts/lib/shell-files.sh" scripts/lib/
 git init -q
@@ -26,18 +26,18 @@ git config user.email 'hook-test@example.invalid'
 git config commit.gpgsign false
 
 # Piping yes must not enable hooks, and an unrelated hook must be preserved.
-printf 'yes\n' | bash scripts/install-hooks.sh >"$TEST_ROOT/setup.log" 2>&1
+printf 'yes\n' | bash scripts/dev/install-hooks.sh >"$TEST_ROOT/setup.log" 2>&1
 [[ ! -e .git/hooks/pre-commit ]] || fail 'noninteractive setup installed hooks'
 grep -q 'installation declined' "$TEST_ROOT/setup.log" || fail 'decline was not reported'
 printf '#!/bin/sh\nexit 0\n' >.git/hooks/pre-commit
 cp .git/hooks/pre-commit "$TEST_ROOT/original-hook"
-if bash scripts/install-hooks.sh >"$TEST_ROOT/setup.log" 2>&1; then
+if bash scripts/dev/install-hooks.sh >"$TEST_ROOT/setup.log" 2>&1; then
     fail 'unrelated hook accepted'
 fi
 cmp .git/hooks/pre-commit "$TEST_ROOT/original-hook" || fail 'unrelated hook changed'
 rm .git/hooks/pre-commit
 git config core.hooksPath "$TEST_ROOT/custom-hooks"
-if bash scripts/install-hooks.sh >"$TEST_ROOT/setup.log" 2>&1; then
+if bash scripts/dev/install-hooks.sh >"$TEST_ROOT/setup.log" 2>&1; then
     fail 'configured hooksPath accepted'
 fi
 [[ ! -e "$TEST_ROOT/custom-hooks" ]] || fail 'configured hooksPath was written'
@@ -55,42 +55,42 @@ git add .
 git commit -qm 'Seed fixture before hook installation'
 
 # Command help and unknown flags must not modify the fixture.
-bash scripts/format.sh --help >"$TEST_ROOT/format-help.log"
-bash scripts/lint.sh --help >"$TEST_ROOT/lint-help.log"
+bash scripts/dev/format.sh --help >"$TEST_ROOT/format-help.log"
+bash scripts/dev/lint.sh --help >"$TEST_ROOT/lint-help.log"
 grep -q 'Usage:' "$TEST_ROOT/format-help.log" || fail 'format help missing'
 grep -q 'Usage:' "$TEST_ROOT/lint-help.log" || fail 'lint help missing'
-if bash scripts/format.sh --unknown >"$TEST_ROOT/format-error.log" 2>&1; then
+if bash scripts/dev/format.sh --unknown >"$TEST_ROOT/format-error.log" 2>&1; then
     fail 'format accepted an unknown option'
 elif [[ $? -ne 2 ]]; then
     fail 'format unknown option returned the wrong status'
 fi
-if bash scripts/lint.sh --unknown >"$TEST_ROOT/lint-error.log" 2>&1; then
+if bash scripts/dev/lint.sh --unknown >"$TEST_ROOT/lint-error.log" 2>&1; then
     fail 'lint accepted an unknown option'
 elif [[ $? -ne 2 ]]; then
     fail 'lint unknown option returned the wrong status'
 fi
 
 # Selected paths, including spaces, use repository-relative names.
-bash scripts/format.sh --check -- 'partial file.sh'
-bash scripts/lint.sh -- 'partial file.sh'
+bash scripts/dev/format.sh --check -- 'partial file.sh'
+bash scripts/dev/lint.sh -- 'partial file.sh'
 
 # A selected script can source a tracked helper that is not in the file list.
 (
     cd "$TEST_ROOT"
-    bash "$TEST_ROOT/repo/scripts/format.sh" --check -- scripts/format.sh
-    bash "$TEST_ROOT/repo/scripts/lint.sh" -- scripts/lint.sh
+    bash "$TEST_ROOT/repo/scripts/dev/format.sh" --check -- scripts/dev/format.sh
+    bash "$TEST_ROOT/repo/scripts/dev/lint.sh" -- scripts/dev/lint.sh
 ) || fail 'selected lint from another directory failed'
 
 # An empty tracked shell-file selection must succeed without invoking tools.
 empty="$TEST_ROOT/empty"
-mkdir -p "$empty/scripts/lib"
-cp scripts/format.sh scripts/lint.sh "$empty/scripts/"
+mkdir -p "$empty/scripts/dev" "$empty/scripts/lib"
+cp scripts/dev/format.sh scripts/dev/lint.sh "$empty/scripts/dev/"
 cp scripts/lib/shell-files.sh "$empty/scripts/lib/"
 git -C "$empty" init -q
 printf 'No shell scripts are tracked.\n' >"$empty/notes.md"
 git -C "$empty" add notes.md
-format_empty=$(cd "$empty" && bash scripts/format.sh --check)
-lint_empty=$(cd "$empty" && bash scripts/lint.sh)
+format_empty=$(cd "$empty" && bash scripts/dev/format.sh --check)
+lint_empty=$(cd "$empty" && bash scripts/dev/lint.sh)
 [[ "$format_empty" == 'No tracked shell scripts to format.' ]] ||
     fail 'format empty selection was not reported'
 [[ "$lint_empty" == 'No tracked shell scripts to lint.' ]] ||
@@ -100,7 +100,7 @@ git diff --cached --quiet || fail 'format or lint command changed the fixture'
 printf 'PASS: Format and lint command options, selected files and empty selection\n'
 
 mise exec -- lefthook install pre-commit >"$TEST_ROOT/install.log" 2>&1
-bash scripts/install-hooks.sh >"$TEST_ROOT/setup.log" 2>&1
+bash scripts/dev/install-hooks.sh >"$TEST_ROOT/setup.log" 2>&1
 grep -q 'already installed' "$TEST_ROOT/setup.log" || fail 'repeat setup did not skip'
 
 cat >'partial file.sh' <<'SHELL'

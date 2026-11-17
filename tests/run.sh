@@ -14,17 +14,10 @@ assert_equal() {
     [[ "$1" == "$2" ]] || fail "$3 (expected $1, got $2)"
 }
 
-for script in "$ROOT/get-started.sh" "$ROOT/scripts/bootstrap.sh" \
-    "$ROOT/scripts/apply-private-overlay.sh" "$ROOT/scripts/check-clean.sh" \
-    "$ROOT/scripts/deploy-zsh-config.sh" "$ROOT/scripts/format.sh" \
-    "$ROOT/scripts/install-dev-tools.sh" \
-    "$ROOT/scripts/install-hooks.sh" "$ROOT/scripts/lint.sh" \
-    "$ROOT/scripts/provision-tool.sh" "$ROOT/scripts/update.sh" \
-    "$ROOT/scripts/lib/common.sh" "$ROOT/scripts/lib/mise.sh" \
-    "$ROOT/scripts/lib/os.sh" "$ROOT/scripts/lib/shell-files.sh" \
-    "$ROOT/tests/check-clean.sh" "$ROOT/tests/get-started.sh" "$ROOT/tests/run.sh"; do
-    bash -n "$script"
-done
+# Validate all tracked shell entry points, including newly introduced scripts.
+while IFS= read -r -d '' script; do
+    bash -n "$ROOT/$script"
+done < <(git -C "$ROOT" ls-files -z -- '*.sh')
 printf 'PASS: Bash syntax\n'
 if command -v zsh >/dev/null 2>&1; then
     zsh -n "$ROOT/.config/zsh/zshrc" || fail 'reviewed zsh file has invalid syntax'
@@ -33,13 +26,34 @@ else
     printf 'SKIP: Reviewed zsh syntax (zsh not found)\n'
 fi
 
-for moved in bootstrap update; do
-    [[ ! -e "$ROOT/$moved.sh" ]] || fail "legacy root $moved script remains"
-    [[ -x "$ROOT/scripts/$moved.sh" ]] || fail "moved $moved script is not executable"
+for moved in bootstrap deploy-zsh-config apply-private-overlay; do
+    [[ ! -e "$ROOT/scripts/$moved.sh" ]] || fail "obsolete setup path remains: $moved"
+    [[ -x "$ROOT/scripts/setup/$moved.sh" ]] || fail "setup script is not executable: $moved"
 done
+for moved in format lint install-hooks install-dev-tools install-docs-deps build-docs check-clean; do
+    [[ ! -e "$ROOT/scripts/$moved.sh" ]] || fail "obsolete dev path remains: $moved"
+    [[ -x "$ROOT/scripts/dev/$moved.sh" ]] || fail "development script is not executable: $moved"
+done
+[[ ! -e "$ROOT/scripts/update.sh" && ! -e "$ROOT/scripts/setup/update.sh" &&
+    ! -e "$ROOT/scripts/setup/provision-tool.sh" ]] ||
+    fail 'removed setup placeholders should not remain'
 [[ -f "$ROOT/get-started.sh" && -f "$ROOT/mise.toml" && -f "$ROOT/lefthook.yml" ]] ||
     fail 'expected root entry points or tool configuration missing'
 printf 'PASS: Checkout script layout and executable modes\n'
+# Validate the real machine manifest with mise without installing anything.
+# This must not accidentally include the root checkout's developer tools.
+if command -v mise >/dev/null 2>&1; then
+    machine_config="$ROOT/scripts/setup/mise.toml"
+    MISE_GLOBAL_CONFIG_FILE="$machine_config" mise -C / config ls >/dev/null ||
+        fail 'mise could not parse the machine-only manifest'
+    tool_listing=$(MISE_GLOBAL_CONFIG_FILE="$machine_config" mise -C / ls --current) ||
+        fail 'mise could not resolve machine tool declarations'
+    [[ "$tool_listing" == *neovim* && "$tool_listing" == *zellij* ]] ||
+        fail 'machine versions are missing from mise config'
+    [[ "$tool_listing" != *shellcheck* && "$tool_listing" != *lefthook* ]] ||
+        fail 'developer tools leaked into machine setup'
+    printf 'PASS: Native mise machine manifest loads without developer tools\n'
+fi
 
 source "$ROOT/scripts/lib/os.sh"
 source "$ROOT/scripts/lib/common.sh"
@@ -117,35 +131,28 @@ case "$1" in
 esac
 MISE
 chmod +x "$TEST_ROOT/bin/mise"
-for entry in bootstrap update; do
-    for help in -h --help; do
-        output=$(bash "$ROOT/scripts/$entry.sh" "$help")
-        [[ "$output" == *'Usage:'* ]] || fail "$entry help missing"
-    done
-    if bash "$ROOT/scripts/$entry.sh" --unknown >"$TEST_ROOT/out" 2>"$TEST_ROOT/err"; then
-        fail "$entry accepted unknown argument"
-    fi
-    if bash "$ROOT/scripts/$entry.sh" --help extra >"$TEST_ROOT/out" 2>"$TEST_ROOT/err"; then
-        fail "$entry accepted extra argument"
-    fi
-    # Run twice from elsewhere, with an isolated HOME, on a supported host only.
-    if detect_os >/dev/null 2>&1; then
-        output=$(cd "$TEST_ROOT/elsewhere" && HOME="$TEST_ROOT/home" \
-            PATH="$TEST_ROOT/bin:$PATH" bash "$ROOT/scripts/$entry.sh")
-        repeated=$(cd "$TEST_ROOT/elsewhere" && HOME="$TEST_ROOT/home" \
-            PATH="$TEST_ROOT/bin:$PATH" bash "$ROOT/scripts/$entry.sh")
-        assert_equal "$output" "$repeated" "$entry repeatability"
-        if [[ "$entry" == bootstrap ]]; then
-            [[ "$output" == *'Detected platform:'* && "$output" == *'Bootstrap complete.'* &&
-                "$output" == *'Not implemented:'* ]] || fail 'bootstrap scope unclear'
-        else
-            [[ "$output" == *'scaffolding only'* && "$output" == *'Not implemented:'* &&
-                "$output" == *'No changes made.'* ]] || fail 'update scope unclear'
-        fi
-    else
-        printf 'SKIP: %s host smoke test (unsupported host)\n' "$entry"
-    fi
+for help in -h --help; do
+    output=$(bash "$ROOT/scripts/setup/bootstrap.sh" "$help")
+    [[ "$output" == *'Usage:'* ]] || fail 'bootstrap help missing'
 done
+if bash "$ROOT/scripts/setup/bootstrap.sh" --unknown >"$TEST_ROOT/out" 2>"$TEST_ROOT/err"; then
+    fail 'bootstrap accepted unknown argument'
+fi
+if bash "$ROOT/scripts/setup/bootstrap.sh" --help extra >"$TEST_ROOT/out" 2>"$TEST_ROOT/err"; then
+    fail 'bootstrap accepted extra argument'
+fi
+# Run twice from elsewhere, with an isolated HOME, on a supported host only.
+if detect_os >/dev/null 2>&1; then
+    output=$(cd "$TEST_ROOT/elsewhere" && HOME="$TEST_ROOT/home" \
+        PATH="$TEST_ROOT/bin:$PATH" bash "$ROOT/scripts/setup/bootstrap.sh")
+    repeated=$(cd "$TEST_ROOT/elsewhere" && HOME="$TEST_ROOT/home" \
+        PATH="$TEST_ROOT/bin:$PATH" bash "$ROOT/scripts/setup/bootstrap.sh")
+    assert_equal "$output" "$repeated" 'bootstrap repeatability'
+    [[ "$output" == *'Detected platform:'* && "$output" == *'Bootstrap complete.'* &&
+        "$output" == *'Dotfile deployment remains a separate opt-in action.'* ]] || fail 'bootstrap scope unclear'
+else
+    printf 'SKIP: bootstrap host smoke test (unsupported host)\n'
+fi
 [[ -z "$(find "$TEST_ROOT/home" "$TEST_ROOT/elsewhere" -mindepth 1 -print)" ]] ||
     fail 'entry point wrote to isolated home or working directory'
 printf 'PASS: Entry-point help, errors and repeatable smoke execution\n'
@@ -156,7 +163,7 @@ if command -v python3 >/dev/null 2>&1; then
     python3 "$ROOT/tests/bootstrap-interactive.py"
     python3 "$ROOT/tests/tool-overlay-interactive.py"
     python3 "$ROOT/tests/zsh-deploy-interactive.py"
-    python3 "$ROOT/tests/provision-zellij-interactive.py"
+    python3 "$ROOT/tests/mise-bootstrap-interactive.py"
 else
     printf 'SKIP: interactive bootstrap tests (python3 not found)\n'
 fi

@@ -65,7 +65,7 @@ reruns and rollback.
 - Use **synthetic private fixtures** for implementation/testing, not actual
   employer repositories or credentials.
 
-The current prototype is deliberately narrow. `scripts/apply-private-overlay.sh`
+The current prototype is deliberately narrow. `scripts/setup/apply-private-overlay.sh`
 takes an explicit source directory and target directory, previews them with
 `mise dot diff` and `mise dot apply --dry-run`, asks once before `mise dot apply`,
 and refuses existing real paths, different symlinks, dirty checkouts and

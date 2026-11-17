@@ -33,9 +33,11 @@ and are **not** evidence that a feature already exists.
 - **CI:** workflow run steps call versioned scripts, with tool commands and
   flags owned by those scripts. Reuse the same scripts from local commands and
   Git hooks. Actions may handle runtime setup, caches, artifacts and deployment.
-- **Layout:** checkout scripts live in visible `scripts/`; `.config/` holds
-  future managed user dotfiles. Keep the standalone `get-started.sh`, entry
-  documentation and automatically discovered tool configuration at the root.
+- **Layout:** `scripts/setup/` is for machine setup, `scripts/dev/` is for
+  maintaining this checkout, and `scripts/lib/` provides internal shared helpers.
+  Put eventual everyday shell commands in `bin/` only when they exist. `.config/`
+  holds intended user dotfiles. Keep the standalone `get-started.sh`, entry
+  documentation and tool-discovered configuration at the root.
 - **Docs:** user-facing guidance should be accurate, concise and task-oriented.
   Store dense plans and older investigations under `docs/reference/`, label
   historical material, and link to it instead of duplicating it.

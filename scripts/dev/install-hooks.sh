@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
+ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 # shellcheck source=scripts/lib/common.sh
 source "$ROOT/scripts/lib/common.sh"
 
 case "${1:-}" in
 -h | --help)
-    printf '%s\n' 'Usage: bash scripts/install-hooks.sh' \
+    printf '%s\n' 'Usage: bash scripts/dev/install-hooks.sh' \
         'Enable the pre-commit hook in this checkout after confirmation.' \
         'Requires trusted mise.toml and the installed development tools.'
     exit 0

@@ -7,7 +7,7 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SCRIPT = ROOT / "scripts" / "deploy-zsh-config.sh"
+SCRIPT = ROOT / "scripts" / "setup" / "deploy-zsh-config.sh"
 SOURCE = ROOT / ".config" / "zsh" / "zshrc"
 
 
@@ -80,7 +80,7 @@ esac
 
     env = make_env(home, log)
     target = home / ".zshrc"
-    args = ["--target", str(target)]
+    args = []
 
     declined = run_tty(SCRIPT, "n\n", env, args)
     assert declined[0] == 0, declined[1]
@@ -107,7 +107,7 @@ esac
     real_log = temp_root / "real.log"
     real_log.touch()
     conflict = run_quiet(
-        SCRIPT, ["--target", str(real_home / ".zshrc")], make_env(real_home, real_log)
+        SCRIPT, [], make_env(real_home, real_log)
     )
     assert conflict.returncode != 0, conflict.stdout
     assert "real file or directory" in conflict.stdout, conflict.stdout
@@ -121,7 +121,7 @@ esac
     link_log = temp_root / "link.log"
     link_log.touch()
     link_conflict = run_quiet(
-        SCRIPT, ["--target", str(link_home / ".zshrc")], make_env(link_home, link_log)
+        SCRIPT, [], make_env(link_home, link_log)
     )
     assert link_conflict.returncode != 0, link_conflict.stdout
     assert "different symlink" in link_conflict.stdout, link_conflict.stdout
@@ -141,7 +141,7 @@ printf '%s\\n' '2026.8.15 linux-x64'
     old_env = make_env(old_home, old_log)
     old_env["PATH"] = str(old_bin) + os.pathsep + "/usr/bin:/bin"
     old_version = run_quiet(
-        SCRIPT, ["--target", str(old_home / ".zshrc")], old_env
+        SCRIPT, [], old_env
     )
     assert old_version.returncode != 0, old_version.stdout
     assert "2026.11.9 or newer" in old_version.stdout, old_version.stdout
