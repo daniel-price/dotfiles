@@ -57,7 +57,11 @@ case "${1:-}" in
     ;;
 '') [[ $# -eq 0 ]] || die 'Unexpected argument.' ;;
 --apply)
-    [[ $# -eq 1 ]] || die 'Unexpected extra argument.'
+    if [[ $# -eq 2 && "$2" == --require-current ]]; then
+        require_current=true
+    else
+        [[ $# -eq 1 ]] || die 'Unexpected extra argument.'
+    fi
     mode=apply
     ;;
 *) die 'Unknown argument. Use --help for usage.' ;;
