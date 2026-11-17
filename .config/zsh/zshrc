@@ -53,6 +53,24 @@ if (( $+commands[zoxide] )); then
   eval "$(zoxide init zsh)"
 fi
 
+# Portable optional interactive helpers; no machine-local paths or work logic.
+_dotfiles_functions="${${(%):-%x}:A:h}/functions.zsh"
+if [[ -o interactive && -r "$_dotfiles_functions" ]]; then
+  source "$_dotfiles_functions"
+fi
+unset _dotfiles_functions
+
+# Enable completion only for interactive shells, with no external dependencies.
+if [[ -o interactive ]]; then
+  autoload -Uz compinit
+  compinit
+  _dotfiles_completions="${${(%):-%x}:A:h}/completions.zsh"
+  if [[ -r "$_dotfiles_completions" ]]; then
+    source "$_dotfiles_completions"
+  fi
+  unset _dotfiles_completions
+fi
+
 # Restore only the reviewed, cross-platform aliases from the old .cfg profile.
 _dotfiles_zsh_dir=${${(%):-%x}:A:h}
 if [[ -r "$_dotfiles_zsh_dir/aliases.zsh" ]]; then
