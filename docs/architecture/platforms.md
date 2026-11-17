@@ -1,88 +1,44 @@
 # Operating systems and machine-specific configuration
 
-The shared baseline covers **Pop!_OS** and **macOS**. Differences should be
-explicit instead of hidden inside a monolithic installation script.
-
-| Concern | Pop!_OS | macOS |
-| --- | --- | --- |
-| OS detection | Debian/Ubuntu family, including `ID_LIKE` | Darwin |
-| System packages | apt | Homebrew |
-| Runtime and dotfile declarations | mise installed on approval; declarations planned | mise installed on approval; declarations planned |
-| Interactive shell | zsh installed on approval; opt-in reviewed startup file | zsh installed on approval; opt-in reviewed startup file |
-| Bootstrap language | Bash | System Bash 3.2-compatible |
-
-A missing package must be checked and approved before installation. An
-existing tool should not be upgraded merely because an update script ran.
+The supported baseline is **Pop!_OS / Debian-derived Linux** and **macOS**.
+The machine inventory is declared in
+[`.config/mise/config.toml`](../../.config/mise/config.toml). The
+root `mise.toml` describes checkout development only.
 
 ## Installed tool inventory
 
-This is the complete list of software the public scripts currently install.
-Every bootstrap operation first checks its current state and asks interactively;
-the commands below are the commands it runs after approval. `sudo` is omitted
-when bootstrap is already running as root.
+| Component | Pop!_OS / Ubuntu | macOS |
+| --- | --- | --- |
+| Git, only if missing at stage zero | `apt-get install git` after approval | Apple Command Line Tools dialog |
+| curl, stage-zero prerequisite | Must already be available | Built into standard macOS |
+| mise `2026.11.9` | Verified pinned GitHub installer, opt-in | Same installer, opt-in |
+| zsh, when missing | `apt:zsh` via `mise bootstrap --only packages` | `brew:zsh` via mise if macOS's built-in zsh is missing and Homebrew exists |
+| Neovim `0.12.6` | `mise install neovim`, opt-in | Same |
+| Zellij `0.46.0` | `mise install zellij`, opt-in | Same |
+| Reviewed `~/.zshrc` | Native `mise dot apply`, separate approval | Same |
 
-| Tool | Debian/Ubuntu/Pop!_OS | macOS | Scope |
-| --- | --- | --- | --- |
-| Git | `sudo apt-get install git` | `xcode-select --install` installs Apple Command Line Tools, including Git | Standalone `get-started.sh`; only if Git is missing |
-| zsh | `sudo apt-get install --no-upgrade zsh` | `HOMEBREW_NO_AUTO_UPDATE=1 brew install zsh` | Checkout bootstrap; only if zsh is missing |
-| curl | `sudo apt-get install --no-upgrade curl` | `HOMEBREW_NO_AUTO_UPDATE=1 brew install curl` | Checkout bootstrap; only if curl is missing |
-| mise `v2026.11.9` | Verified GitHub Release installer writes `~/.local/bin/mise` | Same verified GitHub Release installer and destination | Checkout bootstrap; only if mise is missing |
-| Neovim `0.12.6` | `mise install neovim@0.12.6` through `scripts/setup/provision-tool.sh` | Same mise command on both operating systems | Checkout bootstrap; only if this version is not already installed |
-| Zellij `0.46.0` | `mise install zellij@0.46.0` through `scripts/setup/provision-tool.sh` | Same mise command on both operating systems | Checkout bootstrap; only if this version is not already installed |
+The initial bootstrap uses a small shell wrapper to install mise with a
+verified installer and preserve independent confirmations for each missing
+component. Once mise is present, the script selects the declarative machine
+configuration using `MISE_GLOBAL_CONFIG_FILE` and invokes mise with
+`-C /`: this **excludes checkout development tools**. It does not silently
+activate zsh, link dotfiles, trust private repositories or update software.
 
-The macOS zsh/curl path requires an existing Homebrew installation; bootstrap
-does **not** install Homebrew. Standard macOS installations normally already
-include both tools. The mise flow downloads the pinned official GitHub Release
-installer to a temporary file, verifies its committed SHA-256, then asks again
-before it writes the executable. It does not use apt or Homebrew, activate mise
-or edit shell startup files. The currently managed tools are Neovim and Zellij,
-installed through mise after their own confirmation. See
-[Getting started](../getting-started/index.md) for the full consent and conflict
-behaviour.
+The `~/.zshrc` deployment is deliberately a separate command that checks
+for existing files and foreign symlinks before calling native mise dotfiles.
+Native mise can repoint a wrong symlink; the wrapper must continue to refuse it.
 
-Apart from the Apple Command Line Tools bundle requested only to obtain missing
-Git on macOS, bootstrap installs no other system package, application, shell
-setting or dotfile. To activate mise in a new zsh session, run
-`bash scripts/setup/deploy-zsh-config.sh` separately; it previews the reviewed
-`.config/zsh/zshrc` file and refuses to overwrite an existing `~/.zshrc`.
+## Checkout development tools
 
-## Checkout Development Tools
+The root `mise.toml` pins Lefthook `2.2.2`, shfmt `3.14.1`
+and ShellCheck `0.11.0`. Only `bash scripts/dev/install-dev-tools.sh`
+installs those versions for contributing or CI. Documentation builds use
+Python and Zensical separately; neither belongs in machine bootstrap.
 
-The following tools are installed only when a checkout developer deliberately
-runs `bash scripts/dev/install-dev-tools.sh`. That script runs `mise install`, so
-the installer is the same on both supported operating systems and uses the
-versions in the root `mise.toml`; bootstrap does not install these tools.
+## Configuration boundaries
 
-| Tool | Version | Installer on Pop!_OS/Ubuntu and macOS | Scope |
-| --- | --- | --- | --- |
-| Lefthook | `2.2.2` | `mise install` through `bash scripts/dev/install-dev-tools.sh` | Optional Git hooks for this checkout |
-| shfmt | `3.14.1` | `mise install` through `bash scripts/dev/install-dev-tools.sh` | Format tracked Bash scripts |
-| ShellCheck | `0.11.0` | `mise install` through `bash scripts/dev/install-dev-tools.sh` | Lint tracked Bash scripts |
-| Zensical | Resolved by pip; not pinned yet | `python3 -m pip install zensical` through `bash scripts/dev/install-docs-deps.sh` in an activated virtual environment | Build the documentation site |
-
-Python itself is a prerequisite for the Zensical workflow, not installed by
-this repository. See [Develop this repository](../guides/development.md) for
-the explicit developer and documentation setup commands.
-
-## Where differences belong
-
-- **Shared public settings:** versioned config and templates in this repo,
-  eventually deployed by mise.
-- **Platform variants:** explicit, versioned platform-specific config **when
-  introduced**; there is not yet an implemented per-platform directory.
-- **Private profiles:** an optional, separately authorised Git repository may
-  supply non-public personal/work settings on deliberately selected machines.
-  The current implementation deploys only one explicitly selected directory to
-  one target; full profiles are not implemented.
-- **Machine-local overrides:** identities, keys and host-only settings remain
-  outside Git; `local/` and `*.local` are ignored but not yet loaded.
-- **Sensitive identities:** outside the public Git checkout, with secure
-  recovery and explicit access decisions.
-
-The intended precedence is public defaults, approved private overlay and
-local-only overrides last, with collisions explicitly reviewed. Mise config
-load order must be verified rather than assumed; see
-[configuration layers](private-configuration.md).
-
-Avoid embedding hostnames, personal addresses, work settings or actual SSH
-private keys in public documentation.
+Public defaults are reviewed in this repository. Optional private overlays
+must be chosen explicitly and never auto-discovered. Private keys and
+work-specific settings belong outside the public repo. A future recurring
+update command must guard dirty/diverged checkouts and ask before fetching
+or modifying the machine.

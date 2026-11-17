@@ -4,10 +4,11 @@ This is the documentation for my personal development environment. The goal is
 to make a new Pop!_OS or macOS machine feel familiar without having to remember
 how everything was configured, while keeping the setup reviewable and safe.
 
-**Status: one-managed-tool bootstrap with opt-in shell activation (November
+**Status: declarative machine bootstrap with opt-in shell activation (November
 2026).** Stage zero can install Git if missing, clone the public checkout and,
-with separate approval, run its bootstrap. That bootstrap installs missing
-`zsh`, `curl`, pinned mise and Neovim `0.12.6`. Separate opt-in scripts can
+with separate approval, run its bootstrap. That bootstrap installs pinned mise, then uses mise's declarative package/tool
+provisioning for missing zsh, Neovim `0.12.6` and Zellij `0.46.0`.
+Curl is a prerequisite for the standalone initial download. Separate opt-in scripts can
 deploy a reviewed zsh startup file or one selected private directory; full
 profile layering and secrets remain unimplemented.
 
@@ -25,7 +26,7 @@ design and historical plans are [available separately](reference/index.md).
 | Capability | Status |
 | --- | --- |
 | OS detection and explicit yes/no helper | Implemented in the scaffold |
-| Install only missing `zsh` and `curl` with individual approval | Implemented |
+| Install missing zsh through mise with its own approval | Implemented; curl is a prerequisite |
 | Install verified mise `v2026.11.9` with separate download and execution approval | Implemented |
 | Provision Neovim `0.12.6` and Zellij `0.46.0` with mise and per-tool confirmation | Implemented |
 | Opt-in deployment of a reviewed zsh startup file via mise | Implemented |
@@ -42,7 +43,7 @@ design and historical plans are [available separately](reference/index.md).
 | GitHub Pages publication | Proposed in this documentation PR |
 
 `get-started.sh` ensures Git and acquires the public checkout. The checkout
-bootstrap then checks `zsh`, `curl`, mise and Neovim. Shell activation is a
+bootstrap then checks mise and invokes it for missing zsh, Neovim and Zellij. Shell activation is a
 separate opt-in step; an exit code of zero does not mean the machine has an
 activated shell, other configured tools, deployed dotfiles or restored secrets.
 

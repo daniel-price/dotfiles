@@ -6,11 +6,11 @@ not a list of installed or working features.**
 
 | Responsibility | Chosen or proposed owner | Status |
 | --- | --- | --- |
-| Fresh setup | Bash `scripts/setup/bootstrap.sh` | Installs missing `zsh`, `curl`, pinned mise and Neovim after individual approval |
+| Fresh setup | Bash stage zero + native mise | Verified mise installer; declarative package and pinned tool provisioning with per-component approvals |
 | Recurring update | Not implemented | Planned; no updater executable exists |
-| Runtime and suitable developer tool versions | mise | Neovim provisioning implemented; further tools planned |
+| Runtime and suitable developer tool versions | mise | Neovim and Zellij declared in `.config/mise/config.toml`; development tools remain in root `mise.toml` |
 | Checkout development tools and shell Git hooks | mise + Lefthook | Implemented; opt-in developer setup |
-| Managed dotfiles and templating | Native mise dotfiles | Reviewed zsh file and one explicit directory overlay implemented; broader deployment planned |
+| Managed dotfiles and templating | Native mise dotfiles | Zsh target is declared; explicit conflict preflight and optional private-directory overlay remain |
 | Encrypted values and tracked files | age through mise | Planned; separate mechanisms |
 | Optional private config | Separately authorised Git repo and selected profile | Narrow single-target overlay implemented; full profiles not connected |
 | Machine-local identities and overrides | Outside Git | Policy only |

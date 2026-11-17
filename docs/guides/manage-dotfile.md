@@ -20,7 +20,7 @@ bash ~/.dotfiles/scripts/setup/deploy-zsh-config.sh --help
 bash ~/.dotfiles/scripts/setup/deploy-zsh-config.sh
 ```
 
-The source is `.config/zsh/zshrc`. It only activates mise found on `PATH` or at
+The target and source are declared once in `.config/mise/config.toml` under `[dotfiles]`, rather than generated as temporary TOML. The source is `.config/zsh/zshrc`. It only activates mise found on `PATH` or at
 `~/.local/bin/mise`. An existing `~/.zshrc` is never overwritten: resolve that
 conflict manually before rerunning. A repeated run with the correct symlink
 exits without a prompt.

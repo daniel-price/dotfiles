@@ -7,11 +7,12 @@ commands are distinct from both.
 | Path | Responsibility |
 | --- | --- |
 | `get-started.sh` | Standalone stage-zero installer: checks Git, clones the public checkout and asks before running bootstrap. |
-| `scripts/setup/` | Machine lifecycle: `bootstrap.sh`, `provision-tool.sh`, `deploy-zsh-config.sh` and `apply-private-overlay.sh`. |
+| `scripts/setup/` | Machine lifecycle: `bootstrap.sh`, `deploy-zsh-config.sh` and `apply-private-overlay.sh`. |
 | `scripts/dev/` | Checkout maintenance: formatting, linting, Git hooks, documentation builds, dependency setup and CI checks. |
 | `scripts/lib/` | Source-only Bash helpers shared by setup and development scripts. |
 | `bin/` (future) | Everyday executable commands, once there is an actual personal utility to install or expose on `PATH`. |
-| `.config/` | Reviewed home configuration: currently the opt-in zsh startup file and other application placeholders. |
+| `.config/mise/config.toml` | Declarative machine packages, pinned tools and the opt-in zsh dotfile entry; deliberately separate from developer tooling. |
+| `.config/` | Reviewed home configuration: zsh startup and future application defaults. |
 | `tests/` | Temporary-fixture and interactive integration tests, never host-changing by default. |
 | `docs/` | Current handbook and separately labelled historical planning notes. |
 | `.github/` | CI orchestration and pull request template. |
@@ -31,7 +32,7 @@ root-level `bootstrap.sh` checkouts, without updating them implicitly.
 There is currently **no recurring update command**. Git synchronisation,
 version upgrades and broader dotfile deployment remain explicit future work.
 
-Only the reviewed `.config/zsh/zshrc` is deployable today. Application
+Only the reviewed `.config/zsh/zshrc` is deployable today through native mise dotfiles and an explicit safety preflight. Application
 placeholder directories are not working configurations and must not be linked
 wholesale. Keep repo-only development settings outside `.config/`.
 
