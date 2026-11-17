@@ -45,6 +45,11 @@ echo 'zsh fake'
 """)
     fake_zsh.chmod(0o755)
 
+    # Never query or change the CI runner keyboard from this bootstrap test.
+    fake_hidutil = bin_dir / "hidutil"
+    fake_hidutil.write_text('#!/usr/bin/env bash\nif [[ "$*" == "property --get UserKeyMapping" ]]; then echo "[]"; else exit 1; fi\n')
+    fake_hidutil.chmod(0o755)
+
     fake_mise = bin_dir / "mise"
     fake_mise.write_text("""#!/usr/bin/env bash
 if [[ "$1" == --version ]]; then echo '2026.11.9 fake'; exit 0; fi
@@ -137,7 +142,7 @@ esac
                                     stderr=subprocess.STDOUT)
             os.close(slave)
             slave = -1
-            os.write(master, answers.encode())
+            os.write(master, (answers + "n\n" * 2).encode())
             out = proc.communicate(timeout=20)[0].decode(errors="replace")
             return subprocess.CompletedProcess([], proc.returncode, out)
         finally:
