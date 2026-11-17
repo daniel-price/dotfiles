@@ -114,3 +114,30 @@ esac
     assert log.read_text().count("\n") == 1, "Legacy checkout was cloned again"
 
     print("PASS: PTY current/older handoff, confirmation, idempotence and failure propagation")
+
+    # The shell-only test suite must also finish when invoked from an actual
+    # terminal without input. CI's default non-TTY stdin would miss this bug.
+    master, slave = pty.openpty()
+    try:
+        process = subprocess.Popen(
+            ["bash", str(ROOT / "tests" / "get-started.sh")],
+            stdin=slave, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            cwd=temp, env=os.environ.copy(),
+        )
+        os.close(slave)
+        slave = -1
+        try:
+            output = process.communicate(timeout=12)[0].decode(errors="replace")
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.communicate()
+            raise AssertionError(
+                "Stage-zero shell tests blocked on inherited terminal input"
+            ) from None
+        assert process.returncode == 0, output
+        assert "PASS: Stage-zero Git bootstrap" in output, output
+    finally:
+        os.close(master)
+        if slave != -1:
+            os.close(slave)
+    print("PASS: Stage-zero shell tests do not read from an inherited terminal")

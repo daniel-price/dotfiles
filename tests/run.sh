@@ -157,7 +157,7 @@ fi
     fail 'entry point wrote to isolated home or working directory'
 printf 'PASS: Entry-point help, errors and repeatable smoke execution\n'
 bash "$ROOT/tests/check-clean.sh"
-bash "$ROOT/tests/get-started.sh"
+bash "$ROOT/tests/get-started.sh" </dev/null
 if command -v python3 >/dev/null 2>&1; then
     python3 "$ROOT/tests/get-started-interactive.py"
     python3 "$ROOT/tests/bootstrap-interactive.py"
