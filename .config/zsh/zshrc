@@ -4,9 +4,7 @@ if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
   export PATH="$HOME/.local/bin:$PATH"
 fi
 
-# Add our personal scripts to PATH so they can be run from anywhere.
-# For example, opencode-sandbox starts OpenCode in an isolated container,
-# rather than running OpenCode directly on the host.
+# Add personal scripts to PATH so they can be run from anywhere.
 _dotfiles_bin="${${(%):-%x}:A:h:h:h}/bin"
 if [[ -d "$_dotfiles_bin" && ":$PATH:" != *":$_dotfiles_bin:"* ]]; then
   export PATH="$_dotfiles_bin:$PATH"
