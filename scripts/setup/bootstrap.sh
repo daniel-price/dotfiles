@@ -178,13 +178,57 @@ fi
 zsh_config_status='skipped (zsh unavailable)'
 zsh_target="$HOME/.zshrc"
 zsh_source="$ROOT/.config/zsh/zshrc"
+# Only the Zellij regular-file conflict is auto-migrated. Keep a recoverable
+# original, never force every dotfile or replace foreign symlinks.
+apply_reviewed_dotfiles() {
+    local target="$HOME/.config/zellij/config.kdl"
+    local backup='' timestamp suffix=0
+
+    if [[ -L "$target" ]]; then
+        if [[ ! "$target" -ef "$ROOT/.config/zellij/config.kdl" ]]; then
+            log "Zellij config is a foreign symlink; leaving it untouched: $target"
+            return 1
+        fi
+    elif [[ -e "$target" ]]; then
+        if [[ ! -f "$target" ]]; then
+            log "Zellij config is not a regular file; leaving it untouched: $target"
+            return 1
+        fi
+        timestamp=$(date +%Y%m%d-%H%M%S)
+        backup="$target.backup-$timestamp"
+        while [[ -e "$backup" || -L "$backup" ]]; do
+            suffix=$((suffix + 1))
+            backup="$target.backup-$timestamp-$suffix"
+        done
+        # Move instead of copy, preserving the original exactly.
+        if ! mv "$target" "$backup"; then
+            log "Unable to back up Zellij config; deployment skipped."
+            return 1
+        fi
+        log "Backed up existing Zellij config to $backup"
+    fi
+
+    if "$mise" -C / dot apply --yes; then
+        return 0
+    fi
+    # If mise fails before replacing the target, put its original back.
+    if [[ -n "$backup" && ! -e "$target" && ! -L "$target" ]]; then
+        if mv "$backup" "$target"; then
+            log 'Restored original Zellij config after failed deployment.'
+        else
+            log "Could not restore Zellij config; original is safe at $backup"
+        fi
+    fi
+    return 1
+}
+
 # Let mise decide whether any declared dotfiles need attention.
 if "$mise" -C / dot status --missing >/dev/null 2>&1; then
     log 'Reviewed mise-managed dotfiles are already applied.'
 elif "$mise" -C / dot apply --dry-run; then
-    if confirm 'Apply the reviewed dotfiles declared in mise.toml?'; then
-        if ! "$mise" -C / dot apply --yes; then
-            log 'Mise dotfile deployment failed (for example, an existing file conflict); existing files are preserved.'
+    if confirm 'Apply the reviewed dotfiles (backing up an existing regular Zellij config)?'; then
+        if ! apply_reviewed_dotfiles; then
+            log 'Mise dotfile deployment failed; review any remaining conflicts and backups.'
         fi
     else
         log 'Dotfile deployment declined or noninteractive.'
