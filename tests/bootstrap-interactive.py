@@ -8,7 +8,7 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SCRIPT = ROOT / "scripts" / "setup" / "bootstrap.sh"
+SCRIPT = ROOT / "bin" / ",bootstrap"
 
 
 def supported_host():
@@ -89,7 +89,7 @@ printf '%s  %s\n' "$MOCK_SHA256" "$file"
         master, slave = pty.openpty()
         try:
             process = subprocess.Popen(
-                ["bash", str(SCRIPT)], cwd=temp, env=env, stdin=slave,
+                ["bash", str(SCRIPT), "--no-update"], cwd=temp, env=env, stdin=slave,
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             os.close(slave)
             slave = -1
@@ -118,7 +118,7 @@ printf '%s  %s\n' "$MOCK_SHA256" "$file"
     assert target.exists(), accepted
     assert "installer:v2026.11.9:" in log.read_text(), log.read_text()
     before = log.read_text()
-    repeated = subprocess.run(["bash", str(SCRIPT)], cwd=temp, env=env,
+    repeated = subprocess.run(["bash", str(SCRIPT), "--no-update"], cwd=temp, env=env,
                               stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT, text=True)
     assert repeated.returncode == 0, repeated.stdout
@@ -127,7 +127,7 @@ printf '%s  %s\n' "$MOCK_SHA256" "$file"
 
     target.write_text("#!/usr/bin/env sh\necho '2026.8.15 fake'\n")
     target.chmod(0o755)
-    old = subprocess.run(["bash", str(SCRIPT)], cwd=temp, env=env,
+    old = subprocess.run(["bash", str(SCRIPT), "--no-update"], cwd=temp, env=env,
                          stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT, text=True)
     assert old.returncode != 0 and "2026.11.9 or newer" in old.stdout, old.stdout

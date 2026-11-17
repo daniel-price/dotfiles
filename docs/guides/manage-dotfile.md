@@ -10,7 +10,7 @@ MISE_GLOBAL_CONFIG_FILE="$HOME/.dotfiles/scripts/setup/mise.toml" mise -C / dot 
 MISE_GLOBAL_CONFIG_FILE="$HOME/.dotfiles/scripts/setup/mise.toml" mise -C / dot apply
 ```
 
-Alternatively, rerun `bash ~/.dotfiles/scripts/setup/bootstrap.sh` to provision tools and offer the reviewed dotfiles.
+Alternatively, rerun `bash ~/.dotfiles/bin/,bootstrap --no-update` to provision tools and offer the reviewed dotfiles.
 
 Mise refuses to replace existing regular files without `--force`, but may repoint an existing symlink to the declared source. Review the preview and never use `--force` during bootstrap. The manifest stays separate from the checkout-only development `mise.toml`.
 

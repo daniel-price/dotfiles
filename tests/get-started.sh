@@ -50,8 +50,8 @@ grep -q 'Clone declined' "$TMP/out" || fail 'noninteractive clone not declined'
 [[ ! -e "$TMP/home/.dotfiles" ]] || fail 'checkout created without consent'
 
 # Existing checkout with exact origin should be skipped without changing it.
-mkdir -p "$TMP/home/.dotfiles/scripts/setup"
-cat >"$TMP/home/.dotfiles/scripts/setup/bootstrap.sh" <<'BOOT'
+mkdir -p "$TMP/home/.dotfiles/bin"
+cat >"$TMP/home/.dotfiles/bin/,bootstrap" <<'BOOT'
 #!/usr/bin/env bash
 printf 'unexpected bootstrap execution\n' > "$HOME/bootstrap-invoked"
 BOOT
@@ -68,22 +68,8 @@ if HOME="$TMP/home" SIMULATE_REMOTE='https://example.invalid/other' \
 fi
 grep -q 'unexpected origin' "$TMP/out" || fail 'missing origin error'
 
-# Previous checkouts stored bootstrap directly under scripts/.
-mv "$TMP/home/.dotfiles/scripts/setup/bootstrap.sh" "$TMP/home/.dotfiles/scripts/bootstrap.sh"
-rmdir "$TMP/home/.dotfiles/scripts/setup"
-HOME="$TMP/home" PATH="$TMP/bin:$PATH" \
-    bash "$ROOT/get-started.sh" >"$TMP/out" 2>&1
-grep -q 'Bootstrap execution declined' "$TMP/out" || fail 'previous bootstrap approval was not requested'
-[[ ! -e "$TMP/home/bootstrap-invoked" ]] || fail 'previous bootstrap ran without approval'
-
-# Even older checkouts used a root-level bootstrap.
-mv "$TMP/home/.dotfiles/scripts/bootstrap.sh" "$TMP/home/.dotfiles/bootstrap.sh"
-rmdir "$TMP/home/.dotfiles/scripts"
-HOME="$TMP/home" PATH="$TMP/bin:$PATH" \
-    bash "$ROOT/get-started.sh" >"$TMP/out" 2>&1
-grep -q 'Bootstrap execution declined' "$TMP/out" || fail 'root bootstrap approval was not requested'
-[[ ! -e "$TMP/home/bootstrap-invoked" ]] || fail 'root bootstrap ran without approval'
-rm "$TMP/home/.dotfiles/bootstrap.sh"
+rm "$TMP/home/.dotfiles/bin/,bootstrap"
+rmdir "$TMP/home/.dotfiles/bin"
 rmdir "$TMP/home/.dotfiles"
 printf 'untouched\n' >"$TMP/home/.dotfiles"
 if HOME="$TMP/home" PATH="$TMP/bin:$PATH" \

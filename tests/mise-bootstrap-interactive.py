@@ -9,7 +9,7 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SCRIPT = ROOT / "scripts" / "setup" / "bootstrap.sh"
+SCRIPT = ROOT / "bin" / ",bootstrap"
 
 
 def supported():
@@ -146,12 +146,12 @@ esac
 
     def run(answers=None):
         if answers is None:
-            return subprocess.run(["bash", str(SCRIPT)], cwd=base, env=env,
+            return subprocess.run(["bash", str(SCRIPT), "--no-update"], cwd=base, env=env,
                                   stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                                   stderr=subprocess.STDOUT, text=True, check=False)
         master, slave = pty.openpty()
         try:
-            proc = subprocess.Popen(["bash", str(SCRIPT)], cwd=base, env=env,
+            proc = subprocess.Popen(["bash", str(SCRIPT), "--no-update"], cwd=base, env=env,
                                     stdin=slave, stdout=subprocess.PIPE,
                                     stderr=subprocess.STDOUT)
             os.close(slave)

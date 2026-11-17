@@ -4,7 +4,7 @@
 # This file is downloaded on its own (with curl), without requiring Git,
 # SSH configuration or any sibling scripts from the checkout.
 # Once Git is available, it clones the public repo and separately asks
-# permission before running the checkout's scripts/setup/bootstrap.sh.
+# permission before running the checkout's bin/,bootstrap.
 # Existing trusted checkouts may optionally fetch/switch/fast-forward first.
 # Bash 3.2+ is expected on our supported macOS and Pop!_OS installations.
 set -euo pipefail
@@ -155,16 +155,7 @@ main() {
             info 'Update manually when ready, then rerun to enable safe update offers.'
         fi
     fi
-    local bootstrap='scripts/setup/bootstrap.sh'
-    # Do not update older checkouts implicitly. Use their original entry point
-    # (previously scripts/bootstrap.sh, and before that bootstrap.sh).
-    if [[ ! -e "$target/$bootstrap" && ! -L "$target/$bootstrap" ]]; then
-        if [[ -e "$target/scripts/bootstrap.sh" || -L "$target/scripts/bootstrap.sh" ]]; then
-            bootstrap='scripts/bootstrap.sh'
-        elif [[ -e "$target/bootstrap.sh" || -L "$target/bootstrap.sh" ]]; then
-            bootstrap='bootstrap.sh'
-        fi
-    fi
+    local bootstrap='bin/,bootstrap'
     if [[ ! -f "$target/$bootstrap" || -L "$target/$bootstrap" ]]; then
         fail "Missing or non-regular bootstrap script at $target/$bootstrap; nothing executed."
     fi
@@ -174,6 +165,6 @@ main() {
     fi
     info "Running bootstrap from $target."
     # Subshell leaves the original working directory unchanged.
-    (cd "$target" && bash "./$bootstrap") || fail 'Checkout bootstrap failed.'
+    (cd "$target" && bash "./$bootstrap" --no-update) || fail 'Checkout bootstrap failed.'
 }
 main "$@"

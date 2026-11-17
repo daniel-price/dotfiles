@@ -26,6 +26,8 @@ printf 'PASS: Bash syntax\n'
 [[ -x "$ROOT/bin/opencode-sandbox" && -f "$ROOT/containers/opencode/Containerfile" ]] ||
     fail 'sandbox launcher must be executable and have a reviewed Containerfile'
 bash -n "$ROOT/bin/opencode-sandbox" || fail 'sandbox launcher has invalid Bash syntax'
+[[ -x "$ROOT/bin/,bootstrap" ]] || fail ',bootstrap must be executable'
+bash -n "$ROOT/bin/,bootstrap" || fail ',bootstrap has invalid Bash syntax'
 # These helpers are also run directly from a shell, not just via Bash in Zellij.
 for helper in ,copy-last ,copy-screen ,copy-pick; do
     [[ -x "$ROOT/bin/$helper" ]] || fail "copy helper is not executable: $helper"
@@ -42,7 +44,8 @@ else
     printf 'SKIP: Reviewed zsh syntax (zsh not found)\n'
 fi
 
-for moved in bootstrap apply-private-overlay cleanup update; do
+[[ ! -e "$ROOT/scripts/setup/bootstrap.sh" ]] || fail "obsolete bootstrap script should not remain"
+for moved in apply-private-overlay cleanup update; do
     [[ ! -e "$ROOT/scripts/$moved.sh" ]] || fail "obsolete setup path remains: $moved"
     [[ -x "$ROOT/scripts/setup/$moved.sh" ]] || fail "setup script is not executable: $moved"
 done
@@ -161,21 +164,21 @@ esac
 MISE
 chmod +x "$TEST_ROOT/bin/mise"
 for help in -h --help; do
-    output=$(bash "$ROOT/scripts/setup/bootstrap.sh" "$help")
+    output=$(bash "$ROOT/bin/,bootstrap" "$help")
     [[ "$output" == *'Usage:'* ]] || fail 'bootstrap help missing'
 done
-if bash "$ROOT/scripts/setup/bootstrap.sh" --unknown >"$TEST_ROOT/out" 2>"$TEST_ROOT/err"; then
+if bash "$ROOT/bin/,bootstrap" --unknown >"$TEST_ROOT/out" 2>"$TEST_ROOT/err"; then
     fail 'bootstrap accepted unknown argument'
 fi
-if bash "$ROOT/scripts/setup/bootstrap.sh" --help extra >"$TEST_ROOT/out" 2>"$TEST_ROOT/err"; then
+if bash "$ROOT/bin/,bootstrap" --help extra >"$TEST_ROOT/out" 2>"$TEST_ROOT/err"; then
     fail 'bootstrap accepted extra argument'
 fi
 # Run twice from elsewhere, with an isolated HOME, on a supported host only.
 if detect_os >/dev/null 2>&1; then
     output=$(cd "$TEST_ROOT/elsewhere" && HOME="$TEST_ROOT/home" \
-        PATH="$TEST_ROOT/bin:$PATH" bash "$ROOT/scripts/setup/bootstrap.sh")
+        PATH="$TEST_ROOT/bin:$PATH" bash "$ROOT/bin/,bootstrap" --no-update)
     repeated=$(cd "$TEST_ROOT/elsewhere" && HOME="$TEST_ROOT/home" \
-        PATH="$TEST_ROOT/bin:$PATH" bash "$ROOT/scripts/setup/bootstrap.sh")
+        PATH="$TEST_ROOT/bin:$PATH" bash "$ROOT/bin/,bootstrap" --no-update)
     assert_equal "$output" "$repeated" 'bootstrap repeatability'
     [[ "$output" == *'Detected platform:'* && "$output" == *'Bootstrap complete.'* &&
         "$output" == *'Bootstrap complete. Zsh configuration:'* ]] || fail 'bootstrap scope unclear'
@@ -191,6 +194,7 @@ if command -v python3 >/dev/null 2>&1; then
     python3 "$ROOT/tests/docs-generation.py"
     python3 "$ROOT/tests/get-started-interactive.py"
     python3 "$ROOT/tests/update-interactive.py"
+    python3 "$ROOT/tests/bootstrap-command.py"
     python3 "$ROOT/tests/bootstrap-interactive.py"
     python3 "$ROOT/tests/tool-overlay-interactive.py"
     python3 "$ROOT/tests/zsh-profile.py"

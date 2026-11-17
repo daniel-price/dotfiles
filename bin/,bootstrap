@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
+ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
 # shellcheck source=scripts/lib/common.sh
 source "$ROOT/scripts/lib/common.sh"
 # shellcheck source=scripts/lib/os.sh
@@ -18,9 +18,9 @@ MISE_INSTALLER_URL="https://github.com/jdx/mise/releases/download/$MISE_VERSION/
 MISE_INSTALLER_SHA256='60adf5460b19a791b964c414a2fff9d46990c9f2b1dfc0e4ba8c2b865f882a2b'
 
 usage() {
-    printf '%s\n' 'Usage: bash scripts/setup/bootstrap.sh [--help]' \
-        'Install missing mise and zsh, offer reviewed dotfiles and pinned tools.' \
-        'After provisioning, offer to set Zsh as the default login shell.' \
+    printf '%s\n' 'Usage: ,bootstrap [--no-update|--help]' \
+        'Offer approved update, then install missing mise, zsh and pinned tools.' \
+        '--no-update: provision checked-out version without fetching (stage-zero handoff).' \
         'Every missing component requires its own interactive approval.'
 }
 
@@ -122,22 +122,44 @@ case "${1:-}" in
     usage
     exit 0
     ;;
-'') [[ $# -eq 0 ]] || die 'Unexpected argument.' ;;
+--no-update)
+    [[ $# -eq 1 ]] || die 'Unexpected extra argument.'
+    ;;
+'')
+    [[ $# -eq 0 ]] || die 'Unexpected argument.'
+    # The checkout can replace this file during fast-forward. Run the
+    # coordinator entirely in memory, then execute the new checkout code.
+    DOTFILES_BOOTSTRAP_ROOT="$ROOT" exec bash -c '
+        set -euo pipefail
+        root=$DOTFILES_BOOTSTRAP_ROOT
+        bash "$root/scripts/setup/update.sh" --apply --require-current
+        [[ "$(git -C "$root" symbolic-ref --quiet --short HEAD)" == main ]] || {
+            printf "[error] Checkout is not on main; bootstrap skipped.\\n" >&2
+            exit 1
+        }
+        [[ "$(git -C "$root" rev-parse HEAD)" == "$(git -C "$root" rev-parse refs/remotes/origin/main)" ]] || {
+            printf "[error] Checkout is not at fetched origin/main; bootstrap skipped.\\n" >&2
+            exit 1
+        }
+        [[ -z "$(git -C "$root" status --porcelain --untracked-files=all)" ]] || {
+            printf "[error] Checkout has uncommitted changes; bootstrap skipped.\\n" >&2
+            exit 1
+        }
+        exec bash "$root/bin/,bootstrap" --no-update
+    ' dotfiles-bootstrap
+    ;;
 *) die 'Unknown argument. Use --help for usage.' ;;
 esac
-
 # shellcheck disable=SC2119
 platform=$(detect_os) || die 'Unsupported platform.'
 log "Detected platform: $platform."
 
-# Bootstrap never changes its own checkout. Warn when invoked directly from a
-# different branch; switching/fetching belongs to the separately approved
-# updater, before any bootstrap commands start.
+# Explicit --no-update provisioning can run from an existing feature checkout.
 if command -v git >/dev/null 2>&1 &&
     [[ "$(git -C "$ROOT" rev-parse --show-toplevel 2>/dev/null || :)" == "$ROOT" ]]; then
     checkout_branch=$(git -C "$ROOT" symbolic-ref --quiet --short HEAD 2>/dev/null || :)
     if [[ "$checkout_branch" != main ]]; then
-        log "Running bootstrap from ${checkout_branch:-detached HEAD}; run bash scripts/setup/update.sh --apply to offer a main update first."
+        log "Running bootstrap from ${checkout_branch:-detached HEAD} without updating."
     fi
 fi
 ensure_mise "$platform"
@@ -172,8 +194,7 @@ else
 fi
 
 # Mise owns the reviewed dotfiles. Preview and require explicit approval before
-# applying; --force is safe only for the dry-run preview of regular-file conflicts.
-# The real apply stays non-forced after backing up the known Zellij target.
+# applying; --yes skips mise's second prompt, never its conflict checks.
 # Apply before tool provisioning so a new Zsh session can activate mise.
 # A conflict must not block otherwise independent tool installation.
 zsh_config_status='skipped (zsh unavailable)'

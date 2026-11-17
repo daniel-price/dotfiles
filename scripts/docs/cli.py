@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[2]
 # Deliberate allowlist. Each entry must exit before doing setup, I/O or networking.
 COMMANDS = (
     ("Initial setup", "get-started.sh"),
-    ("Machine bootstrap", "scripts/setup/bootstrap.sh"),
+    ("Update and bootstrap", "bin/,bootstrap"),
     ("Update checkout", "scripts/setup/update.sh"),
     ("Cleanup", "scripts/setup/cleanup.sh"),
     ("Install prompt", "scripts/setup/setup-prompt.sh"),

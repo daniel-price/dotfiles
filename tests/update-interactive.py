@@ -42,6 +42,7 @@ with tempfile.TemporaryDirectory(prefix="dotfiles-update-") as scratch:
     git("-C", seed, "checkout", "-q", "-b", "main")
     (seed / "scripts/setup").mkdir(parents=True)
     (seed / "scripts/lib").mkdir()
+    (seed / "bin").mkdir()
     shutil.copy2(ROOT / "scripts/setup/update.sh", seed / "scripts/setup/update.sh")
     shutil.copy2(ROOT / "scripts/lib/common.sh", seed / "scripts/lib/common.sh")
     git("-C", seed, "remote", "add", "origin", bare)
@@ -53,7 +54,7 @@ with tempfile.TemporaryDirectory(prefix="dotfiles-update-") as scratch:
             (ROOT / "scripts/setup/update.sh").read_text() +
             f"\n# synthetic updater revision {version}\n"
         )
-        (seed / "scripts/setup/bootstrap.sh").write_text(
+        (seed / "bin/,bootstrap").write_text(
             "#!/usr/bin/env bash\n"
             f"printf '%s\\n' '{version}' >> \"$MOCK_BOOTSTRAP_MARKER\"\n"
         )
@@ -118,6 +119,8 @@ exec "@GIT@" "$@"
     assert git("-C", checkout, "rev-parse", "refs/remotes/origin/main") == old
     status, out = run([script, "--apply"])
     assert status == 0 and "Fetch declined" in out, out
+    status, out = run([script, "--apply", "--require-current"])
+    assert status != 0 and "bootstrap will not run" in out, out
     status, out = run([script, "--apply"], "n\n")
     assert status == 0 and "Fetch declined" in out, out
     assert git("-C", checkout, "rev-parse", "refs/remotes/origin/main") == old
@@ -132,7 +135,7 @@ exec "@GIT@" "$@"
     status, out = run([script, "--apply"], "y\n")
     assert status == 0 and "already current" in out, out
 
-    # Stage zero must update first and execute the NEW bootstrap script.
+    # Stage zero must update first and execute the NEW canonical bootstrap.
     git("-C", checkout, "switch", "-qc", "feature/test")
     feature_head = git("-C", checkout, "rev-parse", "HEAD")
     push("v3")

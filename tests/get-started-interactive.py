@@ -29,9 +29,10 @@ case "$1" in
     esac;;
   clone)
     printf '%s\\n' "$4" >> "$MOCK_CLONE_LOG"
-    mkdir -p "$4/scripts/setup"
-    cat > "$4/scripts/setup/bootstrap.sh" <<'BOOT'
+    mkdir -p "$4/bin"
+    cat > "$4/bin/,bootstrap" <<'BOOT'
 #!/usr/bin/env bash
+[[ "$1" == --no-update ]] || exit 17
 printf '%s\\n' "$PWD" > "$MOCK_BOOTSTRAP_MARKER"
 [[ "${MOCK_BOOTSTRAP_FAIL:-0}" != 1 ]]
 BOOT
@@ -76,44 +77,23 @@ esac
     # Clone approval does not imply permission to run cloned code.
     status, output = run_tty("y\nn\n")
     assert status == 0, output
-    assert (home / ".dotfiles" / "scripts" / "setup" / "bootstrap.sh").exists()
+    assert (home / ".dotfiles" / "bin" / ",bootstrap").exists()
     assert not marker.exists(), output
     assert log.read_text().count("\n") == 1
     assert "Bootstrap execution declined" in output, output
 
     # Explicit bootstrap approval; existing repo is reused without a second clone.
-    legacy_bootstrap = home / ".dotfiles" / "bootstrap.sh"
-    legacy_bootstrap.write_text("#!/usr/bin/env bash\nexit 99\n")
     status, output = run_tty("y\n")
     assert status == 0, output
     assert marker.read_text().strip() == str(home / ".dotfiles"), output
     assert log.read_text().count("\n") == 1, "Unexpected second clone"
-    legacy_bootstrap.unlink()
 
     # Errors inside the checkout bootstrap must cause stage zero to fail.
     marker.unlink()
     status, output = run_tty("y\n", should_fail=True)
     assert status != 0 and "Checkout bootstrap failed" in output, output
 
-    # A previous scripts/bootstrap.sh checkout still works without updating.
-    prior_bootstrap = home / ".dotfiles" / "scripts" / "bootstrap.sh"
-    (home / ".dotfiles" / "scripts" / "setup" / "bootstrap.sh").rename(prior_bootstrap)
-    (home / ".dotfiles" / "scripts" / "setup").rmdir()
-    marker.unlink()
-    status, output = run_tty("y\n")
-    assert status == 0, output
-    assert marker.read_text().strip() == str(home / ".dotfiles"), output
-    assert log.read_text().count("\n") == 1, "Prior checkout was cloned again"
-
-    # Even older root-level bootstrap.sh checkouts remain supported.
-    prior_bootstrap.rename(legacy_bootstrap)
-    marker.unlink()
-    status, output = run_tty("y\n")
-    assert status == 0, output
-    assert marker.read_text().strip() == str(home / ".dotfiles"), output
-    assert log.read_text().count("\n") == 1, "Legacy checkout was cloned again"
-
-    print("PASS: PTY current/older handoff, confirmation, idempotence and failure propagation")
+    print("PASS: PTY canonical handoff, confirmation, idempotence and failure propagation")
 
     # The shell-only test suite must also finish when invoked from an actual
     # terminal without input. CI's default non-TTY stdin would miss this bug.
