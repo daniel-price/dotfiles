@@ -80,6 +80,23 @@ Scripts are grouped by purpose: `scripts/setup/` installs and configures the mac
 `scripts/lib/` holds shared internal Bash functions. Personal commands can go
 in `bin/` when there is a useful executable to expose on `PATH`.
 
+## Preview or remove managed setup items
+
+After bootstrapping, you can inspect an optional, conservative cleanup. Running
+it **without flags never removes anything**:
+
+```sh
+bash scripts/setup/cleanup.sh           # Read-only preview
+bash scripts/setup/cleanup.sh --apply   # Separate yes/no prompt per eligible item
+```
+
+Cleanup only targets the reviewed `~/.zshrc` symlink and the **exact mise
+versions** pinned for Neovim and Zellij in `scripts/setup/mise.toml`.
+It never removes zsh/other OS packages, mise itself, Git, the checkout or
+private overlays. Mise tool versions are shared across projects, so approve
+their removal only if you know other projects do not rely on them.
+See [cleanup details](docs/getting-started/index.md#preview-and-clean-up-managed-items).
+
 ## Safety
 
 This is a **public** repository. Never add plaintext credentials, private age

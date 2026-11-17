@@ -7,7 +7,7 @@ commands are distinct from both.
 | Path | Responsibility |
 | --- | --- |
 | `get-started.sh` | Standalone stage-zero installer: checks Git, clones the public checkout and asks before running bootstrap. |
-| `scripts/setup/` | Machine lifecycle: `bootstrap.sh`, `deploy-zsh-config.sh` and `apply-private-overlay.sh`. |
+| `scripts/setup/` | Machine lifecycle: `bootstrap.sh`, `deploy-zsh-config.sh`, `apply-private-overlay.sh` and preview-first `cleanup.sh`. |
 | `scripts/dev/` | Checkout maintenance: formatting, linting, Git hooks, documentation builds, dependency setup and CI checks. |
 | `scripts/lib/` | Source-only Bash helpers shared by setup and development scripts. |
 | `bin/` (future) | Everyday executable commands, once there is an actual personal utility to install or expose on `PATH`. |

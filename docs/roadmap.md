@@ -30,6 +30,7 @@ CI. See [development](guides/development.md) for setup and read-only checks.
 | 2 | Install verified mise `v2026.11.9` with separate download and execution approval | Implemented |
 | 2a | Provision declared Neovim and Zellij using mise with confirmation per tool | Implemented |
 | 3 | Add guarded Git updates and a truthful change report | Planned |
+| 3a | Preview-first, selective cleanup of reviewed symlink and pinned mise tools | Implemented |
 | 4a | Deploy one declared zsh dotfile via native mise with preview and conflict refusal | Implemented |
 | 4 | Migrate further dotfiles gradually via native mise | Planned |
 | 5a | Narrow one-target private config directory overlay with explicit source, conflict preflight and synthetic tests | Implemented |
