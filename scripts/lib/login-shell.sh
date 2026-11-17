@@ -21,14 +21,14 @@ registered_zsh() {
 # Print the account's home and configured login shell on separate lines.
 # Never infer the login shell from $SHELL or the running process.
 login_account_record() {
-    local platform=$1 username=$2 record name password uid gid gecos home shell
+    local platform=$1 username=$2 record name home shell
     local raw_home raw_shell
     case "$platform" in
     debian)
         command -v getent >/dev/null 2>&1 || return 1
         record=$(getent passwd "$username") || return 1
         [[ "$record" != *$'\n'* ]] || return 1
-        IFS=: read -r name password uid gid gecos home shell <<<"$record"
+        IFS=: read -r name _ _ _ _ home shell <<<"$record"
         [[ "$name" == "$username" && "$home" == /* && "$shell" == /* ]] || return 1
         ;;
     macos)
