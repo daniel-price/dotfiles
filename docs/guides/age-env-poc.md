@@ -6,14 +6,14 @@ Question: can a committed, encrypted mise environment value be restored using an
 
 ## Run
 
-Prerequisites: `mise` with age-value support and `age-keygen` installed (on Pop!_OS, the `age` package; on macOS, `age` via your chosen package manager). Review the script first.
+Prerequisite: `mise` with age-value support. The POC uses an existing `age-keygen` if available; otherwise it offers to install pinned `age@1.3.2` through a dedicated [mise tool manifest](../../scripts/poc/age-tools.toml). Review the script and manifest first. This tool is **not** part of normal bootstrap.
 
 ```sh
 bash scripts/poc/age-env.sh
 bash scripts/poc/age-env.sh --apply
 ```
 
-The default command previews only. `--apply` asks for confirmation, then creates a fresh directory under `${TMPDIR:-/tmp}` with `mise.toml` and an **untracked, synthetic-only** `identity.txt`. It tests that `mise exec` receives the fake value and that decryption fails with a missing key. No files in your home or dotfiles repository are changed. The script prints the workspace path, not the key or decrypted value.
+The default command previews only. `--apply` first asks whether to run the experiment, then separately requests consent to install the pinned `age` tool if it is missing. Declining either makes no changes. On approval it creates a fresh directory under `${TMPDIR:-/tmp}` with `mise.toml` and an **untracked, synthetic-only** `identity.txt`. It tests that `mise exec` receives the fake value and that decryption fails with a missing key. No files in your dotfiles checkout are changed. If the `age` installation is approved, mise stores the tool in its normal per-user installation directory; it does not modify your global tool selection. The script prints the workspace path, not the key or decrypted value.
 
 ## Verify recovery on a second machine / clean environment
 
