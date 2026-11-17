@@ -8,6 +8,7 @@ zellij = "0.46.0"
 zoxide = "0.10.0"
 ripgrep = "15.2.0"
 fd = "10.5.2"
+opencode = "2.3.0"
 
 [bootstrap.packages]
 "apt:zsh" = { os = "linux" }
