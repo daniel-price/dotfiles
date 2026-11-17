@@ -3,6 +3,7 @@
 - [Add or change a tool](add-tool.md)
 - [Manage a dotfile](manage-dotfile.md)
 - [Zsh aliases and prompt](zsh.md)
+- [Zellij keybindings and yank helpers](zellij.md)
 - [Develop the repo and use Git hooks](development.md)
 - [Private configuration](private-profiles.md)
 - [OpenCode sandbox](opencode.md) · [Podman prerequisite](podman.md)
