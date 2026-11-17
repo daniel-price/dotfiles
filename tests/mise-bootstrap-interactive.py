@@ -229,25 +229,25 @@ esac
     # An existing regular Zellij config is preserved and replaced with the
     # managed symlink after explicit approval. Repeated runs create no backups.
     zellij_target.unlink()
-    zellij_target.write_text("existing default zellij config\\n")
+    zellij_target.write_text("existing default zellij config\n")
     before_backups = list(zellij_target.parent.glob("config.kdl.backup-*"))
-    migrated = run("y\\n" + "n\\n" * (len(pins) + 1))
+    migrated = run("y\n" + "n\n" * (len(pins) + 1))
     assert migrated.returncode == 0, migrated.stdout
     backups = list(zellij_target.parent.glob("config.kdl.backup-*"))
     assert len(backups) == len(before_backups) + 1, backups
-    assert backups[-1].read_text() == "existing default zellij config\\n"
+    assert backups[-1].read_text() == "existing default zellij config\n"
     assert zellij_target.is_symlink() and zellij_target.resolve() == (ROOT / ".config/zellij/config.kdl").resolve()
     run()
     assert len(list(zellij_target.parent.glob("config.kdl.backup-*"))) == len(backups)
 
     # A failed mise apply restores the moved regular file, retaining its data.
     zellij_target.unlink()
-    zellij_target.write_text("restore me\\n")
+    zellij_target.write_text("restore me\n")
     (state / "fail-dot-apply").touch()
-    failed = run("y\\n" + "n\\n" * (len(pins) + 1))
+    failed = run("y\n" + "n\n" * (len(pins) + 1))
     assert failed.returncode == 0, failed.stdout
     assert zellij_target.is_file() and not zellij_target.is_symlink()
-    assert zellij_target.read_text() == "restore me\\n"
+    assert zellij_target.read_text() == "restore me\n"
     assert "Restored original Zellij config" in failed.stdout
     (state / "fail-dot-apply").unlink()
     zellij_target.unlink()
@@ -255,10 +255,10 @@ esac
 
     # Foreign symlinks are left untouched, never forcibly repointed.
     foreign_kdl = base / "foreign.kdl"
-    foreign_kdl.write_text("custom config\\n")
+    foreign_kdl.write_text("custom config\n")
     zellij_target.unlink()
     zellij_target.symlink_to(foreign_kdl)
-    foreign = run("y\\n" + "n\\n" * (len(pins) + 1))
+    foreign = run("y\n" + "n\n" * (len(pins) + 1))
     assert foreign.returncode == 0, foreign.stdout
     assert zellij_target.is_symlink() and zellij_target.resolve() == foreign_kdl.resolve()
     assert "foreign symlink" in foreign.stdout
