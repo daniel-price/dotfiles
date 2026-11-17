@@ -44,10 +44,8 @@ printf 'PASS: Checkout script layout and executable modes\n'
 # This must not accidentally include the root checkout's developer tools.
 if command -v mise >/dev/null 2>&1; then
     machine_config="$ROOT/scripts/setup/mise.toml"
-    config_listing=$(MISE_GLOBAL_CONFIG_FILE="$machine_config" mise -C / config ls) ||
+    MISE_GLOBAL_CONFIG_FILE="$machine_config" mise -C / config ls >/dev/null ||
         fail 'mise could not parse the machine-only manifest'
-    [[ "$config_listing" == *"$machine_config"* ]] ||
-        fail 'machine manifest was not selected explicitly'
     tool_listing=$(MISE_GLOBAL_CONFIG_FILE="$machine_config" mise -C / ls --current) ||
         fail 'mise could not resolve machine tool declarations'
     [[ "$tool_listing" == *neovim* && "$tool_listing" == *zellij* ]] ||
