@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 # Isolated POC: age-encrypted mise environment value (synthetic data only).
 set -euo pipefail
+ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 
 usage() {
     printf '%s\n' 'Usage: bash scripts/poc/age-env.sh [--apply|--help]' \
         'Default: show the proposed experiment; do not create files.' \
         '--apply: create a disposable directory with a synthetic encrypted value.' \
-        'Requires mise with age-value support and age-keygen; never uses real credentials.'
+        'Requires mise with age-value support; offers pinned age if age-keygen is missing.'
 }
 case "${1:-}" in
 -h | --help)
@@ -39,10 +40,6 @@ command -v mise >/dev/null 2>&1 || {
     printf '%s\n' 'Missing mise.' >&2
     exit 1
 }
-command -v age-keygen >/dev/null 2>&1 || {
-    printf '%s\n' 'Missing age-keygen (age package).' >&2
-    exit 1
-}
 printf 'Create an isolated synthetic demo directory? [y/N] '
 IFS= read -r answer
 [[ "$answer" == y || "$answer" == Y || "$answer" == yes ]] || {
@@ -50,10 +47,41 @@ IFS= read -r answer
     exit 0
 }
 
+# The standalone age binary is needed only to generate a throwaway identity.
+# Provision it through a separately reviewed mise manifest when absent.
+age_keygen=(age-keygen)
+if ! command -v age-keygen >/dev/null 2>&1; then
+    manifest="$ROOT/scripts/poc/age-tools.toml"
+    [[ -f "$manifest" && ! -L "$manifest" ]] || {
+        printf '%s\n' 'Missing reviewed age POC tool manifest.' >&2
+        exit 1
+    }
+    mise=$(command -v mise)
+    export MISE_GLOBAL_CONFIG_FILE="$manifest"
+    if "$mise" -C / install --dry-run-code age@1.3.2; then
+        printf '%s\n' 'Pinned age@1.3.2 is already installed through mise.'
+    else
+        result=$?
+        [[ "$result" -eq 1 ]] || {
+            printf '%s\n' 'Unable to inspect mise age installation status.' >&2
+            exit 1
+        }
+        printf 'Install pinned age@1.3.2 through mise for this POC? [y/N] '
+        IFS= read -r install_answer
+        if [[ "$install_answer" != y && "$install_answer" != Y && "$install_answer" != yes ]]; then
+            printf '%s\n' 'Declined; age was not installed and no demo files were created.'
+            exit 0
+        fi
+        "$mise" -C / install age@1.3.2
+    fi
+    # A scoped mise exec exposes age-keygen without changing PATH or global config.
+    age_keygen=("$mise" -C / exec -- age-keygen)
+fi
+
 umask 077
 work=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-age-poc.XXXXXXXX")
 printf '[settings]\nexperimental = true\n' >"$work/mise.toml"
-age-keygen -o "$work/identity.txt" >"$work/keygen.log" 2>&1 || {
+"${age_keygen[@]}" -o "$work/identity.txt" >"$work/keygen.log" 2>&1 || {
     printf '%s\n' 'age-keygen failed; inspect/remove the temporary workspace.' >&2
     exit 1
 }
