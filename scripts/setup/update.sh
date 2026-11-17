@@ -83,7 +83,6 @@ esac
 branch=$(git -C "$ROOT" symbolic-ref --quiet --short HEAD 2>/dev/null || :)
 if [[ -z "$branch" ]]; then
     skip_update 'Detached HEAD: update skipped; choose a branch manually.'
-
 fi
 log "Current branch: $branch."
 
@@ -117,17 +116,14 @@ fi
 # rather than relying on Git switch to discover problems half-way through.
 if [[ -n "$changes" ]]; then
     skip_update 'Update skipped: commit, stash manually or remove local changes first.'
-
 fi
 
 if ! confirm "Fetch the latest origin/main from $origin? (updates remote-tracking metadata only)"; then
     skip_update 'Fetch declined; checkout unchanged.'
-
 fi
 
 if ! git -C "$ROOT" fetch --no-tags origin refs/heads/main:refs/remotes/origin/main; then
     skip_update 'Could not fetch origin/main; leaving the checkout unchanged (offline bootstrap is still possible).'
-
 fi
 
 # Check for concurrent changes or branch switches between the fetch and action.
@@ -144,7 +140,6 @@ if git -C "$ROOT" show-ref --verify --quiet refs/heads/main; then
     read -r local_ahead local_behind <<<"$counts"
     if [[ "$local_ahead" -ne 0 ]]; then
         skip_update "Local main has $local_ahead commit(s) not on origin/main. No automatic switch, reset or merge."
-
     fi
 
     if [[ "$branch" == main ]]; then
@@ -154,12 +149,10 @@ if git -C "$ROOT" show-ref --verify --quiet refs/heads/main; then
         fi
         if ! confirm "Fast-forward local main by $local_behind commit(s)?"; then
             skip_update 'Fast-forward declined; checkout unchanged.'
-
         fi
     else
         if ! confirm "Switch from $branch to main and fast-forward by $local_behind commit(s)?"; then
             skip_update "Branch switch declined; remaining on $branch."
-
         fi
         if ! git -C "$ROOT" switch main; then
             die 'Could not switch to main; no branch was reset or force-checked out.'
@@ -180,7 +173,6 @@ else
     # A checkout created on a feature branch may not yet have a local main.
     if ! confirm "Create local main tracking origin/main and switch from $branch?"; then
         skip_update "Branch switch declined; remaining on $branch."
-
     fi
     git -C "$ROOT" switch --track -c main origin/main ||
         die 'Could not create local main; existing branch was preserved.'
