@@ -133,17 +133,27 @@ esac
     target = home / ".zshrc"
 
     # Each component requires its own approval. Declines are safe.
-    declined = run("n\nn\nn\nn\n")
+    declined = run("n\n" * (1 + len(pins)))
     assert declined.returncode == 0, declined.stdout
     assert not list(state.iterdir()), declined.stdout
     assert "Skipped zsh" in declined.stdout and "Skipped neovim" in declined.stdout
     assert "Zsh configuration: skipped (zsh unavailable)" in declined.stdout
     assert not any("dot " in line for line in log.read_text().splitlines())
 
-    approved = run("y\ny\ny\nn\ny\n")
+    # The two initial approvals are for Zsh and its reviewed symlink.
+    # Generate tool approvals from the manifest so adding a tool doesn't
+    # silently approve it or hang an interactive test waiting for input.
+    approved_tools = {"neovim", "zoxide"}
+    answers = ["y", "y"] + [
+        "y" if name in approved_tools else "n" for name in pins
+    ]
+    approved = run("\n".join(answers) + "\n")
     assert approved.returncode == 0, approved.stdout
     assert (state / "zsh").exists() and (state / f"neovim@{pins['neovim']}").exists() and (state / f"zoxide@{pins['zoxide']}").exists(), (approved.stdout, log.read_text(), list(state.iterdir()), pins)
-    assert not (state / f"zellij@{pins['zellij']}").exists()
+    assert all(
+        not (state / f"{name}@{version}").exists()
+        for name, version in pins.items() if name not in approved_tools
+    )
     assert target.is_symlink() and target.resolve() == (ROOT / ".config/zsh/zshrc").resolve()
     assert "Zsh configuration: applied" in approved.stdout
     calls = log.read_text().splitlines()
@@ -166,13 +176,19 @@ esac
     assert sum("dot " in line for line in log.read_text().splitlines()) == dot_before_repeat
     assert sum(line.endswith(f"install zoxide@{pins['zoxide']}") for line in log.read_text().splitlines()) == zoxide_before_repeat
     assert not (state / f"zellij@{pins['zellij']}").exists(), repeated.stdout
-    assert f"Skipped zellij@{pins['zellij']}" in repeated.stdout
+    for name, version in pins.items():
+        if name not in approved_tools:
+            assert f"Skipped {name}@{version}" in repeated.stdout, repeated.stdout
 
-    final = run("y\n")
+    remaining = [
+        (name, version) for name, version in pins.items()
+        if not (state / f"{name}@{version}").exists()
+    ]
+    final = run("y\n" * len(remaining))
     assert final.returncode == 0, final.stdout
     assert (state / f"zellij@{pins['zellij']}").exists()
     assert "Bootstrap complete" in final.stdout
-    assert (state / f"zoxide@{pins['zoxide']}").exists()
+    assert all((state / f"{name}@{version}").exists() for name, version in pins.items())
 
     # An unrelated ~/.zshrc must not abort the remaining tool setup.
     target.unlink()
