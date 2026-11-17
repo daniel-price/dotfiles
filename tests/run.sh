@@ -188,6 +188,7 @@ fi
 [[ -z "$(find "$TEST_ROOT/home" "$TEST_ROOT/elsewhere" -mindepth 1 -print)" ]] ||
     fail 'entry point wrote to isolated home or working directory'
 printf 'PASS: Entry-point help, errors and repeatable smoke execution\n'
+bash "$ROOT/tests/cli-utils.sh"
 bash "$ROOT/tests/check-clean.sh"
 bash "$ROOT/tests/get-started.sh"
 if command -v python3 >/dev/null 2>&1; then

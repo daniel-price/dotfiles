@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ $# -eq 0 ]]; then
+    printf 'Usage: ,untilFailure <command> [arguments...]\n' >&2
+    exit 2
+fi
+
+count=0
+while true; do
+    if "$@"; then
+        count=$((count + 1))
+        printf 'Succeeded %s time(s)\n' "$count"
+    else
+        status=$?
+        printf 'Failed after %s successful run(s), exit status %s\n' "$count" "$status" >&2
+        exit "$status"
+    fi
+done

@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ $# -lt 2 || ! "$1" =~ ^[0-9]+$ || "$1" == 0 ]]; then
+    printf 'Usage: ,repeat <positive count> <command> [arguments...]\n' >&2
+    exit 2
+fi
+
+count=$1
+shift
+successes=0
+failures=0
+start=$(date +%s)
+for ((i = 1; i <= count; i++)); do
+    printf '[%s/%s] ' "$i" "$count"
+    if "$@"; then
+        successes=$((successes + 1))
+        printf 'passed\n'
+    else
+        status=$?
+        failures=$((failures + 1))
+        printf 'failed (exit %s)\n' "$status" >&2
+    fi
+done
+elapsed=$(( $(date +%s) - start ))
+printf 'Finished: %s succeeded; %s failed; %ss elapsed\n' "$successes" "$failures" "$elapsed"
+(( failures == 0 ))
