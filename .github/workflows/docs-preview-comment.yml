@@ -10,6 +10,7 @@ on:
 permissions:
   actions: read
   issues: write
+  pull-requests: read
 
 jobs:
   comment:
@@ -18,7 +19,7 @@ jobs:
       github.event.workflow_run.event == 'pull_request' &&
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.head_repository.full_name == github.repository &&
-      github.event.workflow_run.pull_requests[0] != null
+      github.event.workflow_run.head_branch != ''
     runs-on: ubuntu-latest
     steps:
       - name: Create or update preview comment
@@ -26,16 +27,30 @@ jobs:
         with:
           script: |
             const run = context.payload.workflow_run;
-            const pr = run.pull_requests[0];
             const { owner, repo } = context.repo;
+
+            // workflow_run.pull_requests can be empty for otherwise valid PR
+            // builds. Resolve the open same-repo PR by its exact head branch.
+            const matches = await github.paginate(github.rest.pulls.list, {
+              owner, repo, state: 'open',
+              head: `${owner}:${run.head_branch}`, per_page: 100
+            });
+            const pr = matches.find(item =>
+              item.head.repo.full_name === run.head_repository.full_name &&
+              item.head.ref === run.head_branch
+            );
+            if (!pr) {
+              core.info('No open same-repository PR for this build branch.');
+              return;
+            }
             const issue_number = pr.number;
 
-            // Avoid stale comments when an older run finishes after a newer one.
-            const current = await github.rest.pulls.get({
-              owner, repo, pull_number: issue_number
-            });
-            if (pr.head?.sha && current.data.head.sha !== pr.head.sha) {
-              core.info('Skipping preview for an outdated PR commit.');
+            // The PR may have advanced while an older build was finishing.
+            // PR workflow_run.head_sha can be a synthetic merge commit, so
+            // compare against the source branch SHA when provided.
+            const eventPr = run.pull_requests?.find(item => item.number === issue_number);
+            if (eventPr?.head?.sha && eventPr.head.sha !== pr.head.sha) {
+              core.info('Skipping an outdated PR build.');
               return;
             }
 
