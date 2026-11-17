@@ -79,10 +79,20 @@ and ShellCheck `0.11.0`. Only `bash scripts/dev/install-dev-tools.sh`
 installs those versions for contributing or CI. Documentation builds use
 Python and Zensical separately; neither belongs in machine bootstrap.
 
+## Git update boundary
+
+`scripts/setup/update.sh` (local status by default, `--apply` for
+interactive fetch and optional switch/fast-forward) only operates on the
+explicitly validated personal checkout. The bootstrap never updates its own
+source mid-execution. The standalone `get-started.sh` checks for the updater
+in an existing checkout before launching bootstrap. A new clone needs no
+update. Dirty, detached or diverged checkouts and unexpected origins are left
+alone; a remote fetch failure permits offline bootstrap.
+
 ## Configuration boundaries
 
 Public defaults are reviewed in this repository. Optional private overlays
 must be chosen explicitly and never auto-discovered. Private keys and
-work-specific settings belong outside the public repo. A future recurring
-update command must guard dirty/diverged checkouts and ask before fetching
-or modifying the machine.
+work-specific settings belong outside the public repo. An unattended recurring
+update command is still out of scope; any future mechanism must preserve
+the existing guards on fetches, dirty/diverged checkouts and machine changes.

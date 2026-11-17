@@ -15,7 +15,8 @@ Curl must already exist for the standalone first download. Bootstrap offers
 the reviewed Zsh startup symlink **after mise and Zsh are available and before
 installing declared machine tools**. A separate opt-in script deploys one selected
 private configuration directory through mise.
-A recurring update command is not yet implemented; secrets are not restored.
+Existing checkouts can opt into guarded Git updates before bootstrap; automatic
+recurring sync is not implemented, and secrets are not restored.
 
 - **[Read the documentation](docs/index.md)** (source) ·
   [GitHub Pages site](https://daniel-price.github.io/dotfiles/)
@@ -52,8 +53,10 @@ The script checks Git, asks before any installation or HTTPS clone into
 before each missing-tool installation and never upgrades an existing tool. A
 missing mise installation is pinned to `v2026.11.9`, verified before execution,
 and does not add shell activation. Every declared machine tool is installed only after its own confirmation;
-new tools only require a pinned entry in `scripts/setup/mise.toml`. An existing checkout is neither
-overwritten nor automatically updated.
+new tools only require a pinned entry in `scripts/setup/mise.toml`. An existing
+checkout is never overwritten or silently updated. When its updater is
+available, stage zero offers a network fetch and an independently approved,
+fast-forward-only switch/update before executing bootstrap.
 
 Bootstrap offers the reviewed `~/.zshrc` symlink soon after mise and Zsh are
 available. It previews the changes, asks separately and preserves an existing
@@ -78,13 +81,35 @@ bash tests/run.sh
 ```
 
 Bootstrap requires the repository's helper files and makes changes only when a
-missing prerequisite is explicitly approved. Recurring Git updates and full configuration deployment are not implemented.
+missing prerequisite is explicitly approved. Unattended recurring Git sync and
+full configuration deployment are not implemented.
 `get-started.sh` is the separate, standalone entry point.
 
 Scripts are grouped by purpose: `scripts/setup/` installs and configures the machine;
 `scripts/dev/` maintains this checkout (format, lint, hooks, CI and docs); and
 `scripts/lib/` holds shared internal Bash functions. Personal commands can go
 in `bin/` when there is a useful executable to expose on `PATH`.
+
+## Safely update an existing checkout (optional)
+
+```sh
+bash scripts/setup/update.sh           # Local, read-only status
+bash scripts/setup/update.sh --apply   # Confirm fetch, then switch/fast-forward
+```
+
+The first command reads local Git state without network access or modifying
+refs. The second validates the public repository origin and a clean worktree,
+then asks before fetching `origin/main`. If `main` can be fast-forwarded, it
+asks separately before updating (and switching branches if required).
+Conflicting, dirty, ahead or divergent history is never reset, stashed or
+merged automatically. You can decline or remain offline and still run bootstrap
+with the existing checkout.
+
+Running `get-started.sh` for an existing checkout invokes this update offer
+**before** selecting and running the checkout's bootstrap script. A fresh
+clone is already on the current main, and older checkouts without the reviewed
+updater remain usable but cannot update automatically. Running
+`scripts/setup/bootstrap.sh` directly never changes Git branches or code.
 
 ## Develop this checkout (optional)
 

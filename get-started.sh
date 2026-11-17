@@ -5,6 +5,7 @@
 # SSH configuration or any sibling scripts from the checkout.
 # Once Git is available, it clones the public repo and separately asks
 # permission before running the checkout's scripts/setup/bootstrap.sh.
+# Existing trusted checkouts may optionally fetch/switch/fast-forward first.
 # Bash 3.2+ is expected on our supported macOS and Pop!_OS installations.
 set -euo pipefail
 REMOTE='https://github.com/daniel-price/dotfiles.git'
@@ -84,17 +85,26 @@ ensure_git() {
 }
 
 checkout_once() {
-    local target=$1 existing_origin top
+    local target=$1 existing_origin top resolved_target resolved_top
     if [[ -e "$target" || -L "$target" ]]; then
         [[ -d "$target" && ! -L "$target" ]] ||
             fail "Checkout destination already exists as a file or symlink: $target"
         top=$(git -C "$target" rev-parse --show-toplevel 2>/dev/null || :)
-        [[ "$top" == "$target" ]] ||
+        [[ -n "$top" ]] ||
+            fail "Checkout destination is not a Git repository: $target"
+        # On macOS, /var may be an alias of /private/var. Compare physical
+        # directories, while still rejecting a nested or unrelated checkout.
+        resolved_target=$(cd "$target" && pwd -P) ||
+            fail "Could not resolve checkout destination: $target"
+        resolved_top=$(cd "$top" && pwd -P) ||
+            fail "Could not resolve Git repository root: $top"
+        [[ "$resolved_top" == "$resolved_target" ]] ||
             fail "Checkout destination is not its own Git repository: $target"
         existing_origin=$(git -C "$target" remote get-url origin 2>/dev/null || :)
         case "$existing_origin" in
         "$REMOTE" | 'https://github.com/daniel-price/dotfiles' | 'git@github.com:daniel-price/dotfiles.git')
-            info "Existing checkout at $target; skipped clone and update."
+            info "Existing checkout at $target; skipped clone."
+            CHECKOUT_REUSED=1
             return
             ;;
         *) fail 'Existing checkout has an unexpected origin; nothing changed.' ;;
@@ -113,7 +123,7 @@ main() {
     case "${1:-}" in
     -h | --help)
         printf '%s\n' 'Usage: bash dotfiles-get-started.sh [--help]' \
-            'Standalone Git prerequisite, one HTTPS clone and approved checkout bootstrap handoff.'
+            'Standalone Git prerequisite, one HTTPS clone, optional guarded update and approved bootstrap handoff.'
         return
         ;;
     '') ;;
@@ -125,10 +135,25 @@ main() {
     info "Detected $os."
     ensure_git "$os"
     local target="$HOME/.dotfiles"
+    CHECKOUT_REUSED=0
     checkout_once "$target"
     if [[ ! -d "$target" ]]; then
         info 'No checkout available; bootstrap not run.'
         return
+    fi
+    # Run the updater from the existing checkout before resolving bootstrap's
+    # path; a successful update may replace that script with newer code.
+    # Older checkouts remain supported, but cannot safely self-update without
+    # an already-reviewed updater; never download and execute a remote script.
+    if [[ "$CHECKOUT_REUSED" == 1 ]]; then
+        updater="$target/scripts/setup/update.sh"
+        if [[ -f "$updater" && ! -L "$updater" ]]; then
+            info 'Checking existing checkout; updates require separate approval.'
+            bash "$updater" --apply || fail 'Checkout update check failed.'
+        else
+            info 'Existing checkout has no reviewed updater; using the current checkout.'
+            info 'Update manually when ready, then rerun to enable safe update offers.'
+        fi
     fi
     local bootstrap='scripts/setup/bootstrap.sh'
     # Do not update older checkouts implicitly. Use their original entry point
