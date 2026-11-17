@@ -1,5 +1,6 @@
 // doc: note clipboard | Clipboard support uses pbcopy (macOS), wl-copy (Wayland), xclip or xsel (X11).
 // doc: note navigation | Ctrl+H/J/K/L in locked mode uses the vim-zellij-navigator plugin.
+// doc: note modes | Press Ctrl+A from locked mode to enter normal mode, then Y to enter move (yank) mode.
 keybinds clear-defaults=true {
     unbind "Alt right"
     normal {
