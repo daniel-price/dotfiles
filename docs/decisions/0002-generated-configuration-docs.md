@@ -14,7 +14,8 @@ configured, not narrate migration history.
 
 Generate configuration references when building documentation, not in Git.
 Use one local entrypoint (`scripts/docs/generate.py`) to invoke small,
-format-specific extractors for Zsh and Zellij, plus the standard-library TOML\nparser for the machine and checkout development tool manifests. Read the checked-in configuration
+format-specific extractors for Zsh and Zellij, plus the standard-library
+TOML parser for the machine and checkout development tool manifests. Read the checked-in configuration
 as data, without executing it. Derive aliases, keybindings and simple settings
 from declarations; keep only short `# doc:` / `// doc:` annotations where
 user-facing behaviour needs clarification. Omit historical migration details.
