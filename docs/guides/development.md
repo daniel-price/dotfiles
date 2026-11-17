@@ -22,6 +22,8 @@ Review the manifest before trusting it. Existing conflicting hooks are preserved
 
 The hook uses Lefthook to format and re-stage the staged version of a file before linting. Test partially staged changes carefully: formatting can affect other staged lines, and conflicting unstaged edits can interrupt restoration. CI calls the same scripts and tests on Linux/macOS.
 
+For additional command options, see the [generated CLI reference](cli.md).
+
 ## Build documentation locally
 
 Use Python 3.13 in a virtual environment:
