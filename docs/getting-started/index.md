@@ -32,7 +32,7 @@ without running bootstrap. The command preserves your existing Git changes.
 ,bootstrap                 # Update (with approval), then bootstrap
 bash ~/.dotfiles/scripts/setup/update.sh          # Local status (no network)
 bash ~/.dotfiles/scripts/setup/update.sh --apply  # Approve fetch/update
-bash ~/.dotfiles/scripts/setup/bootstrap.sh       # Check missing components
+bash ~/.dotfiles/bin/,bootstrap --no-update       # Provision checked-out version only
 ```
 
 The updater refuses dirty, divergent or unexpected repositories and never resets your changes. Bootstrap does not silently upgrade already installed tools.
