@@ -44,7 +44,8 @@ else
     printf 'SKIP: Reviewed zsh syntax (zsh not found)\n'
 fi
 
-for moved in bootstrap apply-private-overlay cleanup update; do
+[[ ! -e "$ROOT/scripts/setup/bootstrap.sh" ]] || fail "obsolete bootstrap script should not remain"
+for moved in apply-private-overlay cleanup update; do
     [[ ! -e "$ROOT/scripts/$moved.sh" ]] || fail "obsolete setup path remains: $moved"
     [[ -x "$ROOT/scripts/setup/$moved.sh" ]] || fail "setup script is not executable: $moved"
 done
