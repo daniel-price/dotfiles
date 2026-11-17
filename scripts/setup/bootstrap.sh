@@ -110,7 +110,6 @@ ensure_mise() {
     log "Installed mise $version at $target."
 }
 
-
 case "${1:-}" in
 -h | --help)
     [[ $# -eq 1 ]] || die 'Unexpected extra argument.'
