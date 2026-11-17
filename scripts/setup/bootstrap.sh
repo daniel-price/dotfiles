@@ -172,7 +172,8 @@ else
 fi
 
 # Mise owns the reviewed dotfiles. Preview and require explicit approval before
-# applying; --yes skips mise's second prompt, never its conflict checks.
+# applying; --force is safe only for the dry-run preview of regular-file conflicts.
+# The real apply stays non-forced after backing up the known Zellij target.
 # Apply before tool provisioning so a new Zsh session can activate mise.
 # A conflict must not block otherwise independent tool installation.
 zsh_config_status='skipped (zsh unavailable)'
@@ -229,7 +230,7 @@ if [[ -L "$zellij_target" && ! "$zellij_target" -ef "$ROOT/.config/zellij/config
     log "Zellij config is a foreign symlink; leaving it untouched: $zellij_target"
 elif "$mise" -C / dot status --missing >/dev/null 2>&1; then
     log 'Reviewed mise-managed dotfiles are already applied.'
-elif "$mise" -C / dot apply --dry-run; then
+elif "$mise" -C / dot apply --dry-run --force; then
     if confirm 'Apply the reviewed dotfiles (backing up an existing regular Zellij config)?'; then
         if ! apply_reviewed_dotfiles; then
             log 'Mise dotfile deployment failed; review any remaining conflicts and backups.'
