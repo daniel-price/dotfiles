@@ -40,6 +40,22 @@ done
 [[ -f "$ROOT/get-started.sh" && -f "$ROOT/mise.toml" && -f "$ROOT/lefthook.yml" ]] ||
     fail 'expected root entry points or tool configuration missing'
 printf 'PASS: Checkout script layout and executable modes\n'
+# Validate the real machine manifest with mise without installing anything.
+# This must not accidentally include the root checkout's developer tools.
+if command -v mise >/dev/null 2>&1; then
+    machine_config="$ROOT/scripts/setup/mise.toml"
+    config_listing=$(MISE_GLOBAL_CONFIG_FILE="$machine_config" mise -C / config ls) ||
+        fail 'mise could not parse the machine-only manifest'
+    [[ "$config_listing" == *"$machine_config"* ]] ||
+        fail 'machine manifest was not selected explicitly'
+    tool_listing=$(MISE_GLOBAL_CONFIG_FILE="$machine_config" mise -C / ls --current) ||
+        fail 'mise could not resolve machine tool declarations'
+    [[ "$tool_listing" == *neovim* && "$tool_listing" == *zellij* ]] ||
+        fail 'machine versions are missing from mise config'
+    [[ "$tool_listing" != *shellcheck* && "$tool_listing" != *lefthook* ]] ||
+        fail 'developer tools leaked into machine setup'
+    printf 'PASS: Native mise machine manifest loads without developer tools\n'
+fi
 
 source "$ROOT/scripts/lib/os.sh"
 source "$ROOT/scripts/lib/common.sh"

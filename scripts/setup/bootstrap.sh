@@ -141,8 +141,9 @@ else
         die 'Could not preview the zsh package install.'
     if confirm 'Install missing zsh using the native package manager via mise?'; then
         "$mise" -C / bootstrap --only packages || die 'mise could not install zsh.'
-        command -v zsh >/dev/null 2>&1 && zsh --version >/dev/null 2>&1 ||
+        if ! command -v zsh >/dev/null 2>&1 || ! zsh --version >/dev/null 2>&1; then
             die 'Mise package installation finished but zsh is still unavailable.'
+        fi
     else
         log 'Skipped zsh package installation.'
     fi
