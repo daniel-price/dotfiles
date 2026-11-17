@@ -8,7 +8,7 @@ Two tracks: **capabilities** prove reusable mechanisms; **tools/apps** adopt the
 | --- | --- | --- |
 | Initial bootstrap (Git, mise, prerequisites) | Implemented | Extend only as needed |
 | Pinned CLI tools and OS packages | Implemented | GUI application packaging POC |
-| Dotfile deployment | Zsh implemented with mise | Add reviewed configs as needed |
+| Dotfile deployment | Zsh and Zellij implemented with mise | Add reviewed configs as needed |
 | Optional pinned Git dependencies | Powerlevel10k implemented | Reuse as needed |
 | Guarded Git update and selective cleanup | Implemented | Explicit upgrades, drift and rollback |
 | Private configuration layers | Single directory overlay implemented | Test public/private/local precedence and conflicts |
@@ -32,7 +32,7 @@ Each POC must answer one architectural question and include a manual test plan. 
 | Shell config | Zsh aliases and Powerlevel10k | Implemented; theme optional |
 | Repo tooling | shfmt, ShellCheck, Lefthook | Implemented; opt-in hooks |
 | On-demand isolated app | OpenCode through rootless Podman | Implemented on Linux; approval required |
-| GUI apps/config | Ghostty, Neovim and Zellij configs | Incremental migration; not a generic GUI installer |
+| GUI apps/config | Ghostty and Neovim configs | Incremental migration; not a generic GUI installer |
 | Long-running services | Jellyfin, Radarr (examples) | Not implemented |
 
 Add a **capability POC** only for a new mechanism. Add an **application change** to its existing manifest/config once the mechanism is proven. Desktop apps, CLI tools, short-lived agents and persistent services need not share an installation strategy.
