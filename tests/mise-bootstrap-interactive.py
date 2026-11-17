@@ -47,7 +47,13 @@ echo 'zsh fake'
 
     # Simulate an existing unrelated mapping: bootstrap must leave it alone.
     fake_hidutil = bin_dir / "hidutil"
-    fake_hidutil.write_text('#!/usr/bin/env bash\nif [[ "$*" == "property --get UserKeyMapping" ]]; then echo '{ "UserKeyMapping": [{ "HIDKeyboardModifierMappingSrc": 1, "HIDKeyboardModifierMappingDst": 2 }] }'; else exit 1; fi\n')
+    fake_hidutil.write_text("""#!/usr/bin/env bash
+if [[ "$*" == "property --get UserKeyMapping" ]]; then
+    echo '{ "UserKeyMapping": [{ "HIDKeyboardModifierMappingSrc": 1, "HIDKeyboardModifierMappingDst": 2 }] }'
+else
+    exit 1
+fi
+""")
     fake_hidutil.chmod(0o755)
 
     fake_mise = bin_dir / "mise"
