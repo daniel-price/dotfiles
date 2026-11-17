@@ -5,7 +5,7 @@ The repository is also its own handbook: how to use it, why it is designed this
 way, and what still needs building. An optional, separately authorised private
 repository may provide non-public configuration on selected machines.
 
-**Current status: declarative pinned machine tools and opt-in shell activation.**
+**Current status: declarative pinned machine tools and opt-in Zsh login-shell configuration.**
 The self-contained `get-started.sh` can install Git (when missing, after
 approval) and clone this public repository once over HTTPS. `scripts/setup/bootstrap.sh`
 installs missing pinned mise, then asks separately before using native mise
@@ -73,7 +73,9 @@ fast-forward-only switch/update before executing bootstrap.
 
 Bootstrap offers the reviewed `~/.zshrc` symlink soon after mise and Zsh are
 available. It previews the changes, asks separately and preserves an existing
-configuration. Run `bash scripts/setup/deploy-zsh-config.sh` independently to
+configuration. After tool provisioning, bootstrap also offers to make Zsh the
+default login shell using `chsh`, with separate approval and verification.
+The change takes effect on the next login; it does not replace the current shell. Run `bash scripts/setup/deploy-zsh-config.sh` independently to
 retry after resolving a conflict or declining the offer. New Zsh sessions add
 `~/.local/bin` to `PATH` once, load the reviewed machine tool versions,
 activate mise and enable zoxide’s `z` function when installed. The current Bash
