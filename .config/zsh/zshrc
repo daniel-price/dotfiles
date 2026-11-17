@@ -9,6 +9,11 @@ if [[ -o interactive && "${TERM_PROGRAM:-}" != vscode &&
   unset _dotfiles_p10k_cache
 fi
 
+# Allow pasted commands with # comments in interactive Zsh sessions.
+if [[ -o interactive ]]; then
+  setopt interactivecomments
+fi
+
 # The verified mise installer uses ~/.local/bin rather than a system directory.
 # Add it once so the pinned mise binary is available in future zsh sessions.
 if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
