@@ -76,7 +76,7 @@ log "Workspace: $project (read/write inside the container)."
 log "Base image: $base_image; local image: $image."
 log "Container home: ephemeral /tmp; no host home, SSH, Git credentials or sockets mounted."
 log 'Default rootless container network allows outbound traffic; project files can be sent to providers.'
-if [[ ${#credential_names[@]} -gt 0 ]]; then
+if [[ -n "${credential_names[*]-}" ]]; then
     log "Explicitly forwarded credential variable names: ${credential_names[*]} (values not printed)."
 fi
 if [[ "$dry_run" == true ]]; then
@@ -123,7 +123,7 @@ run_args=(
     --env XDG_CACHE_HOME=/tmp/.cache --env XDG_DATA_HOME=/tmp/.local/share
     --volume "$project:/workspace:rw" --workdir /workspace
 )
-for name in "${credential_names[@]}"; do
+for name in "${credential_names[@]+"${credential_names[@]}"}"; do
     run_args+=(--env "$name")
 done
 podman "${run_args[@]}" "$image"
