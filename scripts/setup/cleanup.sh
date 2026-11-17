@@ -43,7 +43,7 @@ mise_supports_dot "$mise" ||
 # Prevent repo-development settings from affecting cleanup. Only the explicit
 # reviewed machine manifest is active, even when invoked from another directory.
 export MISE_GLOBAL_CONFIG_FILE="$manifest"
-log 'Only the reviewed ~/.zshrc and exact pinned Neovim/Zellij versions are eligible.'
+log 'Only the reviewed ~/.zshrc and exact pinned Zoxide/Neovim/Zellij versions are eligible.'
 log 'Versions installed by mise are shared with other projects; uninstalling them may affect those projects.'
 log 'System packages, mise, the Git checkout and private profiles are always preserved.'
 
@@ -70,7 +70,7 @@ else
     log 'No reviewed ~/.zshrc symlink to remove.'
 fi
 
-for tool in neovim zellij; do
+for tool in neovim zellij zoxide; do
     version=$("$mise" -C / config get --file "$manifest" "tools.$tool") ||
         die "Cannot read pinned $tool version from the machine manifest."
     # Never interpret 'latest', a range, or another unpinned request as a

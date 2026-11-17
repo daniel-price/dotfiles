@@ -174,8 +174,8 @@ if command -v zsh >/dev/null 2>&1 && zsh --version >/dev/null 2>&1; then
     fi
 fi
 
-for tool in neovim zellij; do
-    # Tool pins come only from scripts/setup/mise.toml.
+for tool in zoxide neovim zellij; do
+    # Tool pins come only from scripts/setup/mise.toml. Zoxide enables `z` in Zsh.
     if "$mise" -C / install --dry-run-code "$tool"; then
         log "$tool is already installed."
         continue
