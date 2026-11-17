@@ -64,6 +64,7 @@ recipient=$(sed -n 's/^# public key: //p' "$work/identity.txt")
 }
 # The value is deliberately public, but its storage exercises real age encryption.
 # Use -C to isolate mise config resolution from the caller's dotfiles checkout.
+# shellcheck disable=SC2016 # Dollar expansion is intentional in the child shell.
 MISE_AGE_KEY_FILE="$work/identity.txt" mise -C "$work" set \
     --age-encrypt --age-recipient "$recipient" POC_TOKEN=synthetic-demo-only >/dev/null
 MISE_AGE_KEY_FILE="$work/identity.txt" mise -C "$work" exec -- \
