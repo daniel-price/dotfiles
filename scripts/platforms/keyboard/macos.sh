@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Native macOS hidutil mapping, re-applied on login by a user LaunchAgent.
 set -euo pipefail
-ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
+ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)
 # shellcheck source=scripts/lib/common.sh
 source "$ROOT/scripts/lib/common.sh"
 
