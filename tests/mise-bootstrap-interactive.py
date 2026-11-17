@@ -142,7 +142,7 @@ esac
 
     approved = run("y\ny\ny\nn\ny\n")
     assert approved.returncode == 0, approved.stdout
-    assert (state / "zsh").exists() and (state / f"neovim@{pins['neovim']}").exists() and (state / f"zoxide@{pins['zoxide']}").exists()
+    assert (state / "zsh").exists() and (state / f"neovim@{pins['neovim']}").exists() and (state / f"zoxide@{pins['zoxide']}").exists(), (approved.stdout, log.read_text(), list(state.iterdir()), pins)
     assert not (state / f"zellij@{pins['zellij']}").exists()
     assert target.is_symlink() and target.resolve() == (ROOT / ".config/zsh/zshrc").resolve()
     assert "Zsh configuration: applied" in approved.stdout
