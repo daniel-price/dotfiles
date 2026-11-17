@@ -1,6 +1,6 @@
 # How-to guides
 
-- [Add or change a tool](add-tool.md)
+- [Add or change a tool](add-tool.md) · [Pinned tool inventory](tools.md)
 - [Manage a dotfile](manage-dotfile.md)
 - [Zsh aliases and prompt](zsh.md)
 - [Zellij keybindings and yank helpers](zellij.md)
