@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# Update the public dotfiles checkout first, then run bootstrap from that version.
+# This command is available via the reviewed Zsh configuration's bin/ PATH.
+set -euo pipefail
+
+ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
+
+usage() {
+    printf '%s\n' \
+        'Usage: ,bootstrap [--help]' \
+        'Offer a guarded fetch and fast-forward to latest main, then run bootstrap.' \
+        'Declining or failing the update stops before bootstrap; never resets or stashes.'
+}
+
+case "${1:-}" in
+-h | --help)
+    [[ $# -eq 1 ]] || { usage >&2; exit 2; }
+    usage
+    exit 0
+    ;;
+'') [[ $# -eq 0 ]] || { usage >&2; exit 2; } ;;
+*) usage >&2; exit 2 ;;
+esac
+
+# The fast-forward may replace this very script. Keep its original contents
+# in memory, then launch the new bootstrap file from disk after the update.
+if [[ "${DOTFILES_BOOTSTRAP_SNAPSHOT:-}" != 1 ]]; then
+    snapshot=$(<"$ROOT/bin/,bootstrap")
+    DOTFILES_BOOTSTRAP_SNAPSHOT=1 DOTFILES_BOOTSTRAP_ROOT="$ROOT" \
+        exec bash -c "$snapshot" dotfiles-bootstrap
+fi
+
+ROOT=${DOTFILES_BOOTSTRAP_ROOT:?Missing dotfiles checkout root}
+[[ -f "$ROOT/scripts/setup/update.sh" && -f "$ROOT/scripts/setup/bootstrap.sh" ]] || {
+    printf '[error] Missing update or bootstrap script in %s\n' "$ROOT" >&2
+    exit 1
+}
+
+# The strict updater exits nonzero for declined or skipped updates. Never
+# treat a pre-existing origin/main cache as proof that a fetch succeeded.
+bash "$ROOT/scripts/setup/update.sh" --apply --require-current
+
+# Independent post-update validation: run bootstrap only on a clean, current
+# main. The updater already checks remote identity and fast-forward ancestry.
+[[ "$(git -C "$ROOT" symbolic-ref --quiet --short HEAD)" == main ]] || {
+    printf '[error] Checkout is not on main; bootstrap skipped.\n' >&2
+    exit 1
+}
+[[ "$(git -C "$ROOT" rev-parse HEAD)" == "$(git -C "$ROOT" rev-parse refs/remotes/origin/main)" ]] || {
+    printf '[error] Checkout is not at fetched origin/main; bootstrap skipped.\n' >&2
+    exit 1
+}
+[[ -z "$(git -C "$ROOT" status --porcelain --untracked-files=all)" ]] || {
+    printf '[error] Checkout changed after update; bootstrap skipped.\n' >&2
+    exit 1
+}
+
+exec bash "$ROOT/scripts/setup/bootstrap.sh"
