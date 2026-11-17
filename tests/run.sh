@@ -36,7 +36,7 @@ else
     printf 'SKIP: Reviewed zsh syntax (zsh not found)\n'
 fi
 
-for moved in bootstrap deploy-zsh-config apply-private-overlay cleanup update; do
+for moved in bootstrap apply-private-overlay cleanup update; do
     [[ ! -e "$ROOT/scripts/$moved.sh" ]] || fail "obsolete setup path remains: $moved"
     [[ -x "$ROOT/scripts/setup/$moved.sh" ]] || fail "setup script is not executable: $moved"
 done
@@ -44,7 +44,8 @@ for moved in format lint install-hooks install-dev-tools install-docs-deps build
     [[ ! -e "$ROOT/scripts/$moved.sh" ]] || fail "obsolete dev path remains: $moved"
     [[ -x "$ROOT/scripts/dev/$moved.sh" ]] || fail "development script is not executable: $moved"
 done
-[[ ! -e "$ROOT/scripts/update.sh" && ! -e "$ROOT/scripts/setup/provision-tool.sh" ]] ||
+[[ ! -e "$ROOT/scripts/update.sh" && ! -e "$ROOT/scripts/setup/provision-tool.sh" &&
+    ! -e "$ROOT/scripts/setup/deploy-zsh-config.sh" ]] ||
     fail 'obsolete setup placeholders should not remain'
 [[ -f "$ROOT/get-started.sh" && -f "$ROOT/mise.toml" && -f "$ROOT/lefthook.yml" ]] ||
     fail 'expected root entry points or tool configuration missing'
@@ -185,7 +186,6 @@ if command -v python3 >/dev/null 2>&1; then
     python3 "$ROOT/tests/update-interactive.py"
     python3 "$ROOT/tests/bootstrap-interactive.py"
     python3 "$ROOT/tests/tool-overlay-interactive.py"
-    python3 "$ROOT/tests/zsh-deploy-interactive.py"
     python3 "$ROOT/tests/zsh-profile.py"
     python3 "$ROOT/tests/mise-bootstrap-interactive.py"
     python3 "$ROOT/tests/login-shell.py"
