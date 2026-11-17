@@ -31,7 +31,7 @@ for helper in ,copy-last ,copy-screen ,copy-pick; do
     [[ -x "$ROOT/bin/$helper" ]] || fail "copy helper is not executable: $helper"
     bash -n "$ROOT/bin/$helper" || fail "copy helper has invalid Bash syntax: $helper"
 done
-printf 'PASS: Executable Zellij copy helper entry points\\n'
+printf 'PASS: Executable Zellij copy helper entry points\n'
 printf 'PASS: Executable OpenCode launcher syntax and layout\n'
 if command -v zsh >/dev/null 2>&1; then
     zsh -n "$ROOT/.config/zsh/zshrc" || fail 'reviewed zsh file has invalid syntax'
