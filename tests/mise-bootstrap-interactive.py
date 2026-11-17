@@ -101,7 +101,12 @@ case "$*" in
   "dot status --missing")
     [[ -L "$HOME/.zshrc" && -L "$HOME/.config/zellij/config.kdl" ]] && exit 0 || exit 1
     ;;
-  "dot apply --dry-run") exit 0 ;;
+  "dot apply --dry-run --force") exit 0 ;;
+  "dot apply --dry-run")
+    # Model mise refusing to preview an existing unmanaged Zellij file.
+    [[ ! -f "$HOME/.config/zellij/config.kdl" || -L "$HOME/.config/zellij/config.kdl" ]] || exit 17
+    exit 0
+    ;;
   "dot apply --yes")
     mkdir -p "$HOME/.config/zellij"
     [[ ! -e "$MOCK_STATE/fail-dot-apply" ]] || exit 18
@@ -244,6 +249,7 @@ esac
     before_backups = list(zellij_target.parent.glob("config.kdl.backup-*"))
     migrated = run("y\n" + "n\n" * (len(pins) + 1))
     assert migrated.returncode == 0, migrated.stdout
+    assert any(line.endswith("dot apply --dry-run --force") for line in log.read_text().splitlines())
     backups = list(zellij_target.parent.glob("config.kdl.backup-*"))
     assert len(backups) == len(before_backups) + 1, backups
     assert backups[-1].read_text() == "existing default zellij config\n"
