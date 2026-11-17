@@ -65,6 +65,17 @@ It never removes system packages, mise, unrelated tool versions, private
 overlays, or the checkout. Other projects may rely on the same mise version;
 there is no installation-ownership ledger.
 
+## Sandboxed coding agent (Pop!_OS only)
+
+OpenCode is deliberately **not** in the host mise machine-tool manifest. The
+reviewed `bin/opencode-sandbox` launcher uses rootless Podman and only the
+selected personal Git checkout as a writable mount. Podman must be installed
+explicitly through apt; its packages and images are **not** installed or
+removed by bootstrap/cleanup. A default read-only preview and separate
+prompts for pull/build/run prevent unattended provisioning. This container
+launcher is Linux-only; no macOS runtime is claimed. See the
+[OpenCode sandbox guide](../guides/opencode.md).
+
 ## Checkout development tools
 
 The checkout setup script installs pinned developer tools from the root

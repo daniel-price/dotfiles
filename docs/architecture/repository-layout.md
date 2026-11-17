@@ -10,9 +10,10 @@ commands are distinct from both.
 | `scripts/setup/` | Machine lifecycle: `bootstrap.sh`, `deploy-zsh-config.sh`, `apply-private-overlay.sh` and preview-first `cleanup.sh`. |
 | `scripts/dev/` | Checkout maintenance: formatting, linting, Git hooks, documentation builds, dependency setup and CI checks. |
 | `scripts/lib/` | Source-only Bash helpers shared by setup and development scripts. |
-| `bin/` (future) | Everyday executable commands, once there is an actual personal utility to install or expose on `PATH`. |
+| `bin/` | Reviewed everyday commands, currently the executable Linux-only `opencode-sandbox` launcher. |
 | `scripts/setup/mise.toml` | Declarative machine packages, pinned tools and the opt-in zsh dotfile entry; deliberately separate from developer tooling. |
-| `.config/` | Reviewed home configuration: zsh startup and future application defaults. |
+| `.config/` | Reviewed home configuration: zsh startup (which adds the repo's `bin/` to PATH) and future application defaults. |
+| `containers/opencode/` | Reviewed minimal OpenCode image recipe; built only after separate interactive approval, without the developer checkout as build context. |
 | `tests/` | Temporary-fixture and interactive integration tests, never host-changing by default. |
 | `docs/` | Current handbook and separately labelled historical planning notes. |
 | `.github/` | CI orchestration and pull request template. |

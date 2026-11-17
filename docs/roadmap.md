@@ -41,6 +41,7 @@ CI. See [development](guides/development.md) for setup and read-only checks.
 | 5 | Full private configuration profiles, precedence and merge tests | Planned |
 | 5 | Prototype age encryption and verified restore with fake credentials | Planned |
 | 6 | Select and configure a separate history origin if tracked-file sync is needed | Proposed |
+| 7 | Rootless Pop!_OS OpenCode launcher with Git-scoped mount, consent and synthetic tests | Implemented; Podman installed separately by user |
 | Later | Per-platform settings and optional service/container definitions | Not designed |
 
 ## Delivery conventions

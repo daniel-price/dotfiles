@@ -1,0 +1,7 @@
+# Build from the reviewed versioned upstream image selected by the launcher.
+# The upstream runtime image lacks Git, which coding workflows need.
+ARG OPENCODE_IMAGE
+FROM ${OPENCODE_IMAGE}
+USER root
+RUN apk add --no-cache git ca-certificates
+ENTRYPOINT ["opencode"]

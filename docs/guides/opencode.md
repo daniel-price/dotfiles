@@ -1,121 +1,135 @@
-# OpenCode CLI: installation and execution boundaries
+# OpenCode on Pop!_OS: rootless Podman sandbox
 
-OpenCode is a **coding agent**, not merely a passive command-line utility.
-It can inspect files, modify code and run shell commands. Installing its CLI
-does **not** isolate those operations from the host.
+OpenCode is a coding agent with file and shell tools. Its built-in permission
+prompts are **not OS isolation**. For personal development on Pop!_OS,
+the reviewed default is **one disposable rootless Podman container per launch**.
+For untrusted or unattended work, prefer a separate disposable VM.
 
-## Install and verify
+The public bootstrap does **not** install the native OpenCode CLI through
+mise, since that would make running the unsandboxed host agent too easy.
+The entry point is `bin/opencode-sandbox`; the reviewed Zsh config adds
+the checkout's `bin/` directory to PATH.
 
-The reviewed machine manifest pins `opencode = "2.3.0"` using mise's
-`opencode` registry entry (OpenCode 2 from `@opencode/cli`).
-The current reviewed mise bootstrap requires mise 2026.11.9 or later,
-which supports the OpenCode 2 registry entry.
+## Prerequisites (Pop!_OS / Ubuntu)
 
-From the dotfiles checkout:
-
-```sh
-bash scripts/setup/bootstrap.sh
-```
-
-Bootstrap asks **separately** before installing a missing
-`opencode@2.3.0`; decline if this host should not run an agent.
-The OpenCode npm package uses a postinstall script to select the native
-binary. A version pin makes updates explicit but does not eliminate the
-supply-chain risk of running third-party installation code.
-
-After accepting, start a new configured Zsh session and check:
+Podman is a system-level container runtime, not a mise language tool.
+Install it **explicitly**, not through an automatic bootstrap action:
 
 ```sh
-opencode --version
+sudo apt update
+sudo apt install podman
+podman info --format '{{.Host.Security.Rootless}}'
 ```
 
-Expect `2.3.0`. Alternatively, without depending on shell activation,
-run from the dotfiles checkout root:
+The final command should print `true` when invoked as a normal user.
+Don't run `sudo podman` or enable a rootful daemon. Rootless setup may
+require a valid `/etc/subuid` and `/etc/subgid` configuration. No system
+settings are changed automatically by these dotfiles.
+
+The launcher pins the official published OpenCode image
+`ghcr.io/anomalyco/opencode:2.3.0`. The reviewed
+[Containerfile](../../containers/opencode/Containerfile) adds Git and
+CA certificates, tagging the result
+`localhost/dotfiles-opencode-sandbox:2.3.0-r1`.
+The upstream tag is **not pinned by digest**; this is version pinning,
+not immutable image verification. Building can download Alpine packages.
+Neither the agent nor the image is automatically upgraded.
+
+## Launch for one selected personal Git repository
+
+From a checkout with the reviewed Zsh configuration active (or use
+`bash ~/.dotfiles/bin/opencode-sandbox` directly):
 
 ```sh
-MISE_GLOBAL_CONFIG_FILE="$PWD/scripts/setup/mise.toml" \
-  mise -C / exec opencode@2.3.0 -- opencode --version
+cd /path/to/your/personal-git-repo
+opencode-sandbox --dry-run    # Preview; no Podman calls or network
+opencode-sandbox              # Confirm pull, build, then launch
 ```
 
-Run `opencode` **from the individual project directory**, rather than
-your home directory or a directory containing multiple unrelated projects.
-Authenticate with your intended model provider through OpenCode's own
-setup; do not commit API keys, tokens, credentials or generated session
-data to this public dotfiles repository.
+On first use the launcher independently asks before **pulling the base image**,
+**building the small local image** and **running the agent**. On subsequent
+runs, it asks before launching but reuses the existing local image.
+Noninteractive and piped approvals are rejected. You may select a different
+repository with `--project /absolute/path/to/repository`.
 
-## Choose the correct execution boundary
+The selected path must be the root of a standard Git working tree with
+its own real `.git/` directory. Linked worktrees, parent directories,
+home directories, arbitrary mounts and running as root are refused.
 
-| Situation | Approach |
-| --- | --- |
-| Trusted personal repository, interactive review | Pinned local CLI via mise with conservative tool permissions |
-| Unknown project, untrusted dependencies or autonomous agents | Separate VM or purpose-built agent sandbox with only the intended workspace exposed |
-| Long-running services, e.g. media servers | A separately managed service/container, not this machine CLI manifest |
+### Isolation guarantees and limitations
 
-**A native OpenCode process has the same filesystem, process, network and
-credential authority as the signed-in user.** OpenCode's default V2 permission
-policy largely allows shell commands and access outside the project. Prompt
-instructions or an `AGENTS.md` file are not access controls.
+The reviewed launcher runs with:
 
-For a more conservative **optional** per-user configuration, review and
-create `~/.config/opencode/opencode.jsonc` yourself (do not overwrite
-existing settings):
+- A **single read/write bind mount**: the selected repo at `/workspace`
+- No host home, `~/.ssh`, Git/cloud credentials, unrelated directories,
+  or Docker/Podman socket mounts
+- An **ephemeral** container home under `/tmp` with no persistent auth
+- Rootless Podman with mapped user UID/GID, all Linux capabilities dropped,
+  `no-new-privileges`, read-only image filesystem, memory and PID limits
+- No published server ports and no arbitrary Podman/agent command flags
 
-```json
-{
-  "$schema": "https://opencode.ai/config.json",
-  "update": "notify",
-  "permissions": [
-    { "action": "external_directory", "resource": "*", "effect": "deny" },
-    { "action": "shell", "resource": "*", "effect": "ask" },
-    { "action": "shell", "resource": "git status *", "effect": "allow" },
-    { "action": "shell", "resource": "git diff *", "effect": "allow" },
-    { "action": "shell", "resource": "git push *", "effect": "deny" }
-  ]
-}
-```
+**Important limitations:** the default rootless container network still
+permits outbound connections. The agent can read, modify or delete any
+tracked **or ignored** file in the mounted repository, use the network,
+and transmit project contents to services/providers. It could also read
+secrets placed inside that repository. Do not put unrelated repositories
+or sensitive credentials under the mounted tree. Inspect `git diff`
+before accepting changes. Containers are not a VM-strength security
+boundary, and rootless mode does not eliminate all kernel risks.
 
-These are OpenCode **2** rule names. They do **not** form an OS security
-sandbox; shell command analysis and directory inference are best-effort.
-Project-level and agent-specific rules can change effective permissions.
-Keep sensitive directories and credentials outside the agent's reach,
-review its proposed actions, and do not grant blanket shell approvals.
-Do not run an unisolated agent against employer code or credentials
-unless that use is expressly approved and appropriately controlled.
+### Explicit provider credentials
 
-These settings are **documentation only**: bootstrap does not create,
-replace or link `~/.config/opencode/opencode.jsonc`. A separate,
-conflict-safe opt-in deployment would be needed to manage that file.
-
-## What about Docker?
-
-For straightforward interactive work in trusted repositories, running
-the CLI locally keeps access to your normal git, language toolchains
-and terminal simple. Plain `docker run` is **not equivalent to a
-secure agent sandbox**, especially if the host home directory, git/SSH
-credentials or the Docker socket are mounted into it.
-
-Docker publishes a purpose-built OpenCode sandbox workflow
-(`sbx run opencode`), but **Docker currently does not test or support
-Docker Sandboxes on Pop!_OS**, and its Linux setup script can configure
-the wrong package repository on Ubuntu derivatives. Do not run that
-installation script on Pop!_OS as a shortcut. Consider an isolated VM
-or another vetted sandbox if you need automated or untrusted execution.
-
-## Cleanup
+No API credential is passed by default. If you already have a narrowly scoped
+provider key in your environment, allowlist its **variable name**:
 
 ```sh
-bash scripts/setup/cleanup.sh           # Preview only
-bash scripts/setup/cleanup.sh --apply   # Individual removal confirmations
+opencode-sandbox --credential-env ANTHROPIC_API_KEY
 ```
 
-Cleanup only considers the exact pinned mise tool version. It does
-**not** remove OpenCode provider credentials, user-level configuration,
-conversation history or other application state. Review those separately
-if complete removal is required.
+Supported names: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` and
+`OPENROUTER_API_KEY`. The launcher never prints their values or embeds
+literal values in Podman's command arguments; Podman forwards the selected
+environment variable **to the agent**, so the agent may use or exfiltrate it.
+Prefer revocable keys with limited spending and permissions. Do not put
+token values in shell history or the repository. Interactive provider logins
+inside the container disappear when the container exits.
 
-References: [OpenCode installation](https://opencode.ai/docs/),
-[OpenCode V2 permissions](https://opencode.ai/docs/permissions/),
-[OpenCode configuration](https://opencode.ai/docs/config/),
-[mise npm backend](https://mise.jdx.dev/dev-tools/backends/npm),
-[Docker's OpenCode sandbox guide](https://docs.docker.com/ai/sandboxes/agents/opencode/),
-[Docker's Linux sandbox support note](https://docs.docker.com/ai/sandboxes/install).
+Persistent OAuth/provider login would require a separately reviewed state
+volume and is deliberately **not enabled**.
+
+### Developer dependencies
+
+The base image is intentionally minimal, with OpenCode, Git and basic Alpine
+utilities. Node, Python, Docker and other host developer runtimes are **not**
+inherited. Add them in a reviewed Containerfile change and bump the local
+image revision if a particular workflow needs them. Do not mount your
+host development directories or container socket as a workaround.
+
+No background service, browser server or localhost port is exposed by this
+launcher. Use a **disposable VM** for high-autonomy, untrusted or privileged
+work, and an expressly approved environment for employer resources.
+
+## Updating and cleanup
+
+```sh
+opencode-sandbox --dry-run
+podman images
+```
+
+The launcher reuses the local image; version changes are deliberate.
+The existing `scripts/setup/cleanup.sh` only manages mise tools, not
+Podman images. To remove the custom image after review:
+
+```sh
+podman image rm localhost/dotfiles-opencode-sandbox:2.3.0-r1
+```
+
+Podman and unrelated images remain untouched. If you previously installed
+`opencode@2.3.0` on the host from an earlier PR, removing that manifest entry
+does **not** uninstall it. Verify no other project depends on that shared
+version before manually removing it.
+
+References: [OpenCode security policy](https://github.com/anomalyco/opencode/security),
+[OpenCode official image](https://opencode.ai/docs/),
+[Podman installation](https://podman.io/docs/installation),
+[Podman run reference](https://docs.podman.io/en/stable/markdown/podman-run.1.html).
