@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts/docs"))
 import zsh  # noqa: E402
 import zellij  # noqa: E402
+import tools  # noqa: E402
 
 zsh_page = zsh.render()
 assert "# Zsh" in zsh_page
@@ -52,4 +53,17 @@ with tempfile.TemporaryDirectory() as temporary:
     else:
         raise AssertionError("Unbalanced KDL was accepted")
 
-print("PASS: Generated Zsh/Zellij references track configuration and reject stale annotations")
+tool_page = tools.render()
+assert "| `neovim` | `0.12.6` |" in tool_page
+assert "| `lefthook` | `2.2.2` |" in tool_page
+assert "| `apt:zsh` | `linux` |" in tool_page
+with tempfile.TemporaryDirectory() as temporary:
+    machine = Path(temporary) / "machine.toml"
+    development = Path(temporary) / "development.toml"
+    machine.write_text((ROOT / "scripts/setup/mise.toml").read_text().replace('neovim = "0.12.6"', 'neovim = "99.1.0"'))
+    development.write_text((ROOT / "mise.toml").read_text())
+    changed = tools.render(machine, development)
+    assert "| `neovim` | `99.1.0` |" in changed
+    assert changed != tool_page
+
+print("PASS: Generated Zsh/Zellij/tool inventory references track configuration and reject stale annotations")
