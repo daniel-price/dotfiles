@@ -13,6 +13,10 @@ dotfiles remain planned.
 5. Require a precise yes/no prompt for every modifying action.
 6. Test refusal, already-correct state, conflicts and reruns in an isolated HOME.
 
+Bootstrap offers to deploy this reviewed symlink once mise and Zsh are
+available, before installing additional tools. You can also invoke deployment
+independently to retry after declining or resolving a conflict.
+
 To activate mise in a new zsh session:
 
 ```sh

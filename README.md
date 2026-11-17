@@ -10,8 +10,10 @@ The self-contained `get-started.sh` can install Git (when missing, after
 approval) and clone this public repository once over HTTPS. `scripts/setup/bootstrap.sh`
 installs missing pinned mise, then asks separately before using native mise
 configuration to install zsh, Neovim `0.12.6` and Zellij `0.46.0`.
-Curl must already exist for the standalone first download. Separate opt-in scripts can deploy a reviewed zsh
-startup file or one selected private configuration directory through mise.
+Curl must already exist for the standalone first download. Bootstrap offers
+the reviewed Zsh startup symlink **after mise and Zsh are available and before
+installing Neovim/Zellij**. A separate opt-in script deploys one selected
+private configuration directory through mise.
 A recurring update command is not yet implemented; secrets are not restored.
 
 - **[Read the documentation](docs/index.md)** (source) ·
@@ -52,11 +54,12 @@ and does not add shell activation. Neovim is installed from the checked-in mise
 declaration only after its own confirmation. An existing checkout is neither
 overwritten nor automatically updated.
 
-After installing mise, run `bash scripts/setup/deploy-zsh-config.sh` from the checkout
-if you want a reviewed `~/.zshrc` that adds `~/.local/bin` to `PATH` once and activates mise. That step is deliberately
-separate, previews both mise checks and refuses to overwrite an existing shell
-configuration. It does not affect an already-running Bash shell. Development scripts and
-Git hooks resolve the pinned mise executable even without that Zsh activation.
+Bootstrap offers the reviewed `~/.zshrc` symlink soon after mise and Zsh are
+available. It previews the changes, asks separately and preserves an existing
+configuration. Run `bash scripts/setup/deploy-zsh-config.sh` independently to
+retry after resolving a conflict or declining the offer. New Zsh sessions add
+`~/.local/bin` to `PATH` once and activate mise; the current Bash shell is
+unchanged. Development scripts and Git hooks also resolve mise independently.
 
 Do **not** use `curl ... | bash`: stdin must remain connected to your terminal
 for confirmations, and the download must finish before execution.

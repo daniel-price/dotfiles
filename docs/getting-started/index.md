@@ -71,11 +71,14 @@ SHA-256, then asks again before running it. The installer writes only
 `~/.local/bin/mise` and may create its missing parent directories. It downloads
 the release only from GitHub and verifies that release before installation. An
 existing mise found on `PATH` or at that destination is reported and left
-unchanged, even when it is an older version. Bootstrap then asks individually before installing the pinned Neovim and
-Zellij versions declared in `scripts/setup/mise.toml`. It uses mise's
-installed-state checks and never upgrades working installations silently.
-The reviewed zsh startup file is declared in the same config but is **not
-automatically deployed by bootstrap**: use the separate step below.
+unchanged, even when it is an older version. Once mise and Zsh are available, bootstrap **offers** to deploy the reviewed
+`~/.zshrc` via `scripts/setup/deploy-zsh-config.sh` before provisioning Neovim
+and Zellij. It previews the symlink and requires its own confirmation. Existing
+non-managed `~/.zshrc` files or symlinks are preserved and reported without
+blocking remaining setup. Accepting activates mise in **new Zsh sessions**, not
+in the currently running shell. A declined offer can be retried independently.
+Bootstrap then asks individually before installing the pinned Neovim and Zellij
+versions from `scripts/setup/mise.toml`. It never silently upgrades tools.
 
 To deploy a private Neovim configuration, explicitly select an already-present
 source directory and target directory after reviewing
@@ -89,10 +92,10 @@ temporary-file command downloads everything first.
 
 ## Activate mise in zsh (optional)
 
-After bootstrap, install a reviewed `~/.zshrc` that activates mise so tools such
-as `nvim` are available in new interactive zsh sessions. This requires mise
-`2026.11.9` or newer; bootstrap installs that version. Older releases fail with
-an explicit version message before any change:
+Bootstrap offers the reviewed `~/.zshrc` before installing Neovim and Zellij.
+If you declined, or resolved a conflicting existing configuration, you can
+rerun the deployment independently. The script requires mise `2026.11.9` or
+newer and will refuse older versions without modifying the destination:
 
 ```sh
 bash ~/.dotfiles/scripts/setup/deploy-zsh-config.sh --help
@@ -142,11 +145,13 @@ bash ~/.dotfiles/scripts/setup/bootstrap.sh
 bash ~/.dotfiles/tests/run.sh
 ```
 
-**Expected:** bootstrap identifies the OS, skips available mise and zsh,
-Neovim and Zellij, or asks separately before installing a missing component. Mise
-requires separate download/verification and execution confirmation; Neovim and
-Zellij each have their own install prompt. It then lists the unimplemented steps. The tests use temporary fixtures and should finish
-with `All bootstrap checks passed.`
+**Expected:** bootstrap identifies the OS, checks mise and Zsh, and then
+checks the reviewed `~/.zshrc` **before** proposing Neovim/Zellij installs.
+It previews and offers the Zsh symlink if the destination is free, skips an
+already-correct link, and preserves any conflicting file or other symlink.
+Each missing tool requires separate approval. The final message reports the
+Zsh configuration status. Tests use temporary fixtures and finish with
+`All bootstrap checks passed.`
 
 Every bootstrap change already requires its own confirmation. Read the code and
 documentation for the version you check out before running it on a live machine.
@@ -162,10 +167,10 @@ documentation for the version you check out before running it on a live machine.
    `curl` (implemented).
 5. Bootstrap can download, verify and install missing mise `v2026.11.9` after
    separate approval (implemented). It does not activate mise.
-6. Bootstrap can provision pinned Neovim and Zellij from its declarative config after separate
-   approvals (implemented).
-7. Optionally deploy the reviewed zsh startup file that activates mise
-   (implemented).
+6. After mise and Zsh are available, offer to deploy the reviewed Zsh startup
+   symlink with its own confirmation, while preserving conflicts (implemented).
+7. Provision pinned Neovim and Zellij from declarative mise configuration,
+   with separate approvals (implemented).
 8. Explicitly deploy one reviewed private configuration directory through the
    mise overlay (narrow prototype implemented).
 9. Provision further reviewed tools and apply further reviewed dotfiles.
