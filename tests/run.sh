@@ -26,6 +26,8 @@ printf 'PASS: Bash syntax\n'
 [[ -x "$ROOT/bin/opencode-sandbox" && -f "$ROOT/containers/opencode/Containerfile" ]] ||
     fail 'sandbox launcher must be executable and have a reviewed Containerfile'
 bash -n "$ROOT/bin/opencode-sandbox" || fail 'sandbox launcher has invalid Bash syntax'
+[[ -x "$ROOT/bin/,bootstrap" ]] || fail ',bootstrap must be executable'
+bash -n "$ROOT/bin/,bootstrap" || fail ',bootstrap has invalid Bash syntax'
 printf 'PASS: Executable OpenCode launcher syntax and layout\n'
 if command -v zsh >/dev/null 2>&1; then
     zsh -n "$ROOT/.config/zsh/zshrc" || fail 'reviewed zsh file has invalid syntax'
