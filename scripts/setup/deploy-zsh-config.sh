@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
+ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 # shellcheck source=scripts/lib/common.sh
 source "$ROOT/scripts/lib/common.sh"
 # shellcheck source=scripts/lib/mise.sh
@@ -10,7 +10,7 @@ trap 'report_error "$?" "$LINENO"' ERR
 
 usage() {
     printf '%s\n' \
-        'Usage: bash scripts/deploy-zsh-config.sh [--target FILE]' \
+        'Usage: bash scripts/setup/deploy-zsh-config.sh [--target FILE]' \
         'Preview and apply the reviewed zsh startup file with mise.' \
         'Defaults to the home-directory .zshrc. Never overwrites an existing target.'
 }

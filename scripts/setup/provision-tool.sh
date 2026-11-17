@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
+ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 # shellcheck source=scripts/lib/common.sh
 source "$ROOT/scripts/lib/common.sh"
 # shellcheck source=scripts/lib/mise.sh
@@ -10,7 +10,7 @@ trap 'report_error "$?" "$LINENO"' ERR
 
 usage() {
     printf '%s\n' \
-        'Usage: bash scripts/provision-tool.sh {neovim|zellij}' \
+        'Usage: bash scripts/setup/provision-tool.sh {neovim|zellij}' \
         'Install one declared tool with mise after confirmation.' \
         'Skips installed tools and never upgrades them.'
 }

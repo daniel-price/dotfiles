@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
+ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 # shellcheck source=scripts/lib/common.sh
 source "$ROOT/scripts/lib/common.sh"
 # shellcheck source=scripts/lib/os.sh
@@ -14,7 +14,7 @@ MISE_INSTALLER_SHA256='60adf5460b19a791b964c414a2fff9d46990c9f2b1dfc0e4ba8c2b865
 
 usage() {
     printf '%s\n' \
-        'Usage: bash scripts/bootstrap.sh [--help]' \
+        'Usage: bash scripts/setup/bootstrap.sh [--help]' \
         'Install missing zsh, curl, pinned mise, Neovim and Zellij after separate confirmation.' \
         'Does not configure the shell, deploy dotfiles or upgrade software.'
 }
@@ -190,7 +190,7 @@ log "Detected platform: $platform."
 ensure_tool "$platform" zsh
 ensure_tool "$platform" curl
 ensure_mise "$platform"
-bash "$ROOT/scripts/provision-tool.sh" neovim
-bash "$ROOT/scripts/provision-tool.sh" zellij
+bash "$ROOT/scripts/setup/provision-tool.sh" neovim
+bash "$ROOT/scripts/setup/provision-tool.sh" zellij
 log 'Bootstrap complete. Not implemented: SSH setup, other tool installation, dotfile deployment,'
 log 'Git updates, or shell configuration.'

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
+ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 # shellcheck source=scripts/lib/common.sh
 source "$ROOT/scripts/lib/common.sh"
 # shellcheck source=scripts/lib/mise.sh
@@ -10,7 +10,7 @@ trap 'report_error "$?" "$LINENO"' ERR
 
 usage() {
     printf '%s\n' \
-        'Usage: bash scripts/apply-private-overlay.sh --source DIR --target DIR' \
+        'Usage: bash scripts/setup/apply-private-overlay.sh --source DIR --target DIR' \
         'Preview and apply one explicitly selected directory symlink with mise.' \
         'Does not discover, clone, fetch, trust or update any private repository.'
 }
