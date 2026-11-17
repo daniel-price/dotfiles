@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[2]
 ZSH = ROOT / ".config" / "zsh"
 OUTPUT = ROOT / "docs" / "guides" / "zsh.md"
 ANNOTATION = re.compile(r"^# doc: (option|prompt|alias) ([^|]+)\| (.+)$")
-ALIAS = re.compile(r"^alias\s+([^=\s]+)='([^']*)'\s*$")
+ALIAS = re.compile(r"^\s*alias\s+([^=\s]+)='([^']*)'\s*$")
 
 
 def main() -> None:
