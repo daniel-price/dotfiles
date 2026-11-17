@@ -1,22 +1,11 @@
 # Add or change a tool
 
-Machine tools now have **one version source**:
-`scripts/setup/mise.toml`. It declares Neovim `0.12.6` and Zellij
-`0.46.0`, independently of the root `mise.toml`, which is only for
-developing this checkout.
+Machine tools are pinned in [`scripts/setup/mise.toml`](../../scripts/setup/mise.toml), separate from the root `mise.toml` used for repository development.
 
-1. Add or change a pinned version under `[tools]` in
-   `scripts/setup/mise.toml`. Review its source and release.
-2. If it is a system package instead, add a platform-specific
-   `[bootstrap.packages]` declaration in the same file.
-3. For a new version-managed tool, extend the reviewed name list in
-   `scripts/setup/bootstrap.sh` so each installation has its own explicit
-   approval. The *version* must not be duplicated in Bash.
-4. Check `mise install --dry-run-code` in an isolated machine-config
-   context. Verify decline, already-installed, repeat and version-change
-   behaviour before relying on it on your machine.
-5. Update the [tool inventory](../architecture/platforms.md#installed-tool-inventory).
+1. Add or change an exact version under `[tools]`. Use `[bootstrap.packages]` for OS packages.
+2. Review the source/version and run `bash scripts/setup/bootstrap.sh`. It previews missing components and asks before installing.
+3. Test an already-installed tool, refusal and repeat run before merging.
 
-Only `scripts/setup/bootstrap.sh` runs machine provisioning. Existing
-software is not automatically upgraded. Development tools are installed
-separately by `scripts/dev/install-dev-tools.sh`.
+Bootstrap discovers declared tools from the manifest; **do not duplicate their versions or names in Bash**. Upgrading an existing tool is separate from installing missing tools.
+
+See [platforms](../architecture/platforms.md) and [roadmap](../roadmap.md).
