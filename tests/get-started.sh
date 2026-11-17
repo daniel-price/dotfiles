@@ -57,7 +57,8 @@ printf 'unexpected bootstrap execution\n' > "$HOME/bootstrap-invoked"
 BOOT
 HOME="$TMP/home" PATH="$TMP/bin:$PATH" \
     bash "$ROOT/get-started.sh" >"$TMP/out" 2>&1
-grep -q 'skipped clone and update' "$TMP/out" || fail 'existing clone not skipped'
+grep -q 'skipped clone' "$TMP/out" || fail 'existing clone not skipped'
+grep -q 'has no reviewed updater' "$TMP/out" || fail 'legacy checkout updater compatibility missing'
 grep -q 'Bootstrap execution declined' "$TMP/out" || fail 'bootstrap should require a separate approval'
 [[ ! -e "$TMP/home/bootstrap-invoked" ]] || fail 'bootstrap executed without terminal approval'
 
