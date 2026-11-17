@@ -3,4 +3,8 @@ set -euo pipefail
 
 ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 cd "$ROOT"
-exec python3 -m zensical build --clean --strict "$@"
+
+# Generated references are build products, never checked into Git.
+trap 'rm -f "$ROOT/docs/guides/zsh.md"' EXIT
+python3 scripts/docs/generate-zsh.py
+python3 -m zensical build --clean --strict "$@"
