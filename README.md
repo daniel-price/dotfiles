@@ -5,11 +5,11 @@ The repository is also its own handbook: how to use it, why it is designed this
 way, and what still needs building. An optional, separately authorised private
 repository may provide non-public configuration on selected machines.
 
-**Current status: bootstrap with pinned Neovim and Zellij and opt-in shell activation.**
+**Current status: bootstrap with pinned zoxide, Neovim and Zellij and opt-in shell activation.**
 The self-contained `get-started.sh` can install Git (when missing, after
 approval) and clone this public repository once over HTTPS. `scripts/setup/bootstrap.sh`
 installs missing pinned mise, then asks separately before using native mise
-configuration to install zsh, Neovim `0.12.6` and Zellij `0.46.0`.
+configuration to install zsh, zoxide `0.10.0`, Neovim `0.12.6` and Zellij `0.46.0`.
 Curl must already exist for the standalone first download. Bootstrap offers
 the reviewed Zsh startup symlink **after mise and Zsh are available and before
 installing Neovim/Zellij**. A separate opt-in script deploys one selected
@@ -47,19 +47,20 @@ before running downloaded code:
 The temporary download is deleted automatically when the command finishes.
 The script checks Git, asks before any installation or HTTPS clone into
 `~/.dotfiles`, then **asks separately before running** the checkout's
-`scripts/setup/bootstrap.sh`. Bootstrap checks mise and delegates missing zsh, Neovim and Zellij to mise; it asks
+`scripts/setup/bootstrap.sh`. Bootstrap checks mise and delegates missing zsh, zoxide, Neovim and Zellij to mise; it asks
 before each missing-tool installation and never upgrades an existing tool. A
 missing mise installation is pinned to `v2026.11.9`, verified before execution,
-and does not add shell activation. Neovim is installed from the checked-in mise
-declaration only after its own confirmation. An existing checkout is neither
+and does not add shell activation. Zoxide, Neovim and Zellij are installed from the checked-in mise
+declaration only after separate confirmations. An existing checkout is neither
 overwritten nor automatically updated.
 
 Bootstrap offers the reviewed `~/.zshrc` symlink soon after mise and Zsh are
 available. It previews the changes, asks separately and preserves an existing
 configuration. Run `bash scripts/setup/deploy-zsh-config.sh` independently to
 retry after resolving a conflict or declining the offer. New Zsh sessions add
-`~/.local/bin` to `PATH` once and activate mise; the current Bash shell is
-unchanged. Development scripts and Git hooks also resolve mise independently.
+`~/.local/bin` to `PATH` once, load the reviewed machine tool versions,
+activate mise and enable zoxide’s `z` function when installed. The current Bash
+shell is unchanged. Development scripts and Git hooks also resolve mise independently.
 
 Do **not** use `curl ... | bash`: stdin must remain connected to your terminal
 for confirmations, and the download must finish before execution.
@@ -108,7 +109,7 @@ bash scripts/setup/cleanup.sh --apply   # Separate yes/no prompt per eligible it
 ```
 
 Cleanup only targets the reviewed `~/.zshrc` symlink and the **exact mise
-versions** pinned for Neovim and Zellij in `scripts/setup/mise.toml`.
+versions** pinned for zoxide, Neovim and Zellij in `scripts/setup/mise.toml`.
 It never removes zsh/other OS packages, mise itself, Git, the checkout or
 private overlays. Mise tool versions are shared across projects, so approve
 their removal only if you know other projects do not rely on them.

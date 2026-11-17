@@ -2,6 +2,7 @@
 """PTY-backed tests for the opt-in zsh startup deployment."""
 import os
 import pty
+import shutil
 import subprocess
 import tempfile
 from pathlib import Path
@@ -40,6 +41,7 @@ def run_quiet(script, args, env):
 
 assert SOURCE.is_file(), SOURCE
 assert "mise activate zsh" in SOURCE.read_text(), SOURCE.read_text()
+assert "zoxide init zsh" in SOURCE.read_text(), SOURCE.read_text()
 
 with tempfile.TemporaryDirectory(prefix="dotfiles-zsh-deploy-") as scratch:
     temp_root = Path(scratch)
@@ -147,4 +149,57 @@ printf '%s\\n' '2026.8.15 linux-x64'
     assert "2026.11.9 or newer" in old_version.stdout, old_version.stdout
     assert old_log.read_text() == ""
 
-    print("PASS: Zsh deployment consent, preview, conflicts, version and repeatability")
+
+    # Check the real Zsh startup semantics with synthetic mise and zoxide.
+    # The machine manifest must be resolved through the ~/.zshrc symlink,
+    # otherwise a tool installed with mise -C / is invisible to new shells.
+    if shutil.which("zsh"):
+        tools_bin = temp_root / "tools"
+        tools_bin.mkdir()
+        zoxide_log = temp_root / "zoxide.log"
+        zoxide_log.touch()
+        (tools_bin / "zoxide").write_text("""#!/usr/bin/env bash
+printf '%s\\n' "$*" >> "$MOCK_ZOXIDE_LOG"
+[[ "$*" == 'init zsh' ]] || exit 60
+printf '%s\\n' 'function z() { :; }'
+""")
+        (tools_bin / "zoxide").chmod(0o755)
+
+        mise.write_text("""#!/usr/bin/env bash
+printf '%s|%s\\n' "${MISE_GLOBAL_CONFIG_FILE:-unset}" "$*" >> "$MOCK_MISE_LOG"
+[[ "$*" == 'activate zsh' ]] || exit 61
+printf 'export PATH="%s:$PATH"\\n' "$MOCK_TOOLS_BIN"
+""")
+        mise.chmod(0o755)
+        startup_env = make_env(home, log)
+        startup_env.pop("MISE_GLOBAL_CONFIG_FILE", None)
+        startup_env.update({
+            "MOCK_TOOLS_BIN": str(tools_bin),
+            "MOCK_ZOXIDE_LOG": str(zoxide_log),
+        })
+        check = 'source "$HOME/.zshrc"; (( $+functions[z] )) || exit 70; print -r -- "$MISE_GLOBAL_CONFIG_FILE"'
+        started = subprocess.run(
+            ["zsh", "-f", "-c", check], env=startup_env, cwd=temp_root,
+            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT, text=True, check=False, timeout=12,
+        )
+        machine_config = ROOT / "scripts" / "setup" / "mise.toml"
+        assert started.returncode == 0, started.stdout
+        assert str(machine_config) in started.stdout, started.stdout
+        assert "init zsh" in zoxide_log.read_text(), zoxide_log.read_text()
+        assert f"{machine_config}|activate zsh" in log.read_text(), log.read_text()
+
+        # Respect deliberate user overrides; do not silently replace them.
+        startup_env["MISE_GLOBAL_CONFIG_FILE"] = "/chosen/mise-config.toml"
+        overridden = subprocess.run(
+            ["zsh", "-f", "-c", check], env=startup_env, cwd=temp_root,
+            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT, text=True, check=False, timeout=12,
+        )
+        assert overridden.returncode == 0, overridden.stdout
+        assert "/chosen/mise-config.toml" in overridden.stdout, overridden.stdout
+        assert "/chosen/mise-config.toml|activate zsh" in log.read_text()
+    else:
+        print("SKIP: Zsh startup integration (zsh unavailable)")
+
+    print("PASS: Zsh deployment consent, preview, conflicts, version, Zsh init and repeatability")

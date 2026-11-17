@@ -34,17 +34,26 @@ case "$*" in
   "config get --file "*" tools.neovim")
     echo '0.12.6'
     ;;
+  "config get --file "*" tools.zoxide")
+    echo "0.10.0"
+    ;;
   "config get --file "*" tools.zellij")
     echo "${MOCK_ZELLIJ_VERSION:-0.46.0}"
     ;;
   "uninstall --dry-run-code neovim@0.12.6")
     [[ -e "$MOCK_STATE/neovim" ]] && exit 1 || exit 0
     ;;
+  "uninstall --dry-run-code zoxide@0.10.0")
+    [[ -e "$MOCK_STATE/zoxide" ]] && exit 1 || exit 0
+    ;;
   "uninstall --dry-run-code zellij@0.46.0")
     [[ -e "$MOCK_STATE/zellij" ]] && exit 1 || exit 0
     ;;
   "uninstall --yes neovim@0.12.6")
     rm -f -- "$MOCK_STATE/neovim"
+    ;;
+  "uninstall --yes zoxide@0.10.0")
+    rm -f -- "$MOCK_STATE/zoxide"
     ;;
   "uninstall --yes zellij@0.46.0")
     rm -f -- "$MOCK_STATE/zellij"
@@ -107,6 +116,7 @@ esac
 
     (state / "neovim").touch()
     (state / "zellij").touch()
+    (state / "zoxide").touch()
     target.symlink_to(SOURCE)
     help_result = run_quiet(["--help"])
     assert help_result.returncode == 0 and "Usage:" in help_result.stdout
@@ -117,10 +127,11 @@ esac
     preview = run_quiet([])
     assert preview.returncode == 0, preview.stdout
     assert "Preview only; no changes were made" in preview.stdout, preview.stdout
-    assert target.is_symlink() and (state / "neovim").exists() and (state / "zellij").exists()
+    assert target.is_symlink() and (state / "neovim").exists() and (state / "zellij").exists() and (state / "zoxide").exists()
     assert any("dot unapply --dry-run" in line for line in operations())
     assert any("uninstall --dry-run-code neovim@0.12.6" in line for line in operations())
     assert any("uninstall --dry-run-code zellij@0.46.0" in line for line in operations())
+    assert any("uninstall --dry-run-code zoxide@0.10.0" in line for line in operations())
     assert not destructive(), operations()
     assert all(line.startswith(str(MANIFEST) + "|") for line in log.read_text().splitlines())
 
@@ -128,7 +139,7 @@ esac
     reset_log()
     piped = run_quiet(["--apply"], "yes\nyes\nyes\n")
     assert piped.returncode == 0, piped.stdout
-    assert target.is_symlink() and (state / "neovim").exists() and (state / "zellij").exists()
+    assert target.is_symlink() and (state / "neovim").exists() and (state / "zellij").exists() and (state / "zoxide").exists()
     assert not destructive(), operations()
 
     # Existing different symlinks and ordinary files are never touched.
@@ -151,20 +162,21 @@ esac
     # Per-component approval: decline zsh, accept Neovim, decline Zellij.
     reset_log()
     target.symlink_to(SOURCE)
-    status, output = run_tty(["--apply"], "n\ny\nn\n")
+    status, output = run_tty(["--apply"], "n\ny\nn\nn\n")
     assert status == 0, output
     assert target.is_symlink() and not (state / "neovim").exists()
-    assert (state / "zellij").exists(), output
+    assert (state / "zellij").exists() and (state / "zoxide").exists(), output
     assert destructive() == ["-C / uninstall --yes neovim@0.12.6"], operations()
 
     # Subsequent run removes only the remaining approved items.
     reset_log()
-    status, output = run_tty(["--apply"], "y\ny\n")
+    status, output = run_tty(["--apply"], "y\ny\ny\n")
     assert status == 0, output
-    assert not target.exists() and not (state / "zellij").exists(), output
+    assert not target.exists() and not (state / "zellij").exists() and not (state / "zoxide").exists(), output
     assert destructive() == [
         f"-C / dot unapply --yes {target}",
         "-C / uninstall --yes zellij@0.46.0",
+        "-C / uninstall --yes zoxide@0.10.0",
     ], operations()
 
     # Repeat is safe; no managed state or tools remain.
@@ -180,4 +192,4 @@ esac
     assert "not an exact release" in bad_version.stdout
     assert not destructive(), operations()
 
-    print("PASS: Cleanup preview, isolated manifest, conflict refusal, per-item consent, reruns")
+    print("PASS: Cleanup preview, zoxide scope, isolated manifest, consent and reruns")
