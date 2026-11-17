@@ -4,7 +4,7 @@
 - [Manage a dotfile](manage-dotfile.md)
 - [Zsh aliases and prompt](zsh.md)
 - [Zellij keybindings and yank helpers](zellij.md)
-- [Develop the repo and use Git hooks](development.md)
+- [Develop the repo and use Git hooks](development.md) · [Command reference](cli.md)
 - [Private configuration](private-profiles.md)
 - [OpenCode sandbox](opencode.md) · [Podman prerequisite](podman.md)
 - [Encrypted environment values (experimental POC)](age-env-poc.md) · [Secrets management (planned)](manage-secret.md)
