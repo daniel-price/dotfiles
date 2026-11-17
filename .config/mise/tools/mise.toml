@@ -1,3 +1,5 @@
 [tools]
 neovim = "0.12.6"
+node = "24.11.0"
+opencode = "2.3.0"
 zellij = "0.46.0"
