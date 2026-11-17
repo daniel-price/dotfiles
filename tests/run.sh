@@ -163,21 +163,21 @@ esac
 MISE
 chmod +x "$TEST_ROOT/bin/mise"
 for help in -h --help; do
-    output=$(bash "$ROOT/scripts/setup/bootstrap.sh" "$help")
+    output=$(bash "$ROOT/bin/,bootstrap" "$help")
     [[ "$output" == *'Usage:'* ]] || fail 'bootstrap help missing'
 done
-if bash "$ROOT/scripts/setup/bootstrap.sh" --unknown >"$TEST_ROOT/out" 2>"$TEST_ROOT/err"; then
+if bash "$ROOT/bin/,bootstrap" --unknown >"$TEST_ROOT/out" 2>"$TEST_ROOT/err"; then
     fail 'bootstrap accepted unknown argument'
 fi
-if bash "$ROOT/scripts/setup/bootstrap.sh" --help extra >"$TEST_ROOT/out" 2>"$TEST_ROOT/err"; then
+if bash "$ROOT/bin/,bootstrap" --help extra >"$TEST_ROOT/out" 2>"$TEST_ROOT/err"; then
     fail 'bootstrap accepted extra argument'
 fi
 # Run twice from elsewhere, with an isolated HOME, on a supported host only.
 if detect_os >/dev/null 2>&1; then
     output=$(cd "$TEST_ROOT/elsewhere" && HOME="$TEST_ROOT/home" \
-        PATH="$TEST_ROOT/bin:$PATH" bash "$ROOT/scripts/setup/bootstrap.sh")
+        PATH="$TEST_ROOT/bin:$PATH" bash "$ROOT/bin/,bootstrap" --no-update)
     repeated=$(cd "$TEST_ROOT/elsewhere" && HOME="$TEST_ROOT/home" \
-        PATH="$TEST_ROOT/bin:$PATH" bash "$ROOT/scripts/setup/bootstrap.sh")
+        PATH="$TEST_ROOT/bin:$PATH" bash "$ROOT/bin/,bootstrap")
     assert_equal "$output" "$repeated" 'bootstrap repeatability'
     [[ "$output" == *'Detected platform:'* && "$output" == *'Bootstrap complete.'* &&
         "$output" == *'Bootstrap complete. Zsh configuration:'* ]] || fail 'bootstrap scope unclear'

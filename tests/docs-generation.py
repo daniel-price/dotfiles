@@ -68,8 +68,8 @@ with tempfile.TemporaryDirectory() as temporary:
     assert changed != tool_page
 
 cli_page = cli.render()
-assert "## Machine bootstrap" in cli_page
-assert "Usage: bash scripts/setup/bootstrap.sh" in cli_page
+assert "## Update and bootstrap" in cli_page
+assert "Usage: ,bootstrap" in cli_page
 assert "## OpenCode sandbox" in cli_page
 assert "ANTHROPIC_API_KEY" in cli_page
 assert "## Cleanup" in cli_page
