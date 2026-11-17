@@ -1,14 +1,11 @@
 # How-to guides
 
-These guides describe the safe intended workflow. Where implementation is not
-yet available, the guide says so instead of inventing working commands.
-
 - [Add or change a tool](add-tool.md)
-- [Develop this repository and enable Git hooks](development.md)
 - [Manage a dotfile](manage-dotfile.md)
-- [Manage an encrypted secret](manage-secret.md)
-- [Use an optional private profile](private-profiles.md)
-- [Getting started with the current scaffold](../getting-started/index.md)
+- [Zsh aliases and prompt](zsh.md)
+- [Develop the repo and use Git hooks](development.md)
+- [Private configuration](private-profiles.md)
+- [OpenCode sandbox](opencode.md) · [Podman prerequisite](podman.md)
+- [Encrypted secrets (planned)](manage-secret.md)
 
-Before editing a live machine, preview the change, read the source and follow
-a PR's manual test plan. Normal update runs must not silently upgrade software.
+For initial setup see [Getting started](../getting-started/index.md). For unfinished work see the [roadmap](../roadmap.md).
