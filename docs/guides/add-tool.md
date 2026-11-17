@@ -1,12 +1,10 @@
 # Add or change a tool
 
 **Status: partly implemented.** Bootstrap installs pinned mise and can provision
-Neovim, Node, OpenCode and Zellij through `scripts/provision-tool.sh`. Other
-tools remain planned.
+Neovim through `scripts/provision-tool.sh`. Other tools remain planned.
 
-`scripts/provision-tool.sh` accepts one reviewed tool name at a time. Current
-mappings are `neovim@0.12.6`, `node@24.11.0`, `opencode@2.3.0` and
-`zellij@0.46.0`, with the same versions declared in
+`scripts/provision-tool.sh` accepts one reviewed tool name at a time. Neovim is
+currently mapped to `neovim@0.12.6`, with the same version declared in
 `.config/mise/tools/mise.toml`. That directory is separate from the checkout
 config so CI does not install machine tools. The script checks the installed state with
 `mise install --dry-run-code`, asks before `mise install`, and skips an already

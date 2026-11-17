@@ -10,7 +10,7 @@ trap 'report_error "$?" "$LINENO"' ERR
 
 usage() {
     printf '%s\n' \
-        'Usage: bash scripts/provision-tool.sh {neovim|node|opencode|zellij}' \
+        'Usage: bash scripts/provision-tool.sh {neovim|zellij}' \
         'Install one declared tool with mise after confirmation.' \
         'Skips installed tools and never upgrades them.'
 }
@@ -26,16 +26,6 @@ case "$1" in
 neovim)
     tool=neovim
     spec='neovim@0.12.6'
-    config_dir="$ROOT/.config/mise/tools"
-    ;;
-node)
-    tool=node
-    spec='node@24.11.0'
-    config_dir="$ROOT/.config/mise/tools"
-    ;;
-opencode)
-    tool=opencode
-    spec='opencode@2.3.0'
     config_dir="$ROOT/.config/mise/tools"
     ;;
 zellij)

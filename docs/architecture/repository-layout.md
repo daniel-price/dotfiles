@@ -10,7 +10,6 @@ This is a map of **what exists**, with future responsibilities labelled.
 | `scripts/provision-tool.sh` | Installs one reviewed mise-declared tool after confirmation. |
 | `scripts/apply-private-overlay.sh` | Previews and applies one explicitly selected private directory symlink. |
 | `scripts/deploy-zsh-config.sh` | Previews and applies the reviewed zsh startup file after confirmation. |
-| `scripts/install-ghostty.sh` | Installs Ghostty with apt/Homebrew after per-OS confirmation. |
 | `scripts/update.sh` | Read-only checkout scaffold today. |
 | `scripts/` | Visible checkout scripts for setup, shared checks and docs builds. |
 | `scripts/lib/` | OS, confirmation and mise location/trust helpers. |

@@ -88,50 +88,14 @@ INSTALLER
 """)
     curl.chmod(0o755)
 
-    apt_get = bin_dir / "apt-get"
-    apt_get.write_text("""#!/usr/bin/env bash
+    for installer in ("apt-get", "brew"):
+        executable = bin_dir / installer
+        executable.write_text("""#!/usr/bin/env bash
 printf '%s:%s\\n' "${0##*/}" "$*" >> "$MOCK_INSTALL_LOG"
 tool=${!#}
 touch "$MOCK_STATE/$tool"
 """)
-    apt_get.chmod(0o755)
-
-    brew = bin_dir / "brew"
-    brew.write_text("""#!/usr/bin/env bash
-printf '%s:%s\\n' "${0##*/}" "$*" >> "$MOCK_INSTALL_LOG"
-case "$1" in
-  list)
-    [[ -e "$MOCK_STATE/ghostty" ]] || exit 1
-    ;;
-  install)
-    tool=${!#}
-    touch "$MOCK_STATE/$tool"
-    ;;
-esac
-""")
-    brew.chmod(0o755)
-
-    apt_cache = bin_dir / "apt-cache"
-    apt_cache.write_text("""#!/usr/bin/env bash
-printf '%s\\n' '  Candidate: 1.4.0'
-""")
-    apt_cache.chmod(0o755)
-
-    dpkg_query = bin_dir / "dpkg-query"
-    dpkg_query.write_text("""#!/usr/bin/env bash
-if [[ -e "$MOCK_GHOSTTY_STATE" ]]; then
-  printf '%s\\n' 'install ok installed'
-else
-  printf '%s\\n' 'deinstall ok config-files'
-fi
-""")
-    dpkg_query.chmod(0o755)
-
-    add_repo = bin_dir / "add-apt-repository"
-    add_repo.write_text("""#!/usr/bin/env bash
-printf '%s:%s\\n' "${0##*/}" "$*" >> "$MOCK_INSTALL_LOG"
-""")
-    add_repo.chmod(0o755)
+        executable.chmod(0o755)
 
     sudo = bin_dir / "sudo"
     sudo.write_text("""#!/usr/bin/env bash
@@ -155,8 +119,6 @@ printf '%s  %s\\n' "$MOCK_INSTALLER_SHA256" "$file"
         "MOCK_INSTALLER_SHA256": "60adf5460b19a791b964c414a2fff9d46990c9f2b1dfc0e4ba8c2b865f882a2b",
         "MOCK_MISE_VERSION": "2026.11.9",
         "MOCK_STATE": str(state),
-        "MOCK_GHOSTTY_STATE": str(state / "ghostty"),
-        "MOCK_COMMAND_LOG": str(temp / "ghostty-commands.log"),
     })
 
     def run_tty(answers):
@@ -178,7 +140,7 @@ printf '%s  %s\\n' "$MOCK_INSTALLER_SHA256" "$file"
                 os.close(slave)
 
     # Refusing zsh does not block a separately approved curl installation.
-    status, output = run_tty("n\ny\nn\nn\n")
+    status, output = run_tty("n\ny\nn\n")
     assert status == 0, output
     assert not (state / "zsh").exists(), output
     assert (state / "curl").exists(), output
@@ -186,7 +148,7 @@ printf '%s  %s\\n' "$MOCK_INSTALLER_SHA256" "$file"
 
     log.unlink()
     (state / "curl").unlink()
-    status, output = run_tty("y\ny\nn\nn\n")
+    status, output = run_tty("y\ny\nn\n")
     assert status == 0, output
     assert (state / "zsh").exists() and (state / "curl").exists(), output
     installs = log.read_text().splitlines()
@@ -229,13 +191,12 @@ printf '%s  %s\\n' "$MOCK_INSTALLER_SHA256" "$file"
 
     env["MOCK_INSTALLER_SHA256"] = "60adf5460b19a791b964c414a2fff9d46990c9f2b1dfc0e4ba8c2b865f882a2b"
     log.unlink()
-    status, output = run_tty("y\ny\ny\n")
+    status, output = run_tty("y\ny\n")
     assert status == 0, output
     assert target.is_file(), output
     installs = log.read_text().splitlines()
-    assert len(installs) >= 2 and installs[0].startswith("curl-download:"), installs
+    assert len(installs) == 2 and installs[0].startswith("curl-download:"), installs
     assert installs[1] == f"installer:v2026.11.9:{target}", installs
-    assert installs[2] == "apt-get:install ghostty", installs
 
     # The pinned installation is then skipped without downloading or updating it.
     result = subprocess.run(
