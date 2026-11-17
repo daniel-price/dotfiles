@@ -71,6 +71,7 @@ ensure_mise() {
         fi
     done
 
+    command -v curl >/dev/null 2>&1 || die 'curl is required to download mise; install it first.'
     if ! confirm "Download mise $MISE_VERSION installer from GitHub to a temporary file and verify its SHA-256?"; then
         log 'Skipped mise installer download; mise remains unavailable.'
         return
@@ -120,14 +121,15 @@ case "${1:-}" in
 *) die 'Unknown argument. Use --help for usage.' ;;
 esac
 
-# Stage zero requires curl; it is also needed to verify and install mise.
-command -v curl >/dev/null 2>&1 || die 'curl is required to download mise; install it first.'
 # shellcheck disable=SC2119
 platform=$(detect_os) || die 'Unsupported platform.'
 log "Detected platform: $platform."
 ensure_mise "$platform"
 
-mise=$(mise_command) || die 'mise was not found; run bootstrap again after approving its installation.'
+if ! mise=$(mise_command); then
+    log 'Mise is not installed; later provisioning was skipped.'
+    exit 0
+fi
 mise_supports_dot "$mise" || die 'mise 2026.11.9 or newer is required for native machine bootstrap.'
 # Run from / so the checkout's root mise.toml (dev tooling) is never loaded.
 # The single reviewed machine config is the only global config for these calls.
@@ -160,6 +162,8 @@ for tool in neovim zellij; do
     [[ "$status" -eq 1 ]] || die "Could not inspect the installed $tool version."
     if confirm "Install missing $tool from the reviewed mise machine config?"; then
         "$mise" -C / install "$tool" || die "mise could not install $tool."
+        "$mise" -C / install --dry-run-code "$tool" ||
+            die "mise did not report $tool installed after the approved command."
     else
         log "Skipped $tool installation."
     fi

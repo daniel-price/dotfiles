@@ -103,7 +103,8 @@ printf '%s  %s\n' "$MOCK_SHA256" "$file"
 
     target = home / ".local" / "bin" / "mise"
     refused = run_tty("n\n")
-    assert refused[0] != 0 and not target.exists(), refused
+    assert refused[0] == 0 and not target.exists(), refused
+    assert "later provisioning was skipped" in refused[1], refused
     assert log.read_text() == "", log.read_text()
 
     env["MOCK_SHA256"] = "mismatch"
