@@ -66,7 +66,7 @@ recipient=$(sed -n 's/^# public key: //p' "$work/identity.txt")
 # Use -C to isolate mise config resolution from the caller's dotfiles checkout.
 MISE_AGE_KEY_FILE="$work/identity.txt" mise -C "$work" set \
     --age-encrypt --age-recipient "$recipient" POC_TOKEN=synthetic-demo-only >/dev/null
-MISE_AGE_KEY_FILE="$work/identity.txt" mise -C "$work" exec -- printenv POC_TOKEN | \
+MISE_AGE_KEY_FILE="$work/identity.txt" mise -C "$work" exec -- printenv POC_TOKEN |
     grep -Fxq 'synthetic-demo-only' || {
     printf '%s\n' 'Decryption failed with the correct identity.' >&2
     exit 1
