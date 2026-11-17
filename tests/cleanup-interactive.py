@@ -160,7 +160,7 @@ esac
     assert all((state / f"{name}@{version}").exists() for name, version in pins.items())
     assert any("dot unapply --dry-run" in line for line in operations())
     for name, version in pins.items():
-        assert f"uninstall --dry-run-code {name}@{version}" in operations()
+        assert f"-C / uninstall --dry-run-code {name}@{version}" in operations(), operations()
     assert not destructive(), operations()
     assert all(line.startswith(str(MANIFEST) + "|") for line in log.read_text().splitlines())
 
