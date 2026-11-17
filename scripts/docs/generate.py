@@ -6,11 +6,13 @@ import sys
 
 from zsh import render as render_zsh
 from zellij import render as render_zellij
+from tools import render as render_tools
 
 ROOT = Path(__file__).resolve().parents[2]
 OUTPUTS = {
     "zsh.md": render_zsh,
     "zellij.md": render_zellij,
+    "tools.md": render_tools,
 }
 
 
