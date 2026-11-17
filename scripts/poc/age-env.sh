@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Isolated POC: age-encrypted mise environment value (synthetic data only).
 set -euo pipefail
+# shellcheck disable=SC2016 # Values expand only inside child shells invoked by mise.
 
 usage() {
     printf '%s\n' 'Usage: bash scripts/poc/age-env.sh [--apply|--help]' \
@@ -67,13 +68,11 @@ recipient=$(sed -n 's/^# public key: //p' "$work/identity.txt")
 MISE_AGE_KEY_FILE="$work/identity.txt" mise -C "$work" set \
     --age-encrypt --age-recipient "$recipient" POC_TOKEN=synthetic-demo-only >/dev/null
 MISE_AGE_KEY_FILE="$work/identity.txt" mise -C "$work" exec -- \
-    # shellcheck disable=SC2016 # Expand inside the child shell.
     sh -c 'test "$POC_TOKEN" = synthetic-demo-only' || {
     printf '%s\n' 'Decryption failed with the correct identity.' >&2
     exit 1
 }
 if MISE_AGE_KEY_FILE="$work/does-not-exist" mise -C "$work" exec -- \
-    # shellcheck disable=SC2016 # Expand inside the child shell.
     sh -c 'test -n "${POC_TOKEN:-}"' >/dev/null 2>&1; then
     printf '%s\n' 'ERROR: missing-key execution unexpectedly succeeded.' >&2
     exit 1
