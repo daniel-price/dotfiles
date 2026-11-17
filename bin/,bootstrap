@@ -1,61 +1,174 @@
 #!/usr/bin/env bash
-# Update the public dotfiles checkout first, then run bootstrap from that version.
-# This command is available via the reviewed Zsh configuration's bin/ PATH.
+# Primary dotfiles bootstrap command: update the reviewed checkout first,
+# then provision from that exact revision. --no-update is for stage-zero
+# handoff and compatibility with older scripts; it never fetches.
 set -euo pipefail
 
-if [[ "${DOTFILES_BOOTSTRAP_SNAPSHOT:-}" == 1 ]]; then
-    ROOT=${DOTFILES_BOOTSTRAP_ROOT:?Missing dotfiles checkout root}
-else
-    ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
-fi
+ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
 
 usage() {
-    printf '%s\n' \
-        'Usage: ,bootstrap [--help]' \
-        'Offer a guarded fetch and fast-forward to latest main, then run bootstrap.' \
-        'Declining or failing the update stops before bootstrap; never resets or stashes.'
+    printf '%s\\n' \\
+        'Usage: ,bootstrap [--no-update|--help]' \\
+        'Offer to fetch and fast-forward the reviewed main branch, then provision.' \\
+        '--no-update: provision the checked-out version without fetching (for stage-zero setup).'
 }
 
-case "${1:-}" in
--h | --help)
-    [[ $# -eq 1 ]] || { usage >&2; exit 2; }
-    usage
-    exit 0
-    ;;
-'') [[ $# -eq 0 ]] || { usage >&2; exit 2; } ;;
-*) usage >&2; exit 2 ;;
-esac
+# shellcheck disable=SC2119
+platform=$(detect_os) || die 'Unsupported platform.'
+log "Detected platform: $platform."
 
-# The fast-forward may replace this very script. Keep its original contents
-# in memory, then launch the new bootstrap file from disk after the update.
-if [[ "${DOTFILES_BOOTSTRAP_SNAPSHOT:-}" != 1 ]]; then
-    snapshot=$(<"$ROOT/bin/,bootstrap")
-    DOTFILES_BOOTSTRAP_SNAPSHOT=1 DOTFILES_BOOTSTRAP_ROOT="$ROOT" \
-        exec bash -c "$snapshot" dotfiles-bootstrap
+# Bootstrap never changes its own checkout. Warn when invoked directly from a
+# different branch; switching/fetching belongs to the separately approved
+# updater, before any bootstrap commands start.
+if command -v git >/dev/null 2>&1 &&
+    [[ "$(git -C "$ROOT" rev-parse --show-toplevel 2>/dev/null || :)" == "$ROOT" ]]; then
+    checkout_branch=$(git -C "$ROOT" symbolic-ref --quiet --short HEAD 2>/dev/null || :)
+    if [[ "$checkout_branch" != main ]]; then
+        log "Running checked-out bootstrap on ${checkout_branch:-detached HEAD} without updating."
+    fi
+fi
+ensure_mise "$platform"
+
+if ! mise=$(mise_command); then
+    log 'Mise is not installed; later provisioning was skipped.'
+    exit 0
+fi
+mise_supports_dot "$mise" || die 'mise 2026.11.9 or newer is required for native machine bootstrap.'
+# Run from / so the checkout's root mise.toml (dev tooling) is never loaded.
+# The single reviewed machine config is the only global config for these calls.
+export MISE_GLOBAL_CONFIG_FILE="$ROOT/scripts/setup/mise.toml"
+[[ -f "$MISE_GLOBAL_CONFIG_FILE" ]] || die 'Missing declarative machine config.'
+
+# Fail closed on unpinned or undeclared entries before package or dotfile setup.
+tool_specs=$(machine_tool_specs "$mise" "$MISE_GLOBAL_CONFIG_FILE") ||
+    die 'Could not read the reviewed machine tool declarations.'
+
+if command -v zsh >/dev/null 2>&1 && zsh --version >/dev/null 2>&1; then
+    log 'zsh is available; no package installation needed.'
+else
+    "$mise" -C / bootstrap --only packages --dry-run ||
+        die 'Could not preview the zsh package install.'
+    if confirm 'Install missing zsh using the native package manager via mise?'; then
+        "$mise" -C / bootstrap --only packages || die 'mise could not install zsh.'
+        if ! command -v zsh >/dev/null 2>&1 || ! zsh --version >/dev/null 2>&1; then
+            die 'Mise package installation finished but zsh is still unavailable.'
+        fi
+    else
+        log 'Skipped zsh package installation.'
+    fi
 fi
 
-[[ -f "$ROOT/scripts/setup/update.sh" && -f "$ROOT/scripts/setup/bootstrap.sh" ]] || {
-    printf '[error] Missing update or bootstrap script in %s\n' "$ROOT" >&2
-    exit 1
+# Mise owns the reviewed dotfiles. Preview and require explicit approval before
+# applying; --yes skips mise's second prompt, never its conflict checks.
+# Apply before tool provisioning so a new Zsh session can activate mise.
+# A conflict must not block otherwise independent tool installation.
+zsh_config_status='skipped (zsh unavailable)'
+zsh_target="$HOME/.zshrc"
+zsh_source="$ROOT/.config/zsh/zshrc"
+# Only the Zellij regular-file conflict is auto-migrated. Keep a recoverable
+# original, never force every dotfile or replace foreign symlinks.
+apply_reviewed_dotfiles() {
+    local target="$HOME/.config/zellij/config.kdl"
+    local backup='' timestamp suffix=0
+
+    if [[ -L "$target" ]]; then
+        if [[ ! "$target" -ef "$ROOT/.config/zellij/config.kdl" ]]; then
+            log "Zellij config is a foreign symlink; leaving it untouched: $target"
+            return 1
+        fi
+    elif [[ -e "$target" ]]; then
+        if [[ ! -f "$target" ]]; then
+            log "Zellij config is not a regular file; leaving it untouched: $target"
+            return 1
+        fi
+        timestamp=$(date +%Y%m%d-%H%M%S)
+        backup="$target.backup-$timestamp"
+        while [[ -e "$backup" || -L "$backup" ]]; do
+            suffix=$((suffix + 1))
+            backup="$target.backup-$timestamp-$suffix"
+        done
+        # Move instead of copy, preserving the original exactly.
+        if ! mv "$target" "$backup"; then
+            log "Unable to back up Zellij config; deployment skipped."
+            return 1
+        fi
+        log "Backed up existing Zellij config to $backup"
+    fi
+
+    if "$mise" -C / dot apply --yes; then
+        return 0
+    fi
+    # If mise fails before replacing the target, put its original back.
+    if [[ -n "$backup" && ! -e "$target" && ! -L "$target" ]]; then
+        if mv "$backup" "$target"; then
+            log 'Restored original Zellij config after failed deployment.'
+        else
+            log "Could not restore Zellij config; original is safe at $backup"
+        fi
+    fi
+    return 1
 }
 
-# The strict updater exits nonzero for declined or skipped updates. Never
-# treat a pre-existing origin/main cache as proof that a fetch succeeded.
-bash "$ROOT/scripts/setup/update.sh" --apply --require-current
+# Refuse a foreign Zellij symlink before consulting mise status: a status
+# command may consider a symlink present even when its source is unrelated.
+zellij_target="$HOME/.config/zellij/config.kdl"
+if [[ -L "$zellij_target" && ! "$zellij_target" -ef "$ROOT/.config/zellij/config.kdl" ]]; then
+    log "Zellij config is a foreign symlink; leaving it untouched: $zellij_target"
+elif "$mise" -C / dot status --missing >/dev/null 2>&1; then
+    log 'Reviewed mise-managed dotfiles are already applied.'
+elif "$mise" -C / dot apply --dry-run; then
+    if confirm 'Apply the reviewed dotfiles (backing up an existing regular Zellij config)?'; then
+        if ! apply_reviewed_dotfiles; then
+            log 'Mise dotfile deployment failed; review any remaining conflicts and backups.'
+        fi
+    else
+        log 'Dotfile deployment declined or noninteractive.'
+    fi
+else
+    log 'Mise dotfile preview failed; skipping dotfiles and continuing tool setup.'
+fi
+if command -v zsh >/dev/null 2>&1 && zsh --version >/dev/null 2>&1; then
+    if [[ -L "$zsh_target" && "$zsh_target" -ef "$zsh_source" ]]; then
+        zsh_config_status='applied'
+    else
+        zsh_config_status='not applied'
+    fi
+fi
 
-# Independent post-update validation: run bootstrap only on a clean, current
-# main. The updater already checks remote identity and fast-forward ancestry.
-[[ "$(git -C "$ROOT" symbolic-ref --quiet --short HEAD)" == main ]] || {
-    printf '[error] Checkout is not on main; bootstrap skipped.\n' >&2
-    exit 1
-}
-[[ "$(git -C "$ROOT" rev-parse HEAD)" == "$(git -C "$ROOT" rev-parse refs/remotes/origin/main)" ]] || {
-    printf '[error] Checkout is not at fetched origin/main; bootstrap skipped.\n' >&2
-    exit 1
-}
-[[ -z "$(git -C "$ROOT" status --porcelain --untracked-files=all)" ]] || {
-    printf '[error] Checkout changed after update; bootstrap skipped.\n' >&2
-    exit 1
-}
+# Iterate via fd 3 to leave terminal stdin available for per-tool approval.
+while IFS= read -r spec <&3; do
+    [[ -n "$spec" ]] || continue
+    if "$mise" -C / install --dry-run-code "$spec"; then
+        log "$spec is already installed."
+        continue
+    else
+        status=$?
+    fi
+    [[ "$status" -eq 1 ]] || die "Could not inspect the installed $spec version."
+    if confirm "Install missing $spec from the reviewed machine manifest?"; then
+        "$mise" -C / install "$spec" || die "mise could not install $spec."
+        "$mise" -C / install --dry-run-code "$spec" ||
+            die "mise did not report $spec installed after the approved command."
+    else
+        log "Skipped $spec installation."
+    fi
+done 3<<<"$tool_specs"
 
-exec bash "$ROOT/scripts/setup/bootstrap.sh"
+# The prompt is an optional Git checkout, not a native installed executable.
+# Only offer it when our reviewed Zsh startup file is actually active.
+if [[ "$zsh_config_status" == 'already applied' || "$zsh_config_status" == applied* ]]; then
+    bash "$ROOT/scripts/setup/setup-prompt.sh" --apply
+else
+    log 'Skipping optional prompt installation: reviewed Zsh startup is not active.'
+fi
+
+# Desktop keyboard preferences are independent of mise-managed dotfiles.
+# The helper only offers a mapping for a detected supported Linux desktop.
+bash "$ROOT/scripts/setup/keyboard.sh" --apply
+
+# Changing the login shell is independent of package and dotfile setup.
+# Run this last so any earlier approval answers cannot apply to chsh.
+# chsh changes only this user's login account and may ask for a password.
+offer_default_zsh "$platform" /etc/shells
+
+log "Bootstrap complete. Zsh configuration: $zsh_config_status."
