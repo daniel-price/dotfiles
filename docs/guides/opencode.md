@@ -55,6 +55,8 @@ runs, it asks before launching but reuses the existing local image.
 Noninteractive and piped approvals are rejected. You may select a different
 repository with `--project /absolute/path/to/repository`.
 
+See the [generated CLI reference](cli.md#opencode-sandbox) for the current launcher flags.
+
 The selected path must be the root of a standard Git working tree with
 its own real `.git/` directory. Linked worktrees, parent directories,
 home directories, arbitrary mounts and running as root are refused.
