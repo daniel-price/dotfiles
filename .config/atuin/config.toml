@@ -1,0 +1,10 @@
+# Reviewed portable Atuin search preferences from .cfg.
+# Do not capture command output or launch background services automatically.
+# Atuin's secrets filter is helpful but does not replace reviewing history.
+bind_up_arrow = false
+enter_accept = true
+ctrl_n_shortcuts = true
+style = "compact"
+inline_height = 20
+show_preview = true
+secrets_filter = true
