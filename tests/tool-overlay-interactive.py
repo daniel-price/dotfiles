@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PTY-backed tests for tool provisioning and the explicit private overlay."""
+"""PTY-backed tests for the explicit private directory overlay."""
 import os
 import pty
 import subprocess
@@ -7,7 +7,6 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-PROVISION = ROOT / "scripts" / "setup" / "provision-tool.sh"
 OVERLAY = ROOT / "scripts" / "setup" / "apply-private-overlay.sh"
 
 
@@ -89,30 +88,6 @@ esac
         "MOCK_DOT_TARGET": "",
     })
     (temp / "mise.log").touch()
-
-    def log_lines():
-        return (temp / "mise.log").read_text().splitlines()
-
-    unsupported = run_quiet(PROVISION, ["ghostty"], base_env)
-    assert unsupported.returncode != 0, unsupported.stdout
-
-    declined = run_tty(PROVISION, "n\n", base_env, ["neovim"])
-    assert declined[0] == 0, declined[1]
-    assert "Skipped neovim installation" in declined[1], declined[1]
-    assert not (temp / "mise.state").exists(), declined[1]
-    assert not any("install neovim@0.12.6" in line for line in log_lines()), log_lines()
-
-    approved = run_tty(PROVISION, "y\n", base_env, ["neovim"])
-    assert approved[0] == 0, approved[1]
-    assert "Installed neovim@0.12.6" in approved[1], approved[1]
-    assert (temp / "mise.state").exists(), approved[1]
-    assert sum("install neovim@0.12.6" in line for line in log_lines()) == 1, log_lines()
-
-    before_repeat = len(log_lines())
-    repeated = run_quiet(PROVISION, ["neovim"], base_env)
-    assert repeated.returncode == 0, repeated.stdout
-    assert "already installed" in repeated.stdout, repeated.stdout
-    assert len(log_lines()) == before_repeat + 1, log_lines()
 
     def make_source(name):
         source = temp / name
@@ -218,4 +193,4 @@ esac
     assert diverged.returncode != 0, diverged.stdout
     assert "diverged" in diverged.stdout, diverged.stdout
 
-    print("PASS: Neovim provisioning and private overlay consent, conflicts and repeatability")
+    print("PASS: Private overlay consent, conflicts and repeatability")

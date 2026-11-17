@@ -10,9 +10,9 @@ task acceptance criteria are deliberately kept in
 remains scaffolded.**
 The standalone `get-started.sh` installs missing Git after approval, clones
 once, and asks separately before running the checkout bootstrap. The documented
-temporary download cleans itself up. `scripts/setup/bootstrap.sh` installs only
-missing `zsh`, `curl`, verified mise and Neovim `0.12.6`, asking separately for
-each operation. Separate opt-in scripts can deploy a reviewed zsh startup file
+temporary download cleans itself up. `scripts/setup/bootstrap.sh` installs verified mise, then delegates packages and pinned Neovim/Zellij
+versions to declarative mise configuration while preserving separate approvals.
+Curl is a stage-zero prerequisite. Separate opt-in scripts can deploy a reviewed zsh startup file
 or one selected private configuration directory. A recurring update command has not been implemented.
 
 Checkout development tooling is available separately: pinned shfmt, ShellCheck
@@ -25,12 +25,12 @@ CI. See [development](guides/development.md) for setup and read-only checks.
 | --- | --- | --- |
 | 1 | Download one self-contained file, ensure Git with consent, clone once over HTTPS | Implemented |
 | 1b | Confirmed delegation to the checkout bootstrap | Implemented |
-| 1c | Install missing `zsh` and `curl` prerequisites with separate approval | Implemented |
+| 1c | Install missing zsh through native mise after approval; require curl for stage zero | Implemented |
 | 1d | Remaining machine configuration | Planned |
 | 2 | Install verified mise `v2026.11.9` with separate download and execution approval | Implemented |
-| 2a | Provision Neovim and Zellij one tool at a time with confirmation | Implemented |
+| 2a | Provision declared Neovim and Zellij using mise with confirmation per tool | Implemented |
 | 3 | Add guarded Git updates and a truthful change report | Planned |
-| 4a | Deploy one reviewed zsh startup file via native mise with preview and conflict refusal | Implemented |
+| 4a | Deploy one declared zsh dotfile via native mise with preview and conflict refusal | Implemented |
 | 4 | Migrate further dotfiles gradually via native mise | Planned |
 | 5a | Narrow one-target private config directory overlay with explicit source, conflict preflight and synthetic tests | Implemented |
 | 5 | Full private configuration profiles, precedence and merge tests | Planned |

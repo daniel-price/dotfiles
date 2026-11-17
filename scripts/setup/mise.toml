@@ -1,0 +1,15 @@
+# Reviewed machine-only manifest. Not discovered when maintaining this checkout.
+# Setup selects it via MISE_GLOBAL_CONFIG_FILE and runs mise from /.
+[tools]
+neovim = "0.12.6"
+zellij = "0.46.0"
+
+[bootstrap.packages]
+"apt:zsh" = { os = "linux" }
+"brew:zsh" = { os = "macos" }
+
+[dotfiles]
+"~/.zshrc" = { source = "../../.config/zsh/zshrc", mode = "symlink" }
+
+[settings]
+auto_install = false

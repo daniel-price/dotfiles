@@ -8,8 +8,9 @@ repository may provide non-public configuration on selected machines.
 **Current status: bootstrap with pinned Neovim and Zellij and opt-in shell activation.**
 The self-contained `get-started.sh` can install Git (when missing, after
 approval) and clone this public repository once over HTTPS. `scripts/setup/bootstrap.sh`
-can install missing `zsh`, `curl`, pinned mise, Neovim `0.12.6` and Zellij
-`0.46.0`, with separate approval for each operation. Separate opt-in scripts can deploy a reviewed zsh
+installs missing pinned mise, then asks separately before using native mise
+configuration to install zsh, Neovim `0.12.6` and Zellij `0.46.0`.
+Curl must already exist for the standalone first download. Separate opt-in scripts can deploy a reviewed zsh
 startup file or one selected private configuration directory through mise.
 A recurring update command is not yet implemented; secrets are not restored.
 
@@ -44,7 +45,7 @@ before running downloaded code:
 The temporary download is deleted automatically when the command finishes.
 The script checks Git, asks before any installation or HTTPS clone into
 `~/.dotfiles`, then **asks separately before running** the checkout's
-`scripts/setup/bootstrap.sh`. Bootstrap checks `zsh`, `curl`, mise and Neovim; it asks
+`scripts/setup/bootstrap.sh`. Bootstrap checks mise and delegates missing zsh, Neovim and Zellij to mise; it asks
 before each missing-tool installation and never upgrades an existing tool. A
 missing mise installation is pinned to `v2026.11.9`, verified before execution,
 and does not add shell activation. Neovim is installed from the checked-in mise
