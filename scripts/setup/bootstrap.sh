@@ -138,6 +138,10 @@ mise_supports_dot "$mise" || die 'mise 2026.11.9 or newer is required for native
 export MISE_GLOBAL_CONFIG_FILE="$ROOT/scripts/setup/mise.toml"
 [[ -f "$MISE_GLOBAL_CONFIG_FILE" ]] || die 'Missing declarative machine config.'
 
+# Fail closed on unpinned or undeclared entries before package or dotfile setup.
+tool_specs=$(machine_tool_specs "$mise" "$MISE_GLOBAL_CONFIG_FILE") ||
+    die 'Could not read the reviewed machine tool declarations.'
+
 if command -v zsh >/dev/null 2>&1 && zsh --version >/dev/null 2>&1; then
     log 'zsh is available; no package installation needed.'
 else
@@ -176,11 +180,7 @@ if command -v zsh >/dev/null 2>&1 && zsh --version >/dev/null 2>&1; then
     fi
 fi
 
-# Enumerate the reviewed machine manifest, including missing installations.
-# Read inventory from fd 3 so stdin stays the real terminal for confirmations.
-# Capture errors before any installation so a malformed declaration fails closed.
-tool_specs=$(machine_tool_specs "$mise" "$MISE_GLOBAL_CONFIG_FILE") ||
-    die 'Could not read the reviewed machine tool declarations.'
+# Iterate via fd 3 to leave terminal stdin available for per-tool approval.
 while IFS= read -r spec <&3; do
     [[ -n "$spec" ]] || continue
     if "$mise" -C / install --dry-run-code "$spec"; then
