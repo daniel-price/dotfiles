@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Copy stdin to the system clipboard on macOS, Wayland or X11.
+copy_to_clipboard() {
+  local temp bytes
+  temp=$(mktemp) || return 1
+  cat > "$temp"
+  bytes=$(wc -c < "$temp" | tr -d ' ')
+  if command -v pbcopy >/dev/null 2>&1; then
+    pbcopy < "$temp"
+  elif [[ -n "${WAYLAND_DISPLAY:-}" ]] && command -v wl-copy >/dev/null 2>&1; then
+    wl-copy < "$temp"
+  elif command -v xclip >/dev/null 2>&1; then
+    xclip -selection clipboard < "$temp"
+  elif command -v xsel >/dev/null 2>&1; then
+    xsel --clipboard --input < "$temp"
+  else
+    printf 'No clipboard tool found (pbcopy, wl-copy, xclip or xsel).\n' >&2
+    rm -f -- "$temp"
+    return 1
+  fi
+  rm -f -- "$temp"
+  printf 'copied %s bytes\n' "$bytes" >&2
+}
