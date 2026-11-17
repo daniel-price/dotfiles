@@ -27,8 +27,8 @@ when bootstrap is already running as root.
 | zsh | `sudo apt-get install --no-upgrade zsh` | `HOMEBREW_NO_AUTO_UPDATE=1 brew install zsh` | Checkout bootstrap; only if zsh is missing |
 | curl | `sudo apt-get install --no-upgrade curl` | `HOMEBREW_NO_AUTO_UPDATE=1 brew install curl` | Checkout bootstrap; only if curl is missing |
 | mise `v2026.11.9` | Verified GitHub Release installer writes `~/.local/bin/mise` | Same verified GitHub Release installer and destination | Checkout bootstrap; only if mise is missing |
-| Neovim `0.12.6` | `mise install neovim@0.12.6` through `scripts/provision-tool.sh` | Same mise command on both operating systems | Checkout bootstrap; only if this version is not already installed |
-| Zellij `0.46.0` | `mise install zellij@0.46.0` through `scripts/provision-tool.sh` | Same mise command on both operating systems | Checkout bootstrap; only if this version is not already installed |
+| Neovim `0.12.6` | `mise install neovim@0.12.6` through `scripts/setup/provision-tool.sh` | Same mise command on both operating systems | Checkout bootstrap; only if this version is not already installed |
+| Zellij `0.46.0` | `mise install zellij@0.46.0` through `scripts/setup/provision-tool.sh` | Same mise command on both operating systems | Checkout bootstrap; only if this version is not already installed |
 
 The macOS zsh/curl path requires an existing Homebrew installation; bootstrap
 does **not** install Homebrew. Standard macOS installations normally already
@@ -43,22 +43,22 @@ behaviour.
 Apart from the Apple Command Line Tools bundle requested only to obtain missing
 Git on macOS, bootstrap installs no other system package, application, shell
 setting or dotfile. To activate mise in a new zsh session, run
-`bash scripts/deploy-zsh-config.sh` separately; it previews the reviewed
+`bash scripts/setup/deploy-zsh-config.sh` separately; it previews the reviewed
 `.config/zsh/zshrc` file and refuses to overwrite an existing `~/.zshrc`.
 
 ## Checkout Development Tools
 
 The following tools are installed only when a checkout developer deliberately
-runs `bash scripts/install-dev-tools.sh`. That script runs `mise install`, so
+runs `bash scripts/dev/install-dev-tools.sh`. That script runs `mise install`, so
 the installer is the same on both supported operating systems and uses the
 versions in the root `mise.toml`; bootstrap does not install these tools.
 
 | Tool | Version | Installer on Pop!_OS/Ubuntu and macOS | Scope |
 | --- | --- | --- | --- |
-| Lefthook | `2.2.2` | `mise install` through `bash scripts/install-dev-tools.sh` | Optional Git hooks for this checkout |
-| shfmt | `3.14.1` | `mise install` through `bash scripts/install-dev-tools.sh` | Format tracked Bash scripts |
-| ShellCheck | `0.11.0` | `mise install` through `bash scripts/install-dev-tools.sh` | Lint tracked Bash scripts |
-| Zensical | Resolved by pip; not pinned yet | `python3 -m pip install zensical` through `bash scripts/install-docs-deps.sh` in an activated virtual environment | Build the documentation site |
+| Lefthook | `2.2.2` | `mise install` through `bash scripts/dev/install-dev-tools.sh` | Optional Git hooks for this checkout |
+| shfmt | `3.14.1` | `mise install` through `bash scripts/dev/install-dev-tools.sh` | Format tracked Bash scripts |
+| ShellCheck | `0.11.0` | `mise install` through `bash scripts/dev/install-dev-tools.sh` | Lint tracked Bash scripts |
+| Zensical | Resolved by pip; not pinned yet | `python3 -m pip install zensical` through `bash scripts/dev/install-docs-deps.sh` in an activated virtual environment | Build the documentation site |
 
 Python itself is a prerequisite for the Zensical workflow, not installed by
 this repository. See [Develop this repository](../guides/development.md) for

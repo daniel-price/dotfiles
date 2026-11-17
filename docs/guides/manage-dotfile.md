@@ -16,8 +16,8 @@ dotfiles remain planned.
 To activate mise in a new zsh session:
 
 ```sh
-bash ~/.dotfiles/scripts/deploy-zsh-config.sh --help
-bash ~/.dotfiles/scripts/deploy-zsh-config.sh
+bash ~/.dotfiles/scripts/setup/deploy-zsh-config.sh --help
+bash ~/.dotfiles/scripts/setup/deploy-zsh-config.sh
 ```
 
 The source is `.config/zsh/zshrc`. It only activates mise found on `PATH` or at

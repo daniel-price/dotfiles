@@ -1,9 +1,9 @@
 # Add or change a tool
 
 **Status: partly implemented.** Bootstrap installs pinned mise and can provision
-Neovim through `scripts/provision-tool.sh`. Other tools remain planned.
+Neovim through `scripts/setup/provision-tool.sh`. Other tools remain planned.
 
-`scripts/provision-tool.sh` accepts one reviewed tool name at a time. Neovim is
+`scripts/setup/provision-tool.sh` accepts one reviewed tool name at a time. Neovim is
 currently mapped to `neovim@0.12.6`, with the same version declared in
 `.config/mise/tools/mise.toml`. That directory is separate from the checkout
 config so CI does not install machine tools. The script checks the installed state with
@@ -15,7 +15,7 @@ installed version. It does not upgrade tools.
    `.config/mise/tools/mise.toml`; keep OS-specific packages in the correct
    apt/Homebrew boundary.
 3. Review the package source, exact version and install behaviour.
-4. Add an explicit mapping in `scripts/provision-tool.sh` only after testing it
+4. Add an explicit mapping in `scripts/setup/provision-tool.sh` only after testing it
    with an isolated HOME and fake mise commands.
 5. Verify installed tools are skipped, declines make no change and upgrades stay
    a separate action.

@@ -35,7 +35,7 @@ before running downloaded code.
 The script checks Git, asking before installation if needed (apt on Linux or
 Apple Command Line Tools on macOS). It asks separately before an HTTPS clone
 into `~/.dotfiles`, then **asks a third time before running** the checkout's
-`scripts/bootstrap.sh`. It runs bootstrap from the repository directory without
+`scripts/setup/bootstrap.sh`. It runs bootstrap from the repository directory without
 changing your terminal's working directory.
 
 On macOS, complete the Command Line Tools installer and rerun if Git was
@@ -43,14 +43,13 @@ missing. An existing matching checkout is reused without fetching or
 updating it. Existing conflicting destinations are never overwritten.
 Declining any prompt skips that operation.
 
-The current bootstrap is `scripts/bootstrap.sh`. It installs only a missing
+The current bootstrap is `scripts/setup/bootstrap.sh`. It installs only a missing
 `zsh` or `curl`: `apt-get install --no-upgrade` on Debian-derived Linux, or
 `HOMEBREW_NO_AUTO_UPDATE=1 brew install` on macOS. It does not change the login
 shell or configure it. If Homebrew is needed but unavailable, it stops without
-making a change so it can be installed and reviewed separately. If a reused
-checkout still has the earlier root-level `bootstrap.sh`, the standalone entry
-point can run that version after the same separate approval; it does not update
-the checkout.
+making a change so it can be installed and reviewed separately. If a reused checkout still has the previous `scripts/bootstrap.sh`, or
+the even earlier root-level `bootstrap.sh`, the standalone entry point can run
+that version after the same separate approval; it does not update the checkout.
 
 The [per-platform installed tool inventory](../architecture/platforms.md#installed-tool-inventory)
 lists every tool this repository currently installs, its installer and its
@@ -64,7 +63,7 @@ SHA-256, then asks again before running it. The installer writes only
 the release only from GitHub and verifies that release before installation. An
 existing mise found on `PATH` or at that destination is reported and left
 unchanged, even when it is an older version. Bootstrap then calls
-`scripts/provision-tool.sh neovim`, which reads the checked-in `0.12.6`
+`scripts/setup/provision-tool.sh neovim`, which reads the checked-in `0.12.6`
 declaration and asks once before running `mise install`. It repeats this for
 pinned Zellij. Bootstrap does not activate mise or edit shell startup files; use
 the separate step below.
@@ -87,8 +86,8 @@ as `nvim` are available in new interactive zsh sessions. This requires mise
 an explicit version message before any change:
 
 ```sh
-bash ~/.dotfiles/scripts/deploy-zsh-config.sh --help
-bash ~/.dotfiles/scripts/deploy-zsh-config.sh
+bash ~/.dotfiles/scripts/setup/deploy-zsh-config.sh --help
+bash ~/.dotfiles/scripts/setup/deploy-zsh-config.sh
 ```
 
 Expected: mise shows a diff and a dry-run first, then the script asks once before
@@ -113,17 +112,15 @@ After approving the clone, the script offers to run the bootstrap.
 To inspect or rerun it later:
 
 ```sh
-bash ~/.dotfiles/scripts/bootstrap.sh --help
-bash ~/.dotfiles/scripts/bootstrap.sh
-bash ~/.dotfiles/scripts/update.sh
+bash ~/.dotfiles/scripts/setup/bootstrap.sh --help
+bash ~/.dotfiles/scripts/setup/bootstrap.sh
 bash ~/.dotfiles/tests/run.sh
 ```
 
 **Expected:** bootstrap identifies the OS, skips available `zsh`, `curl`, mise,
 Neovim and Zellij, or asks separately before installing a missing component. Mise
 requires separate download/verification and execution confirmation; Neovim and
-Zellij each have their own install prompt. It then lists the unimplemented steps. Update still
-reports `No changes made.` The tests use temporary fixtures and should finish
+Zellij each have their own install prompt. It then lists the unimplemented steps. The tests use temporary fixtures and should finish
 with `All bootstrap checks passed.`
 
 Every bootstrap change already requires its own confirmation. Read the code and
@@ -162,9 +159,9 @@ see [the private-profile guide](../guides/private-profiles.md).
 
 ## Existing machine: intended future flow
 
-The eventual `scripts/update.sh` will check the remote, guard dirty/diverged state,
-fast-forward only when approved, and preview each configuration change before
-applying it. Today it only reports the detected OS.
+A recurring update command has not been implemented. A future one should check
+the remote, guard dirty/diverged state, fast-forward only after approval and
+preview each configuration change before applying it.
 
 ## Documentation preview
 

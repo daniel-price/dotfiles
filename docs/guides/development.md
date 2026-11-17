@@ -17,7 +17,7 @@ asks before writing the checkout's Git hook.
 
 ```sh
 mise trust mise.toml
-bash scripts/install-dev-tools.sh
+bash scripts/dev/install-dev-tools.sh
 mise run hooks:install
 ```
 
@@ -31,7 +31,7 @@ The root `mise.toml` pins development tools and tasks. It is separate from
 tool installation is disabled in this checkout: use `mise install` explicitly
 when installing missing tools or adopting a reviewed version change.
 
-`bash scripts/install-dev-tools.sh` currently installs Lefthook `2.2.2`, shfmt
+`bash scripts/dev/install-dev-tools.sh` currently installs Lefthook `2.2.2`, shfmt
 `3.14.1` and ShellCheck `0.11.0` through mise on both supported operating
 systems. It does not use apt or Homebrew. The [installed tool inventory](../architecture/platforms.md#checkout-development-tools)
 also records the separate Zensical documentation dependency and its pip-based
@@ -42,14 +42,14 @@ installer.
 | Command | Result |
 | --- | --- |
 | `git commit` | Format staged `*.sh` files, stage the formatting, then run ShellCheck. |
-| `bash scripts/format.sh` | Format every tracked `*.sh` file without changing staging. |
-| `bash scripts/format.sh --check` | Check formatting without rewriting or staging files. |
-| `bash scripts/lint.sh` | Run ShellCheck on every tracked `*.sh` file without changing it. |
-| `bash scripts/format.sh -- file.sh` | Format selected files, using the same command as the commit hook. |
-| `bash scripts/lint.sh -- file.sh` | Lint selected files, using the same command as the commit hook. |
+| `bash scripts/dev/format.sh` | Format every tracked `*.sh` file without changing staging. |
+| `bash scripts/dev/format.sh --check` | Check formatting without rewriting or staging files. |
+| `bash scripts/dev/lint.sh` | Run ShellCheck on every tracked `*.sh` file without changing it. |
+| `bash scripts/dev/format.sh -- file.sh` | Format selected files, using the same command as the commit hook. |
+| `bash scripts/dev/lint.sh -- file.sh` | Lint selected files, using the same command as the commit hook. |
 | `bash tests/hooks.sh` | Exercise the hooks in a disposable repository that is removed afterwards. |
 | `bash tests/run.sh` | Run the existing bootstrap checks; Python 3 enables the interactive cases. |
-| `bash scripts/check-clean.sh` | Fail if tracked working files or the index differ from HEAD. |
+| `bash scripts/dev/check-clean.sh` | Fail if tracked working files or the index differ from HEAD. |
 
 `mise run format` and `mise run lint` are convenience aliases for these scripts.
 `mise run check` runs both the formatting check and linting, reporting failures
@@ -57,7 +57,7 @@ from either command. `mise run test:hooks` runs the disposable hook tests.
 
 Both scripts accept an optional file list after `--`; without one they select
 tracked `*.sh` files. Combine `--check` with a file list to check selected files:
-`bash scripts/format.sh --check -- file.sh`. Paths are relative to the repository
+`bash scripts/dev/format.sh --check -- file.sh`. Paths are relative to the repository
 root, and names containing spaces are supported. The scripts can be invoked
 from another directory by passing their full path. Shared file selection lives
 in `scripts/lib/shell-files.sh`.
@@ -80,7 +80,7 @@ zsh. Add an appropriate separate check when those files are introduced.
 ## Continuous validation
 
 The **Shell checks** workflow installs the pinned tools, runs
-`bash scripts/format.sh --check` and `bash scripts/lint.sh`, exercises real
+`bash scripts/dev/format.sh --check` and `bash scripts/dev/lint.sh`, exercises real
 commits and partial staging, and runs the bootstrap tests on Linux and macOS.
 These CI commands are read-only. Local hook installation remains opt-in.
 
@@ -97,8 +97,8 @@ environment before installing dependencies, then call the same scripts as CI:
 docs_env=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-docs.XXXXXX")
 python3 -m venv "$docs_env"
 . "$docs_env/bin/activate"
-bash scripts/install-docs-deps.sh
-bash scripts/build-docs.sh
+bash scripts/dev/install-docs-deps.sh
+bash scripts/dev/build-docs.sh
 deactivate
 rm -rf -- "$docs_env"
 ```

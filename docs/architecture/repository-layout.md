@@ -1,42 +1,39 @@
 # Repository layout
 
-This is a map of **what exists**, with future responsibilities labelled.
+Scripts are organised by **who runs them and when**, rather than by language or
+tool. Machine setup is distinct from developing this repository; personal
+commands are distinct from both.
 
 | Path | Responsibility |
 | --- | --- |
+| `get-started.sh` | Standalone stage-zero installer: checks Git, clones the public checkout and asks before running bootstrap. |
+| `scripts/setup/` | Machine lifecycle: `bootstrap.sh`, `provision-tool.sh`, `deploy-zsh-config.sh` and `apply-private-overlay.sh`. |
+| `scripts/dev/` | Checkout maintenance: formatting, linting, Git hooks, documentation builds, dependency setup and CI checks. |
+| `scripts/lib/` | Source-only Bash helpers shared by setup and development scripts. |
+| `bin/` (future) | Everyday executable commands, once there is an actual personal utility to install or expose on `PATH`. |
+| `.config/` | Reviewed home configuration: currently the opt-in zsh startup file and other application placeholders. |
+| `tests/` | Temporary-fixture and interactive integration tests, never host-changing by default. |
+| `docs/` | Current handbook and separately labelled historical planning notes. |
+| `.github/` | CI orchestration and pull request template. |
+| `mise.toml`, `lefthook.yml`, `zensical.toml` | Root-level tool configuration, retained where standard discovery expects it. |
 | `README.md`, `AGENTS.md` | Human and agent entry points. |
-| `get-started.sh` | Standalone download: ensure Git and acquire the checkout. |
-| `scripts/bootstrap.sh` | Installs missing `zsh`, `curl`, pinned mise and Neovim after individual approval. |
-| `scripts/provision-tool.sh` | Installs one reviewed mise-declared tool after confirmation. |
-| `scripts/apply-private-overlay.sh` | Previews and applies one explicitly selected private directory symlink. |
-| `scripts/deploy-zsh-config.sh` | Previews and applies the reviewed zsh startup file after confirmation. |
-| `scripts/update.sh` | Read-only checkout scaffold today. |
-| `scripts/` | Visible checkout scripts for setup, shared checks and docs builds. |
-| `scripts/lib/` | OS, confirmation and mise location/trust helpers. |
-| `.config/zsh/zshrc` | Reviewed public zsh startup file that activates mise. |
-| `.config/` | Other future managed user dotfiles: Neovim, Zellij and Ghostty placeholders. |
-| `mise.toml`, `lefthook.yml` | Project development tooling and hook configuration. |
-| `zensical.toml` | Documentation-site configuration. |
-| `tests/` | Scaffold checks and disposable hook integration tests. |
-| `docs/` | Canonical handbook Markdown. |
-| `.github/` | Workflow orchestration and PR template. |
 
-Keep executable project code in visible `scripts/`; there is no separate
-hidden `.scripts/` directory. Reserve `.config/` for configuration intended for
-the user's home directory. Repository tooling stays in its usual discovery
-locations rather than being mixed with those future deployed files.
+A user bootstrapping a machine should not need the development-only tools from
+`scripts/dev/`. Git hooks and CI should call those same development scripts,
+not duplicate tool commands. A script under `scripts/lib/` should be sourced
+rather than executed; do not deploy it as a shell utility.
 
-The root keeps six visible files: the two entry documents, the standalone
-download, and three tool configurations. The checkout's bootstrap and update
-commands live with the other scripts.
+Keep the standalone `get-started.sh` in the root because it is downloaded
+**before the repository is cloned**. It recognises current
+`scripts/setup/bootstrap.sh` checkouts and older `scripts/bootstrap.sh` or
+root-level `bootstrap.sh` checkouts, without updating them implicitly.
 
-The application directories currently contain placeholders, **not deployable
-configurations**. Do not link the whole `.config` tree.
+There is currently **no recurring update command**. Git synchronisation,
+version upgrades and broader dotfile deployment remain explicit future work.
 
-Development tooling lives in the root `mise.toml` and `lefthook.yml`, with
-opt-in hook setup in `scripts/install-hooks.sh`, disposable integration checks
-in `tests/hooks.sh`, and Linux/macOS CI in `.github/workflows/shell.yml`. See
-[development](../guides/development.md); this is separate from machine setup.
+Only the reviewed `.config/zsh/zshrc` is deployable today. Application
+placeholder directories are not working configurations and must not be linked
+wholesale. Keep repo-only development settings outside `.config/`.
 
 **Planned separate sources** (not currently connected or cloned):
 
@@ -49,9 +46,7 @@ in `tests/hooks.sh`, and Linux/macOS CI in `.github/workflows/shell.yml`. See
 
 No private remote, path, repository name or work-specific details belong in
 this public repo. Public setup and Pages builds must never require private
-access. For work-related material, use employer-approved storage rather than
-assuming a personal private repo is acceptable. See
+access. Work-related material needs employer-approved storage. See
 [configuration layers](private-configuration.md).
 
-Reference material lives under `docs/reference/` and can be much denser than
-the main handbook. It is still **public** and must not contain secrets.
+Historical reference notes are public too and must never contain secrets.

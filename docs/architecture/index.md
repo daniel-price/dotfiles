@@ -6,8 +6,8 @@ not a list of installed or working features.**
 
 | Responsibility | Chosen or proposed owner | Status |
 | --- | --- | --- |
-| Fresh setup | Bash `scripts/bootstrap.sh` | Installs missing `zsh`, `curl`, pinned mise and Neovim after individual approval |
-| Recurring update | Bash `scripts/update.sh` | Read-only scaffold |
+| Fresh setup | Bash `scripts/setup/bootstrap.sh` | Installs missing `zsh`, `curl`, pinned mise and Neovim after individual approval |
+| Recurring update | Not implemented | Planned; no updater executable exists |
 | Runtime and suitable developer tool versions | mise | Neovim provisioning implemented; further tools planned |
 | Checkout development tools and shell Git hooks | mise + Lefthook | Implemented; opt-in developer setup |
 | Managed dotfiles and templating | Native mise dotfiles | Reviewed zsh file and one explicit directory overlay implemented; broader deployment planned |

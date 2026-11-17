@@ -29,7 +29,7 @@ design and historical plans are [available separately](reference/index.md).
 | Install verified mise `v2026.11.9` with separate download and execution approval | Implemented |
 | Provision Neovim `0.12.6` and Zellij `0.46.0` with mise and per-tool confirmation | Implemented |
 | Opt-in deployment of a reviewed zsh startup file via mise | Implemented |
-| Read-only `scripts/update.sh` | Implemented |
+| Recurring Git updates and configuration syncing | Planned; no updater executable exists |
 | Temporary download, Git prerequisite, HTTPS clone and confirmed bootstrap handoff | Implemented as standalone stage zero |
 | Dependency-free scaffold tests | Implemented |
 | Opt-in shell formatting/lint hooks and pinned development tools | Implemented; see [development](guides/development.md) |

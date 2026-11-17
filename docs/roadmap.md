@@ -10,11 +10,10 @@ task acceptance criteria are deliberately kept in
 remains scaffolded.**
 The standalone `get-started.sh` installs missing Git after approval, clones
 once, and asks separately before running the checkout bootstrap. The documented
-temporary download cleans itself up. `scripts/bootstrap.sh` installs only
+temporary download cleans itself up. `scripts/setup/bootstrap.sh` installs only
 missing `zsh`, `curl`, verified mise and Neovim `0.12.6`, asking separately for
 each operation. Separate opt-in scripts can deploy a reviewed zsh startup file
-or one selected private configuration directory. `scripts/update.sh` remains
-read-only.
+or one selected private configuration directory. A recurring update command has not been implemented.
 
 Checkout development tooling is available separately: pinned shfmt, ShellCheck
 and Lefthook, opt-in pre-commit formatting with partial staging, and Linux/macOS
