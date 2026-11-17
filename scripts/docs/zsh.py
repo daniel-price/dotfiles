@@ -74,6 +74,5 @@ def render() -> str:
         lines += ["", "## Prompt", ""]
         lines += [f"- {description}" for description in prompts]
 
-    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT.write_text("\n".join(lines) + "\n")
+    return "\n".join(lines) + "\n"
 
