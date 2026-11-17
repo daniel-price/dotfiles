@@ -13,7 +13,7 @@ Two tracks: **capabilities** prove reusable mechanisms; **tools/apps** adopt the
 | Guarded Git update and selective cleanup | Implemented | Explicit upgrades, drift and rollback |
 | Private configuration layers | Single directory overlay implemented | Test public/private/local precedence and conflicts |
 | Encrypted environment values | POC ready for manual validation | [**POC 1A:** age + mise, fake token and second-machine restore](guides/age-env-poc.md) |
-| Encrypted files/history | Planned | **POC 1B:** encrypted fake file, inspect first commit and separate Git history |
+| Encrypted files/history | POC ready for manual validation | [**POC 1B:** synthetic encrypted file, Git history inspection and restore](guides/age-file-poc.md) |
 | Machine-local identities | Planned | New SSH identity and age recovery POC |
 | Persistent services | Planned | Rootless container, network, restart, volume and backup POC |
 | OS preferences | Planned | One reversible setting per platform |
