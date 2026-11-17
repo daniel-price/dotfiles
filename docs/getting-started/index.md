@@ -19,7 +19,7 @@ Review [get-started.sh](https://github.com/daniel-price/dotfiles/blob/main/get-s
 
 The script can install missing Git, clone to `~/.dotfiles` and offer to run bootstrap. **Each change requires confirmation.** Existing files and conflicting checkouts are preserved. Do not pipe the download directly into Bash; the script needs interactive input.
 
-Bootstrap then offers the reviewed mise, Zsh and pinned machine tools. It can also deploy `~/.zshrc`, install the optional Powerlevel10k theme and set Zsh as your login shell. The latter takes effect on your next login, not in the current terminal. Declined components can be installed later.
+Bootstrap then offers the reviewed mise, Zsh and pinned machine tools. It also offers the mise-managed `~/.zshrc` symlink, installs the optional Powerlevel10k theme and set Zsh as your login shell. The latter takes effect on your next login, not in the current terminal. Declined components can be installed later.
 
 ## Re-run or update an existing installation
 
@@ -35,7 +35,7 @@ The updater refuses dirty, divergent or unexpected repositories and never resets
 
 | Task | Command or guide |
 | --- | --- |
-| Deploy reviewed Zsh startup | `bash ~/.dotfiles/scripts/setup/deploy-zsh-config.sh` |
+| Preview or apply reviewed dotfiles | [Manage a dotfile](../guides/manage-dotfile.md) |
 | Preview optional prompt installation | `bash ~/.dotfiles/scripts/setup/setup-prompt.sh` |
 | Install optional prompt after approval | `bash ~/.dotfiles/scripts/setup/setup-prompt.sh --apply` |
 | Preview cleanup | `bash ~/.dotfiles/scripts/setup/cleanup.sh` |
