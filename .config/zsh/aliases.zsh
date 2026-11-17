@@ -1,0 +1,23 @@
+# Reviewed portable aliases migrated from daniel-price/.cfg.
+# Leave employer-specific functions, old machine paths and destructive commands
+# behind; they belong in explicitly selected local/private overlays.
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+
+alias g='git'
+alias zj='zellij'
+alias za='zellij action'
+alias zar='zellij action rename-tab'
+alias hl='rg --passthru'
+
+if (( $+commands[mise] )); then
+  alias m='mise'
+fi
+if (( $+commands[pnpm] )); then
+  alias p='pnpm'
+fi
+# Only replace ls if eza is actually installed; never break stock ls.
+if (( $+commands[eza] )); then
+  alias ls='eza'
+fi

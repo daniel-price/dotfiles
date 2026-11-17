@@ -22,6 +22,7 @@ maintain a second list or require edits when adding or removing a tool.
 | Machine CLI tools from [`[tools]`](../../scripts/setup/mise.toml) | Each exact pinned version offered individually through mise | Same |
 | Reviewed `~/.zshrc` | Native `mise dot apply`, offered early with separate approval | Same |
 | Default Zsh login shell | `chsh -s` with separate confirmation, account and `/etc/shells` checks | Same; account read through `dscl` |
+| Optional Powerlevel10k theme | Pinned Git checkout via `mise bootstrap repos apply`, separately approved | Same; no Homebrew theme installation |
 
 The initial bootstrap uses a small shell wrapper to install mise with a
 verified installer and preserve independent confirmations for each missing
@@ -57,6 +58,17 @@ even outside this checkout. After mise activation, it runs `zoxide init zsh`
 only when zoxide is available; this defines the `z` shell function.
 Missing zoxide does not break shell startup. The machine manifest remains
 separate from the root `mise.toml` for checkout development.
+
+## Optional Zsh prompt
+
+The aliases are reviewed source files under `.config/zsh/`, not copied from
+other machines. Powerlevel10k uses a separate single-repository mise manifest
+at `scripts/setup/prompt.toml`, pinned to the verified v1.20.0 release commit.
+Bootstrap offers a preview and individual approval to clone it only after the
+reviewed `.zshrc` is active. Shell startup sources the theme and original
+`.cfg` prompt config when present, without network calls or installation. It
+preserves existing theme checkouts and unrelated Zsh settings; the old work
+functions and third-party plugins are out of scope. See [Zsh guide](../guides/zsh.md).
 
 ## Default login shell
 

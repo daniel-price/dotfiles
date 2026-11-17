@@ -12,7 +12,9 @@ commands are distinct from both.
 | `scripts/lib/` | Source-only Bash helpers shared by setup and development scripts. |
 | `bin/` | Reviewed everyday commands, currently the executable Linux-only `opencode-sandbox` launcher. |
 | `scripts/setup/mise.toml` | Declarative machine packages, pinned tools and the opt-in zsh dotfile entry; deliberately separate from developer tooling. |
-| `.config/` | Reviewed home configuration: zsh startup (which adds the repo's `bin/` to PATH) and future application defaults. |
+| `.config/` | Reviewed home configuration: Zsh startup, portable aliases and original Powerlevel10k appearance, and future application defaults. |
+| `scripts/setup/prompt.toml` | Optional single, exact-commit Git repository declaration for the Powerlevel10k theme. |
+| `scripts/setup/setup-prompt.sh` | Preview-first installer for the pinned theme, using native mise repositories with explicit consent. |
 | `containers/opencode/` | Reviewed minimal OpenCode image recipe; built only after separate interactive approval, without the developer checkout as build context. |
 | `containers/podman/mise.toml` | Shared optional declaration for the Podman system package; separate from the always-offered machine manifest. |
 | `scripts/setup/setup-podman.sh` | Reusable preview-first, consent-gated package setup and rootless verification for container workloads. |
@@ -35,7 +37,7 @@ root-level `bootstrap.sh` checkouts, without updating them implicitly.
 There is currently **no recurring update command**. Git synchronisation,
 version upgrades and broader dotfile deployment remain explicit future work.
 
-Only the reviewed `.config/zsh/zshrc` is deployable today through native mise dotfiles and an explicit safety preflight. Application
+Only the reviewed `.config/zsh/zshrc` is deployable today through native mise dotfiles and an explicit safety preflight. It sources its adjacent alias and prompt configuration from the Git checkout; the third-party theme is a separate opt-in mise repository. Application
 placeholder directories are not working configurations and must not be linked
 wholesale. Keep repo-only development settings outside `.config/`.
 

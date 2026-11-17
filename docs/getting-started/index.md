@@ -89,6 +89,15 @@ bootstrap checks the registered system shell, current account and login shell,
 leaves already-correct settings alone, and never changes root's shell.
 The new login shell takes effect after logging out and back in; it does not
 switch an existing Bash process.
+Bootstrap also offers the **optional Powerlevel10k theme** after other
+machine tools are processed, provided the reviewed `~/.zshrc` symlink is active.
+The theme is a commit-pinned Git checkout declared separately in
+[`scripts/setup/prompt.toml`](../../scripts/setup/prompt.toml), not a normal
+machine tool. An additional prompt asks before cloning, and an existing
+checkout is not changed. Your original `.cfg` prompt settings and portable
+aliases such as `zj` are included in the public Zsh configuration. See the
+[Zsh guide](../guides/zsh.md).
+
 Bootstrap asks individually before installing any missing tools from
 the exact versions in `scripts/setup/mise.toml`. Add another pinned tool to
 that manifest and it is discovered automatically; no setup script changes are
@@ -175,6 +184,7 @@ checks the reviewed `~/.zshrc` **before** proposing declared machine-tool instal
 It previews and offers the Zsh symlink if the destination is free, skips an
 already-correct link, and preserves any conflicting file or other symlink.
 Each missing tool requires separate approval. After tools, bootstrap offers
+the optional, commit-pinned Powerlevel10k theme if `.zshrc` is managed, then
 a separate login-shell change when needed. The final message reports the
 Zsh configuration status. Tests use temporary fixtures and finish with
 `All bootstrap checks passed.`
