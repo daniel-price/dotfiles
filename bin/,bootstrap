@@ -3,7 +3,11 @@
 # This command is available via the reviewed Zsh configuration's bin/ PATH.
 set -euo pipefail
 
-ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
+if [[ "${DOTFILES_BOOTSTRAP_SNAPSHOT:-}" == 1 ]]; then
+    ROOT=${DOTFILES_BOOTSTRAP_ROOT:?Missing dotfiles checkout root}
+else
+    ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
+fi
 
 usage() {
     printf '%s\n' \
@@ -30,7 +34,6 @@ if [[ "${DOTFILES_BOOTSTRAP_SNAPSHOT:-}" != 1 ]]; then
         exec bash -c "$snapshot" dotfiles-bootstrap
 fi
 
-ROOT=${DOTFILES_BOOTSTRAP_ROOT:?Missing dotfiles checkout root}
 [[ -f "$ROOT/scripts/setup/update.sh" && -f "$ROOT/scripts/setup/bootstrap.sh" ]] || {
     printf '[error] Missing update or bootstrap script in %s\n' "$ROOT" >&2
     exit 1
