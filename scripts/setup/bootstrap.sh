@@ -19,7 +19,7 @@ MISE_INSTALLER_SHA256='60adf5460b19a791b964c414a2fff9d46990c9f2b1dfc0e4ba8c2b865
 
 usage() {
     printf '%s\n' 'Usage: bash scripts/setup/bootstrap.sh [--help]' \
-        'Install missing mise and zsh, offer reviewed shell activation and tool versions.' \
+        'Install missing mise and zsh, offer reviewed dotfiles and pinned tools.' \
         'After provisioning, offer to set Zsh as the default login shell.' \
         'Every missing component requires its own interactive approval.'
 }
@@ -171,26 +171,32 @@ else
     fi
 fi
 
-# Activate the reviewed shell integration before provisioning user tools.
-# A conflicting ~/.zshrc is never replaced or treated as a bootstrap failure.
+# Mise owns the reviewed dotfiles. Preview and require explicit approval before
+# applying; --yes skips mise's second prompt, never its conflict checks.
+# Apply before tool provisioning so a new Zsh session can activate mise.
+# A conflict must not block otherwise independent tool installation.
 zsh_config_status='skipped (zsh unavailable)'
-if command -v zsh >/dev/null 2>&1 && zsh --version >/dev/null 2>&1; then
-    zsh_target="$HOME/.zshrc"
-    zsh_source="$ROOT/.config/zsh/zshrc"
-    if [[ -L "$zsh_target" && "$zsh_target" -ef "$zsh_source" ]]; then
-        zsh_config_status='already applied'
-        log 'Reviewed zsh startup file is already applied; no changes made.'
-    elif [[ -e "$zsh_target" || -L "$zsh_target" ]]; then
-        zsh_config_status='skipped (existing ~/.zshrc conflict)'
-        log 'Preserving existing ~/.zshrc; resolve the conflict manually before deploying the reviewed Zsh startup file.'
-    else
-        log 'Offering the reviewed zsh startup file before provisioning machine tools.'
-        bash "$ROOT/scripts/setup/deploy-zsh-config.sh"
-        if [[ -L "$zsh_target" && "$zsh_target" -ef "$zsh_source" ]]; then
-            zsh_config_status='applied (takes effect in a new zsh session)'
-        else
-            zsh_config_status='declined or noninteractive'
+zsh_target="$HOME/.zshrc"
+zsh_source="$ROOT/.config/zsh/zshrc"
+# Let mise decide whether any declared dotfiles need attention.
+if "$mise" -C / dot status --missing >/dev/null 2>&1; then
+    log 'Reviewed mise-managed dotfiles are already applied.'
+elif "$mise" -C / dot apply --dry-run; then
+    if confirm 'Apply the reviewed dotfiles declared in mise.toml?'; then
+        if ! "$mise" -C / dot apply --yes; then
+            log 'Mise dotfile deployment failed (for example, an existing file conflict); existing files are preserved.'
         fi
+    else
+        log 'Dotfile deployment declined or noninteractive.'
+    fi
+else
+    log 'Mise dotfile preview failed; skipping dotfiles and continuing tool setup.'
+fi
+if command -v zsh >/dev/null 2>&1 && zsh --version >/dev/null 2>&1; then
+    if [[ -L "$zsh_target" && "$zsh_target" -ef "$zsh_source" ]]; then
+        zsh_config_status='applied'
+    else
+        zsh_config_status='not applied'
     fi
 fi
 
