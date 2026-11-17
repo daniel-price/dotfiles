@@ -177,7 +177,7 @@ if detect_os >/dev/null 2>&1; then
     output=$(cd "$TEST_ROOT/elsewhere" && HOME="$TEST_ROOT/home" \
         PATH="$TEST_ROOT/bin:$PATH" bash "$ROOT/bin/,bootstrap" --no-update)
     repeated=$(cd "$TEST_ROOT/elsewhere" && HOME="$TEST_ROOT/home" \
-        PATH="$TEST_ROOT/bin:$PATH" bash "$ROOT/bin/,bootstrap")
+        PATH="$TEST_ROOT/bin:$PATH" bash "$ROOT/bin/,bootstrap" --no-update)
     assert_equal "$output" "$repeated" 'bootstrap repeatability'
     [[ "$output" == *'Detected platform:'* && "$output" == *'Bootstrap complete.'* &&
         "$output" == *'Bootstrap complete. Zsh configuration:'* ]] || fail 'bootstrap scope unclear'
