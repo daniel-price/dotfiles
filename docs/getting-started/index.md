@@ -166,6 +166,43 @@ implemented.
 No private repositories should be discovered or cloned automatically;
 see [the private-profile guide](../guides/private-profiles.md).
 
+## Preview and clean up managed items
+
+The machine setup is intentionally **not** a fully reversible installer.
+You can preview removing items managed by the public mise manifest without
+modifying your laptop:
+
+```sh
+bash ~/.dotfiles/scripts/setup/cleanup.sh
+```
+
+To select removals interactively:
+
+```sh
+bash ~/.dotfiles/scripts/setup/cleanup.sh --apply
+```
+
+Every eligible removal requires an explicit **yes** from a terminal; the default
+answer is no and piped answers are rejected. The script delegates to
+`mise dot unapply` and `mise uninstall`, showing their native dry runs first.
+Only the following are eligible:
+
+- The reviewed `~/.zshrc` symlink, **if it still points to this checkout's
+  reviewed source**. Ordinary files or symlinks to another source are left alone.
+- The exact Neovim and Zellij versions declared in
+  `scripts/setup/mise.toml`. These mise installations may be shared by other
+  projects, and this script **cannot establish whether they existed before
+  bootstrap**. Review that warning before approving a removal.
+
+**Never removed:** apt/Homebrew zsh or other system packages; Git and curl;
+mise and its unrelated installations; the public checkout; private-profile
+sources or linked directories; credentials or other settings.
+
+No installation-state journal is maintained. This is selective cleanup,
+**not an exact restore of the pre-bootstrap machine state**. There is no
+`--all`, `--force`, `mise implode` or package-manager prune operation.
+It is safe to run from outside the checkout, but uses its reviewed manifest.
+
 ## Existing machine: intended future flow
 
 A recurring update command has not been implemented. A future one should check

@@ -26,7 +26,7 @@ else
     printf 'SKIP: Reviewed zsh syntax (zsh not found)\n'
 fi
 
-for moved in bootstrap deploy-zsh-config apply-private-overlay; do
+for moved in bootstrap deploy-zsh-config apply-private-overlay cleanup; do
     [[ ! -e "$ROOT/scripts/$moved.sh" ]] || fail "obsolete setup path remains: $moved"
     [[ -x "$ROOT/scripts/setup/$moved.sh" ]] || fail "setup script is not executable: $moved"
 done
@@ -164,6 +164,7 @@ if command -v python3 >/dev/null 2>&1; then
     python3 "$ROOT/tests/tool-overlay-interactive.py"
     python3 "$ROOT/tests/zsh-deploy-interactive.py"
     python3 "$ROOT/tests/mise-bootstrap-interactive.py"
+    python3 "$ROOT/tests/cleanup-interactive.py"
 else
     printf 'SKIP: interactive bootstrap tests (python3 not found)\n'
 fi

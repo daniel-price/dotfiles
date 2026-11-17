@@ -25,6 +25,12 @@ The target and source are declared once in `scripts/setup/mise.toml` under `[dot
 conflict manually before rerunning. A repeated run with the correct symlink
 exits without a prompt.
 
+To preview or selectively remove the reviewed Zsh symlink, use
+`bash ~/.dotfiles/scripts/setup/cleanup.sh` (preview) or append `--apply`
+(interactive). Only the symlink pointing to this checkout's source is eligible;
+ordinary files and different symlinks are never modified. Other private
+configuration overlays are deliberately excluded from cleanup.
+
 Existing `.config/nvim`, `.config/zellij` and `.config/ghostty` are still empty
 placeholders. See [Getting started](../getting-started/index.md) and
 [architecture](../architecture/index.md) for context.

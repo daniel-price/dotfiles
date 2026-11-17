@@ -28,6 +28,14 @@ The `~/.zshrc` deployment is deliberately a separate command that checks
 for existing files and foreign symlinks before calling native mise dotfiles.
 Native mise can repoint a wrong symlink; the wrapper must continue to refuse it.
 
+## Selective cleanup
+
+`bash scripts/setup/cleanup.sh` previews removal of the reviewed zsh symlink
+and the exact declared Neovim/Zellij mise versions; `--apply` prompts for each.
+It never removes system packages, mise, unrelated tool versions, private
+overlays, or the checkout. Other projects may rely on the same mise version;
+there is no installation-ownership ledger.
+
 ## Checkout development tools
 
 The root `mise.toml` pins Lefthook `2.2.2`, shfmt `3.14.1`
