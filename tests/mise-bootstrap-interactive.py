@@ -48,8 +48,7 @@ echo 'zsh fake'
     fake_mise = bin_dir / "mise"
     fake_mise.write_text("""#!/usr/bin/env bash
 if [[ "$1" == --version ]]; then echo '2026.11.9 fake'; exit 0; fi
-printf '%s\\n' "$MISE_GLOBAL_CONFIG_FILE" >> "$MOCK_LOG"
-printf '%s\\n' "$*" >> "$MOCK_LOG"
+printf '%s|%s\\n' "$MISE_GLOBAL_CONFIG_FILE" "$*" >> "$MOCK_LOG"
 [[ "$1" == -C && "$2" == / ]] || exit 20
 shift 2
 case "$*" in
