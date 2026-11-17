@@ -8,7 +8,7 @@ Deploy it on an existing machine:
 bash ~/.dotfiles/scripts/setup/bootstrap.sh
 ```
 
-Bootstrap uses mise's reviewed dotfile manifest to offer Zsh and Zellij together. Mise refuses conflicting regular files without `--force`; a symlink pointing elsewhere may be repointed. Review the preview first. Restart Zellij after deploying.
+Bootstrap uses mise's reviewed dotfile manifest to offer Zsh and Zellij together. After you approve deployment, an existing regular Zellij config is moved to a timestamped `config.kdl.backup-*` file before the managed symlink is installed. It never uses blanket `--force`, and foreign symlinks or other file types are left untouched. If deployment fails before replacing the target, the backup is restored. Review the preview first. Restart Zellij after deploying.
 
 Zellij starts in locked mode. Press **Ctrl+A** to enter command mode, then **Y** to enter the yank menu:
 
