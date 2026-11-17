@@ -47,6 +47,12 @@ with tempfile.TemporaryDirectory(prefix="dotfiles-update-") as scratch:
     git("-C", seed, "remote", "add", "origin", bare)
 
     def push(version):
+        # The updater itself changes on each push: it must continue running
+        # safely while fast-forwarding a checkout that replaces its own file.
+        (seed / "scripts/setup/update.sh").write_text(
+            (ROOT / "scripts/setup/update.sh").read_text() +
+            f"\n# synthetic updater revision {version}\n"
+        )
         (seed / "scripts/setup/bootstrap.sh").write_text(
             "#!/usr/bin/env bash\n"
             f"printf '%s\\n' '{version}' >> \"$MOCK_BOOTSTRAP_MARKER\"\n"
