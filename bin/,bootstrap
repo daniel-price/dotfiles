@@ -133,9 +133,18 @@ case "${1:-}" in
         set -euo pipefail
         root=$DOTFILES_BOOTSTRAP_ROOT
         bash "$root/scripts/setup/update.sh" --apply --require-current
-        [[ "$(git -C "$root" symbolic-ref --quiet --short HEAD)" == main ]]
-        [[ "$(git -C "$root" rev-parse HEAD)" == "$(git -C "$root" rev-parse refs/remotes/origin/main)" ]]
-        [[ -z "$(git -C "$root" status --porcelain --untracked-files=all)" ]]
+        [[ "$(git -C "$root" symbolic-ref --quiet --short HEAD)" == main ]] || {
+            printf "[error] Checkout is not on main; bootstrap skipped.\\n" >&2
+            exit 1
+        }
+        [[ "$(git -C "$root" rev-parse HEAD)" == "$(git -C "$root" rev-parse refs/remotes/origin/main)" ]] || {
+            printf "[error] Checkout is not at fetched origin/main; bootstrap skipped.\\n" >&2
+            exit 1
+        }
+        [[ -z "$(git -C "$root" status --porcelain --untracked-files=all)" ]] || {
+            printf "[error] Checkout has uncommitted changes; bootstrap skipped.\\n" >&2
+            exit 1
+        }
         exec bash "$root/bin/,bootstrap" --no-update
     ' dotfiles-bootstrap
     ;;
