@@ -1,23 +1,17 @@
 # Manage a dotfile
 
-Dotfiles are declared under `[dotfiles]` in [`scripts/setup/mise.toml`](../../scripts/setup/mise.toml). Only the reviewed Zsh target is managed today.
+Mise manages the reviewed Zsh symlink declared in [`scripts/setup/mise.toml`](../../scripts/setup/mise.toml). No per-application deployment scripts are needed.
 
-1. Review the source file; remove credentials and machine/work-specific values.
-2. Declare one explicit source and target.
-3. Preview changes and refuse existing files or unrelated symlinks.
-4. Test approval, refusal, idempotence and conflicts in a temporary home.
-
-Deploy the existing Zsh configuration with:
+To inspect and apply these settings on an existing machine:
 
 ```sh
-bash ~/.dotfiles/scripts/setup/deploy-zsh-config.sh
+MISE_GLOBAL_CONFIG_FILE="$HOME/.dotfiles/scripts/setup/mise.toml" mise -C / dot diff
+MISE_GLOBAL_CONFIG_FILE="$HOME/.dotfiles/scripts/setup/mise.toml" mise -C / dot apply --dry-run
+MISE_GLOBAL_CONFIG_FILE="$HOME/.dotfiles/scripts/setup/mise.toml" mise -C / dot apply
 ```
 
-To preview or selectively remove managed items:
+Alternatively, rerun `bash ~/.dotfiles/scripts/setup/bootstrap.sh` to provision tools and offer the reviewed dotfiles.
 
-```sh
-bash ~/.dotfiles/scripts/setup/cleanup.sh
-bash ~/.dotfiles/scripts/setup/cleanup.sh --apply
-```
+Mise refuses to replace existing regular files without `--force`, but may repoint an existing symlink to the declared source. Review the preview and never use `--force` during bootstrap. The manifest stays separate from the checkout-only development `mise.toml`.
 
-For personal/private directories, see [private profiles](private-profiles.md). Do not link empty placeholder configuration directories.
+For removal, preview with `bash ~/.dotfiles/scripts/setup/cleanup.sh` and approve selective cleanup with `--apply`. See [private profiles](private-profiles.md).
