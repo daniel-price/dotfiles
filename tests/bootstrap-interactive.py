@@ -112,7 +112,7 @@ printf '%s  %s\n' "$MOCK_SHA256" "$file"
     assert not target.exists()
 
     env["MOCK_SHA256"] = "60adf5460b19a791b964c414a2fff9d46990c9f2b1dfc0e4ba8c2b865f882a2b"
-    accepted = run_tty("y\ny\n")
+    accepted = run_tty("y\ny\nn\n")
     assert accepted[0] == 0, accepted
     assert target.exists(), accepted
     assert "installer:v2026.11.9:" in log.read_text(), log.read_text()
