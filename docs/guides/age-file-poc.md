@@ -6,7 +6,7 @@ Question: Can mise encrypt a whole file from its **first** Git checkpoint, prese
 
 ## Run
 
-Prerequisites: `git`, `mise` with `mise dot track --encrypt` support, and `age-keygen`. POC 1A documents the separately approved pinned age installation. No POC tooling is installed by this script.
+Prerequisites: `git` and `mise` with `mise dot track --encrypt` support. If `age-keygen` is missing, the script reuses POC 1A's reviewed manifest to offer a **separately approved** installation of pinned `age@1.3.2` through mise. Declining leaves no demo workspace; an approved tool install uses mise's normal per-user tool storage.
 
 Review the script first:
 
