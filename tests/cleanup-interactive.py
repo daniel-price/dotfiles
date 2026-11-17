@@ -84,7 +84,7 @@ case "$1" in
     [[ "$2" == unapply ]] || exit 25
     if [[ "$3" == --yes ]]; then
       # Approximate mise's conservative unapply: only links to reviewed sources.
-      [[ -L "$HOME/.zshrc" && "$HOME/.zshrc" -ef "$MOCK_DOT_SOURCE" ]] && rm -f -- "$HOME/.zshrc"
+      if [[ -L "$HOME/.zshrc" && "$HOME/.zshrc" -ef "$MOCK_DOT_SOURCE" ]]; then rm -f -- "$HOME/.zshrc"; fi
     elif [[ "$3" == --dry-run ]]; then
       :
     else
