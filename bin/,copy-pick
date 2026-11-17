@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
+lib="$(cd "$(dirname "$0")" && pwd)/lib"
+# shellcheck source=lib/copy_to_clipboard
+source "$lib/copy_to_clipboard"
+# shellcheck source=lib/format_cmd_output
+source "$lib/format_cmd_output"
+# shellcheck source=lib/zellij_dump_screen
+source "$lib/zellij_dump_screen"
+# shellcheck source=lib/extract_last_output
+source "$lib/extract_last_output"
+
+if ! command -v fzf >/dev/null 2>&1; then
+  printf 'fzf is required for ,copy-pick\n' >&2
+  exit 1
+fi
+
+# Newest first (-r false: atuin's -r true is oldest-first). Cap for fzf.
+selection=$(
+  atuin history list -f '{uuid}\t{command}' -r false 2>/dev/null \
+    | head -n 2000 \
+    | fzf --delimiter=$'\t' --with-nth=2.. --height=40% --reverse \
+        --prompt='copy> ' --preview='printf %s {2..}' --preview-window=down:3:wrap \
+    || true
+)
+
+if [[ -z "${selection:-}" ]]; then
+  printf 'cancelled\n' >&2
+  exit 0
+fi
+
+cmd=${selection#*$'\t'}
+if [[ -z "$cmd" ]]; then
+  printf 'empty selection\n' >&2
+  exit 1
+fi
+
+output=""
+# Best-effort Atuin capture (only populated when the shell runs under atuin pty-proxy)
+if out=$(atuin output search --limit 1 --style plain -- "$cmd" 2>/dev/null) && [[ -n "$out" ]]; then
+  output=$out
+fi
+
+# Fall back to the origin pane scrollback (works for recent commands still on screen)
+if [[ -z "$output" ]] && dump=$(zellij_dump_screen 2>/dev/null); then
+  output=$(printf '%s\n' "$dump" | extract_last_output "$cmd" || true)
+fi
+
+if [[ -z "$output" ]]; then
+  printf 'warning: no output found; copying command only\n' >&2
+fi
+
+format_cmd_output "$cmd" "$output" | copy_to_clipboard
