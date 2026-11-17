@@ -7,8 +7,8 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-PROVISION = ROOT / "scripts" / "provision-tool.sh"
-OVERLAY = ROOT / "scripts" / "apply-private-overlay.sh"
+PROVISION = ROOT / "scripts" / "setup" / "provision-tool.sh"
+OVERLAY = ROOT / "scripts" / "setup" / "apply-private-overlay.sh"
 
 
 def run_tty(script, answers, env, args=None):

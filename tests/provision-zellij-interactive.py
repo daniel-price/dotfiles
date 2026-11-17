@@ -7,7 +7,7 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SCRIPT = ROOT / "scripts" / "provision-tool.sh"
+SCRIPT = ROOT / "scripts" / "setup" / "provision-tool.sh"
 
 
 def run_tty(answers, env):

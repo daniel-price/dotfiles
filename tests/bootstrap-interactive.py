@@ -9,7 +9,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent.parent
-SCRIPT = ROOT / "scripts" / "bootstrap.sh"
+SCRIPT = ROOT / "scripts" / "setup" / "bootstrap.sh"
 
 
 def supported_host():

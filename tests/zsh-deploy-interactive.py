@@ -7,7 +7,7 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SCRIPT = ROOT / "scripts" / "deploy-zsh-config.sh"
+SCRIPT = ROOT / "scripts" / "setup" / "deploy-zsh-config.sh"
 SOURCE = ROOT / ".config" / "zsh" / "zshrc"
 
 
