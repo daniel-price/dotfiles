@@ -20,12 +20,12 @@ usage() {
 
 mode=preview
 case "${1:-}" in
---help|-h)
+--help | -h)
     [[ $# -eq 1 ]] || die 'Help accepts no extra arguments.'
     usage
     exit 0
     ;;
-''|--dry-run)
+'' | --dry-run)
     [[ $# -le 1 ]] || die 'Unexpected extra argument.'
     ;;
 --apply)
