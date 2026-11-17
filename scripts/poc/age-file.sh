@@ -39,22 +39,22 @@ age_keygen=(age-keygen)
 if ! command -v age-keygen >/dev/null 2>&1; then
     manifest="$ROOT/scripts/poc/age-tools.toml"
     [[ -f "$manifest" && ! -L "$manifest" ]] || {
-        printf '%s\\n' 'Missing reviewed age POC tool manifest.' >&2
+        printf '%s\n' 'Missing reviewed age POC tool manifest.' >&2
         exit 1
     }
     mise_bin=$(command -v mise)
     if MISE_GLOBAL_CONFIG_FILE="$manifest" "$mise_bin" -C / install --dry-run-code age@1.3.2; then
-        printf '%s\\n' 'Pinned age@1.3.2 is already installed through mise.'
+        printf '%s\n' 'Pinned age@1.3.2 is already installed through mise.'
     else
         result=$?
         [[ "$result" -eq 1 ]] || {
-            printf '%s\\n' 'Unable to inspect mise age installation status.' >&2
+            printf '%s\n' 'Unable to inspect mise age installation status.' >&2
             exit 1
         }
         printf 'Install pinned age@1.3.2 through mise for this POC? [y/N] '
         IFS= read -r install_answer
         if [[ "$install_answer" != y && "$install_answer" != Y && "$install_answer" != yes ]]; then
-            printf '%s\\n' 'Declined; age was not installed and no demo files were created.'
+            printf '%s\n' 'Declined; age was not installed and no demo files were created.'
             exit 0
         fi
         MISE_GLOBAL_CONFIG_FILE="$manifest" "$mise_bin" -C / install age@1.3.2
