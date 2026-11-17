@@ -57,6 +57,8 @@ case "$*" in
   "install --dry-run-code zellij") [[ -e "$MOCK_STATE/zellij" ]] && exit 0 || exit 1 ;;
   "install neovim") touch "$MOCK_STATE/neovim"; exit 0 ;;
   "install zellij") touch "$MOCK_STATE/zellij"; exit 0 ;;
+  "install --dry-run-code zoxide") [[ -e "$MOCK_STATE/zoxide" ]] && exit 0 || exit 1 ;;
+  "install zoxide") touch "$MOCK_STATE/zoxide"; exit 0 ;;
   "dot diff"|"dot apply --dry-run") exit 0 ;;
   "dot apply")
     ln -s "$MOCK_DOT_SOURCE" "$HOME/.zshrc"
@@ -93,16 +95,16 @@ esac
     target = home / ".zshrc"
 
     # Each component requires its own approval. Declines are safe.
-    declined = run("n\nn\nn\n")
+    declined = run("n\nn\nn\nn\n")
     assert declined.returncode == 0, declined.stdout
     assert not list(state.iterdir()), declined.stdout
     assert "Skipped zsh" in declined.stdout and "Skipped neovim" in declined.stdout
     assert "Zsh configuration: skipped (zsh unavailable)" in declined.stdout
     assert not any("dot " in line for line in log.read_text().splitlines())
 
-    approved = run("y\ny\ny\nn\n")
+    approved = run("y\ny\ny\ny\nn\n")
     assert approved.returncode == 0, approved.stdout
-    assert (state / "zsh").exists() and (state / "neovim").exists()
+    assert (state / "zsh").exists() and (state / "neovim").exists() and (state / "zoxide").exists()
     assert not (state / "zellij").exists()
     assert target.is_symlink() and target.resolve() == (ROOT / ".config/zsh/zshrc").resolve()
     assert "Zsh configuration: applied" in approved.stdout
@@ -112,15 +114,19 @@ esac
     assert next(i for i, line in enumerate(calls) if line.endswith("dot apply")) < next(
         i for i, line in enumerate(calls) if line.endswith("install neovim")
     ), calls
+    assert any(line.endswith("install zoxide") for line in calls), calls
+    assert any(line.endswith("install neovim") for line in calls), calls
     assert all(line.startswith(str(ROOT / "scripts/setup/mise.toml") + "|-C /")
                for line in calls), calls
     assert not any("scripts/dev" in line for line in calls), calls
 
     dot_before_repeat = sum("dot " in line for line in log.read_text().splitlines())
+    zoxide_before_repeat = sum(line.endswith("install zoxide") for line in calls)
     repeated = run()
     assert repeated.returncode == 0, repeated.stdout
     assert "Zsh configuration: already applied" in repeated.stdout
     assert sum("dot " in line for line in log.read_text().splitlines()) == dot_before_repeat
+    assert sum(line.endswith("install zoxide") for line in log.read_text().splitlines()) == zoxide_before_repeat
     assert not (state / "zellij").exists(), repeated.stdout
     assert "Skipped zellij" in repeated.stdout
 
@@ -128,6 +134,7 @@ esac
     assert final.returncode == 0, final.stdout
     assert (state / "zellij").exists()
     assert "Bootstrap complete" in final.stdout
+    assert (state / "zoxide").exists()
 
     # An unrelated ~/.zshrc must not abort the remaining tool setup.
     target.unlink()

@@ -40,6 +40,7 @@ def run_quiet(script, args, env):
 
 assert SOURCE.is_file(), SOURCE
 assert "mise activate zsh" in SOURCE.read_text(), SOURCE.read_text()
+assert "zoxide init zsh" in SOURCE.read_text(), SOURCE.read_text()
 
 with tempfile.TemporaryDirectory(prefix="dotfiles-zsh-deploy-") as scratch:
     temp_root = Path(scratch)
