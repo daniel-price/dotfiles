@@ -10,24 +10,24 @@ auto_install = false
 
 [tasks."hooks:install"]
 description = "Enable this checkout's pre-commit hook after confirmation"
-run = "bash scripts/install-hooks.sh"
+run = "bash scripts/dev/install-hooks.sh"
 
 [tasks.check]
 description = "Check tracked shell scripts without changing files or staging"
 run = """
 result=0
-bash scripts/format.sh --check || result=$?
-bash scripts/lint.sh || result=$?
+bash scripts/dev/format.sh --check || result=$?
+bash scripts/dev/lint.sh || result=$?
 exit "$result"
 """
 
 [tasks.format]
 description = "Format tracked shell scripts without staging changes"
-run = "bash scripts/format.sh"
+run = "bash scripts/dev/format.sh"
 
 [tasks.lint]
 description = "Lint tracked shell scripts without changing files or staging"
-run = "bash scripts/lint.sh"
+run = "bash scripts/dev/lint.sh"
 
 [tasks."test:hooks"]
 description = "Test auto-formatting and partial staging in a disposable repository"

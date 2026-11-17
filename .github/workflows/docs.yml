@@ -19,11 +19,11 @@ jobs:
         with:
           python-version: "3.13"
       - name: Install Zensical
-        run: bash scripts/install-docs-deps.sh
+        run: bash scripts/dev/install-docs-deps.sh
       - name: Validate bootstrap scripts
         run: bash tests/run.sh
       - name: Build and validate site
-        run: bash scripts/build-docs.sh
+        run: bash scripts/dev/build-docs.sh
       - name: Upload Pages artifact
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v5
