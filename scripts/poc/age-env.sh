@@ -9,10 +9,22 @@ usage() {
         'Requires mise with age-value support and age-keygen; never uses real credentials.'
 }
 case "${1:-}" in
--h|--help) usage; exit 0 ;;
-'') [[ $# -eq 0 ]] || exit 2; mode=preview ;;
---apply) [[ $# -eq 1 ]] || exit 2; mode=apply ;;
-*) usage >&2; exit 2 ;;
+-h | --help)
+    usage
+    exit 0
+    ;;
+'')
+    [[ $# -eq 0 ]] || exit 2
+    mode=preview
+    ;;
+--apply)
+    [[ $# -eq 1 ]] || exit 2
+    mode=apply
+    ;;
+*)
+    usage >&2
+    exit 2
+    ;;
 esac
 
 printf '%s\n' 'POC: generate a new age identity in a temporary directory, encrypt a FAKE value with mise,' \
@@ -31,8 +43,8 @@ IFS= read -r answer
 
 umask 077
 work=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-age-poc.XXXXXXXX")
-printf '[settings]\nexperimental = true\n' > "$work/mise.toml"
-age-keygen -o "$work/identity.txt" > "$work/keygen.log" 2>&1 || {
+printf '[settings]\nexperimental = true\n' >"$work/mise.toml"
+age-keygen -o "$work/identity.txt" >"$work/keygen.log" 2>&1 || {
     printf '%s\n' 'age-keygen failed; inspect/remove the temporary workspace.' >&2
     exit 1
 }
