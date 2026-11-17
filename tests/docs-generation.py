@@ -76,9 +76,15 @@ assert "## Cleanup" in cli_page
 assert "No secrets" not in cli_page
 with tempfile.TemporaryDirectory() as temporary:
     root = Path(temporary)
-    (root / "demo.sh").write_text("#!/usr/bin/env bash\\nif [[ \${1:-} == --help ]]; then printf 'Usage: demo.sh [--help]\\n'; exit 0; fi\\nexit 1\\n")
+    fixture = root / "demo.sh"
+    fixture.write_text("""#!/usr/bin/env bash
+if [[ "$1" == --help ]]; then printf 'Usage: demo.sh [--help]\n'; exit 0; fi
+exit 1
+""")
     assert cli.help_text(root, "demo.sh").startswith("Usage: demo.sh")
-    (root / "demo.sh").write_text("#!/usr/bin/env bash\\nif [[ \${1:-} == --help ]]; then touch \\"$HOME/mutated\\"; printf 'Usage: demo.sh\\n'; fi\\n")
+    fixture.write_text("""#!/usr/bin/env bash
+if [[ "$1" == --help ]]; then touch "$HOME/mutated"; printf 'Usage: demo.sh\n'; fi
+""")
     try:
         cli.help_text(root, "demo.sh")
     except ValueError as error:
