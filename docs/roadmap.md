@@ -12,8 +12,10 @@ The standalone `get-started.sh` installs missing Git after approval, clones
 once, and asks separately before running the checkout bootstrap. The documented
 temporary download cleans itself up. `scripts/setup/bootstrap.sh` installs verified mise, then delegates packages and pinned Neovim/Zellij
 versions to declarative mise configuration while preserving separate approvals.
-Curl is a stage-zero prerequisite. Separate opt-in scripts can deploy a reviewed zsh startup file
-or one selected private configuration directory. A recurring update command has not been implemented.
+Curl is a stage-zero prerequisite. Bootstrap also offers the reviewed Zsh
+startup symlink after mise and Zsh, before Neovim/Zellij, with explicit approval
+and conflict preservation. A separate opt-in script deploys one selected
+private configuration directory. A recurring update command has not been implemented.
 
 Checkout development tooling is available separately: pinned shfmt, ShellCheck
 and Lefthook, opt-in pre-commit formatting with partial staging, and Linux/macOS

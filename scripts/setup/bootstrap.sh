@@ -15,7 +15,7 @@ MISE_INSTALLER_SHA256='60adf5460b19a791b964c414a2fff9d46990c9f2b1dfc0e4ba8c2b865
 
 usage() {
     printf '%s\n' 'Usage: bash scripts/setup/bootstrap.sh [--help]' \
-        'Install missing mise, then provision reviewed machine packages and tools.' \
+        'Install missing mise and zsh, offer reviewed shell activation, then provision tools.' \
         'Every missing component requires its own interactive approval.'
 }
 
@@ -151,6 +151,29 @@ else
     fi
 fi
 
+# Activate the reviewed shell integration before provisioning user tools.
+# A conflicting ~/.zshrc is never replaced or treated as a bootstrap failure.
+zsh_config_status='skipped (zsh unavailable)'
+if command -v zsh >/dev/null 2>&1 && zsh --version >/dev/null 2>&1; then
+    zsh_target="$HOME/.zshrc"
+    zsh_source="$ROOT/.config/zsh/zshrc"
+    if [[ -L "$zsh_target" && "$zsh_target" -ef "$zsh_source" ]]; then
+        zsh_config_status='already applied'
+        log 'Reviewed zsh startup file is already applied; no changes made.'
+    elif [[ -e "$zsh_target" || -L "$zsh_target" ]]; then
+        zsh_config_status='skipped (existing ~/.zshrc conflict)'
+        log 'Preserving existing ~/.zshrc; resolve the conflict manually before deploying the reviewed Zsh startup file.'
+    else
+        log 'Offering the reviewed zsh startup file before provisioning machine tools.'
+        bash "$ROOT/scripts/setup/deploy-zsh-config.sh"
+        if [[ -L "$zsh_target" && "$zsh_target" -ef "$zsh_source" ]]; then
+            zsh_config_status='applied (takes effect in a new zsh session)'
+        else
+            zsh_config_status='declined or noninteractive'
+        fi
+    fi
+fi
+
 for tool in neovim zellij; do
     # Tool pins come only from scripts/setup/mise.toml.
     if "$mise" -C / install --dry-run-code "$tool"; then
@@ -169,4 +192,4 @@ for tool in neovim zellij; do
     fi
 done
 
-log 'Bootstrap complete. Dotfile deployment remains a separate opt-in action.'
+log "Bootstrap complete. Zsh configuration: $zsh_config_status."

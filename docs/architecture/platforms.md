@@ -15,18 +15,19 @@ root `mise.toml` describes checkout development only.
 | zsh, when missing | `apt:zsh` via `mise bootstrap --only packages` | `brew:zsh` via mise if macOS's built-in zsh is missing and Homebrew exists |
 | Neovim `0.12.6` | `mise install neovim`, opt-in | Same |
 | Zellij `0.46.0` | `mise install zellij`, opt-in | Same |
-| Reviewed `~/.zshrc` | Native `mise dot apply`, separate approval | Same |
+| Reviewed `~/.zshrc` | Native `mise dot apply`, offered early with separate approval | Same |
 
 The initial bootstrap uses a small shell wrapper to install mise with a
 verified installer and preserve independent confirmations for each missing
 component. Once mise is present, the script selects the declarative machine
 configuration using `MISE_GLOBAL_CONFIG_FILE` and invokes mise with
-`-C /`: this **excludes checkout development tools**. It does not silently
-activate zsh, link dotfiles, trust private repositories or update software.
-
-The `~/.zshrc` deployment is deliberately a separate command that checks
-for existing files and foreign symlinks before calling native mise dotfiles.
-Native mise can repoint a wrong symlink; the wrapper must continue to refuse it.
+`-C /`: this **excludes checkout development tools**. It does not silently activate Zsh, trust private repositories or update
+software. After mise and Zsh are available, bootstrap calls the separately
+runnable reviewed Zsh deployment script, **before** Neovim and Zellij setup.
+Deployment only proceeds after a preview and explicit confirmation. Bootstrap
+skips conflicting existing `~/.zshrc` files/symlinks without preventing tool
+installation. Native mise can repoint a foreign symlink, so its wrapper retains
+the conflict-refusal checks.
 
 ## Selective cleanup
 

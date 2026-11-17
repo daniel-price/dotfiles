@@ -156,7 +156,7 @@ if detect_os >/dev/null 2>&1; then
         PATH="$TEST_ROOT/bin:$PATH" bash "$ROOT/scripts/setup/bootstrap.sh")
     assert_equal "$output" "$repeated" 'bootstrap repeatability'
     [[ "$output" == *'Detected platform:'* && "$output" == *'Bootstrap complete.'* &&
-        "$output" == *'Dotfile deployment remains a separate opt-in action.'* ]] || fail 'bootstrap scope unclear'
+        "$output" == *'Bootstrap complete. Zsh configuration:'* ]] || fail 'bootstrap scope unclear'
 else
     printf 'SKIP: bootstrap host smoke test (unsupported host)\n'
 fi

@@ -57,12 +57,18 @@ case "$*" in
   "install --dry-run-code zellij") [[ -e "$MOCK_STATE/zellij" ]] && exit 0 || exit 1 ;;
   "install neovim") touch "$MOCK_STATE/neovim"; exit 0 ;;
   "install zellij") touch "$MOCK_STATE/zellij"; exit 0 ;;
+  "dot diff"|"dot apply --dry-run") exit 0 ;;
+  "dot apply")
+    ln -s "$MOCK_DOT_SOURCE" "$HOME/.zshrc"
+    exit 0
+    ;;
   *) exit 21 ;;
 esac
 """)
     fake_mise.chmod(0o755)
     env = dict(os.environ, HOME=str(home), PATH=str(bin_dir) + ":/usr/bin:/bin",
-               MOCK_STATE=str(state), MOCK_LOG=str(log))
+               MOCK_STATE=str(state), MOCK_LOG=str(log),
+               MOCK_DOT_SOURCE=str(ROOT / ".config" / "zsh" / "zshrc"))
 
     def run(answers=None):
         if answers is None:
@@ -84,23 +90,37 @@ esac
             if slave != -1:
                 os.close(slave)
 
+    target = home / ".zshrc"
+
     # Each component requires its own approval. Declines are safe.
     declined = run("n\nn\nn\n")
     assert declined.returncode == 0, declined.stdout
     assert not list(state.iterdir()), declined.stdout
     assert "Skipped zsh" in declined.stdout and "Skipped neovim" in declined.stdout
+    assert "Zsh configuration: skipped (zsh unavailable)" in declined.stdout
+    assert not any("dot " in line for line in log.read_text().splitlines())
 
-    approved = run("y\ny\nn\n")
+    approved = run("y\ny\ny\nn\n")
     assert approved.returncode == 0, approved.stdout
     assert (state / "zsh").exists() and (state / "neovim").exists()
     assert not (state / "zellij").exists()
+    assert target.is_symlink() and target.resolve() == (ROOT / ".config/zsh/zshrc").resolve()
+    assert "Zsh configuration: applied" in approved.stdout
     calls = log.read_text().splitlines()
+    assert any("dot apply --dry-run" in line for line in calls)
+    assert sum(line.endswith("dot apply") for line in calls) == 1
+    assert next(i for i, line in enumerate(calls) if line.endswith("dot apply")) < next(
+        i for i, line in enumerate(calls) if line.endswith("install neovim")
+    ), calls
     assert all(line.startswith(str(ROOT / "scripts/setup/mise.toml") + "|-C /")
                for line in calls), calls
     assert not any("scripts/dev" in line for line in calls), calls
 
+    dot_before_repeat = sum("dot " in line for line in log.read_text().splitlines())
     repeated = run()
     assert repeated.returncode == 0, repeated.stdout
+    assert "Zsh configuration: already applied" in repeated.stdout
+    assert sum("dot " in line for line in log.read_text().splitlines()) == dot_before_repeat
     assert not (state / "zellij").exists(), repeated.stdout
     assert "Skipped zellij" in repeated.stdout
 
@@ -109,9 +129,38 @@ esac
     assert (state / "zellij").exists()
     assert "Bootstrap complete" in final.stdout
 
+    # An unrelated ~/.zshrc must not abort the remaining tool setup.
+    target.unlink()
+    target.write_text("personal shell setup\\n")
+    before = len(log.read_text().splitlines())
+    conflict = run()
+    assert conflict.returncode == 0, conflict.stdout
+    assert "Zsh configuration: skipped (existing ~/.zshrc conflict)" in conflict.stdout
+    assert target.read_text() == "personal shell setup\\n"
+    assert not any("dot " in line for line in log.read_text().splitlines()[before:])
+    target.unlink()
+
+    other = base / "other.zshrc"
+    other.write_text("foreign symlink target\\n")
+    target.symlink_to(other)
+    conflict_link = run()
+    assert conflict_link.returncode == 0, conflict_link.stdout
+    assert target.is_symlink() and target.resolve() == other.resolve()
+    assert "existing ~/.zshrc conflict" in conflict_link.stdout
+    target.unlink()
+
+    # Noninteractive runs preview the safe deployment but never approve it.
+    before = len(log.read_text().splitlines())
+    unattended = run()
+    assert unattended.returncode == 0, unattended.stdout
+    assert not target.exists()
+    assert "Zsh configuration: declined or noninteractive" in unattended.stdout
+    assert any("dot apply --dry-run" in line for line in log.read_text().splitlines()[before:])
+    assert not any(line.endswith("dot apply") for line in log.read_text().splitlines()[before:])
+
     # An earlier mise cannot safely run the new bootstrap phases.
     fake_mise.write_text("#!/usr/bin/env bash\necho '2026.8.15 fake'\n")
     old = run()
     assert old.returncode != 0, old.stdout
     assert "2026.11.9 or newer" in old.stdout, old.stdout
-    print("PASS: Native mise packages/tools, approvals, isolated config, repeatability")
+    print("PASS: Native mise packages, early Zsh activation, conflict preservation and tools")
