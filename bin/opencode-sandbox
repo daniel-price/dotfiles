@@ -1,0 +1,129 @@
+#!/usr/bin/env bash
+# Execute a coding agent with only one reviewed Git checkout bind-mounted.
+# Linux rootless Podman only. No host HOME, SSH keys or container socket mounts.
+set -euo pipefail
+
+ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
+# shellcheck source=scripts/lib/common.sh
+source "$ROOT/scripts/lib/common.sh"
+
+usage() {
+    printf '%s\n' \
+        'Usage: bin/opencode-sandbox [--project DIR] [--credential-env NAME] [--dry-run|--help]' \
+        'Run OpenCode in rootless Podman with a single writable Git checkout.' \
+        'Dry-run makes no network requests or Podman changes.' \
+        'Normal runs separately confirm image pull, build and agent launch.' \
+        'Credential environment names: ANTHROPIC_API_KEY, OPENAI_API_KEY, OPENROUTER_API_KEY.'
+}
+
+version=2.3.0
+base_image="ghcr.io/anomalyco/opencode:$version"
+# Bump the -rN suffix when changing the Containerfile, to avoid using stale builds.
+image="localhost/dotfiles-opencode-sandbox:$version-r1"
+project=$PWD
+dry_run=false
+credential_names=()
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+    --help|-h)
+        [[ $# -eq 1 ]] || die 'Help accepts no other arguments.'
+        usage
+        exit 0
+        ;;
+    --project)
+        [[ $# -ge 2 && -n "$2" ]] || die '--project requires a directory.'
+        project=$2
+        shift 2
+        ;;
+    --credential-env)
+        [[ $# -ge 2 ]] || die '--credential-env requires an allowlisted variable name.'
+        case "$2" in
+        ANTHROPIC_API_KEY|OPENAI_API_KEY|OPENROUTER_API_KEY) ;;
+        *) die 'Unsupported credential name; see --help.' ;;
+        esac
+        [[ -n "${!2:-}" ]] || die "Credential variable $2 is not set or is empty."
+        credential_names+=("$2")
+        shift 2
+        ;;
+    --dry-run)
+        dry_run=true
+        shift
+        ;;
+    *) die 'Unknown option. See --help; arbitrary Podman and OpenCode flags are not accepted.' ;;
+    esac
+done
+
+[[ "$(uname -s)" == Linux ]] || die 'This launcher supports Linux rootless Podman only.'
+[[ "$(id -u)" != 0 ]] || die 'Do not launch a coding agent with root or sudo.'
+[[ -d "$project" ]] || die 'Project must be an existing directory.'
+project=$(CDPATH='' cd -- "$project" && pwd -P) || die 'Could not resolve project path.'
+[[ "$project" != / && "$project" != *:* && "$project" != *$'\n'* ]] ||
+    die 'Unsafe workspace path (root, colon, or newline); refusing mount.'
+[[ -n "${HOME:-}" && -d "$HOME" ]] || die 'HOME must be an existing directory.'
+home=$(CDPATH='' cd -- "$HOME" && pwd -P) || die 'Could not resolve HOME.'
+[[ "$project" != "$home" ]] || die 'Refusing to mount the host home directory.'
+# Require a normal Git root, not its parent or a linked worktree pointing at
+# .git metadata stored outside the mount. Avoid broad accidental mounts.
+[[ -d "$project/.git" && ! -L "$project/.git" ]] ||
+    die 'Select a Git repository root with a real .git directory (not a linked worktree).'
+command -v git >/dev/null 2>&1 || die 'Git is needed to validate the selected project.'
+repo_root=$(git -C "$project" rev-parse --show-toplevel 2>/dev/null) ||
+    die 'Selected project is not a readable Git working tree.'
+[[ "$repo_root" == "$project" ]] || die 'Select exactly the Git repository root.'
+[[ -f "$ROOT/containers/opencode/Containerfile" ]] || die 'Reviewed Containerfile is missing.'
+
+log "Workspace: $project (read/write inside the container)."
+log "Base image: $base_image; local image: $image."
+log "Container home: ephemeral /tmp; no host home, SSH, Git credentials or sockets mounted."
+log 'Default rootless container network allows outbound traffic; project files can be sent to providers.'
+if [[ -n "${credential_names[*]-}" ]]; then
+    log "Explicitly forwarded credential variable names: ${credential_names[*]} (values not printed)."
+fi
+if [[ "$dry_run" == true ]]; then
+    log 'Read-only preview; no image pull, build or container launch.'
+    exit 0
+fi
+
+command -v podman >/dev/null 2>&1 ||
+    die 'Podman is missing. On Pop!_OS install it explicitly with sudo apt install podman.'
+rootless=$(podman info --format '{{.Host.Security.Rootless}}' 2>/dev/null) ||
+    die 'Could not inspect Podman rootless mode; no image pulled or agent launched.'
+[[ "$rootless" == true ]] || die 'Podman is not rootless; refusing to launch.'
+[[ -t 0 ]] || die 'An interactive terminal is required to approve each action.'
+
+if ! podman image exists "$image"; then
+    if ! podman image exists "$base_image"; then
+        if ! confirm "Pull the published OpenCode image $base_image to rootless Podman storage?"; then
+            log 'Declined image pull; no agent launched.'
+            exit 0
+        fi
+        podman pull "$base_image" || die 'OpenCode base image download failed.'
+    fi
+    if ! confirm "Build $image (adds Git from Alpine packages) with the reviewed Containerfile?"; then
+        log 'Declined image build; no agent launched.'
+        exit 0
+    fi
+    podman build --pull=never \
+        --build-arg "OPENCODE_IMAGE=$base_image" \
+        --file "$ROOT/containers/opencode/Containerfile" \
+        --tag "$image" "$ROOT/containers/opencode" || die 'OpenCode image build failed.'
+fi
+
+if ! confirm "Run OpenCode on $project with write access and outbound network?"; then
+    log 'Declined agent launch.'
+    exit 0
+fi
+run_args=(
+    run --rm --interactive --tty --pull=never
+    --userns=keep-id --user "$(id -u):$(id -g)"
+    --cap-drop=ALL --security-opt=no-new-privileges --read-only
+    --tmpfs /tmp:rw,nosuid,nodev,size=1g,mode=1777
+    --pids-limit=256 --memory=4g
+    --env HOME=/tmp --env XDG_CONFIG_HOME=/tmp/.config
+    --env XDG_CACHE_HOME=/tmp/.cache --env XDG_DATA_HOME=/tmp/.local/share
+    --volume "$project:/workspace:rw" --workdir /workspace
+)
+for name in "${credential_names[@]+"${credential_names[@]}"}"; do
+    run_args+=(--env "$name")
+done
+podman "${run_args[@]}" "$image"

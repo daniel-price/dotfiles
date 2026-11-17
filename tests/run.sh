@@ -23,6 +23,10 @@ while IFS= read -r -d '' script; do
     bash -n "$ROOT/$script"
 done < <(git -C "$ROOT" ls-files -z -- '*.sh')
 printf 'PASS: Bash syntax\n'
+[[ -x "$ROOT/bin/opencode-sandbox" && -f "$ROOT/containers/opencode/Containerfile" ]] ||
+    fail 'sandbox launcher must be executable and have a reviewed Containerfile'
+bash -n "$ROOT/bin/opencode-sandbox" || fail 'sandbox launcher has invalid Bash syntax'
+printf 'PASS: Executable OpenCode launcher syntax and layout\n'
 if command -v zsh >/dev/null 2>&1; then
     zsh -n "$ROOT/.config/zsh/zshrc" || fail 'reviewed zsh file has invalid syntax'
     printf 'PASS: Reviewed zsh syntax\n'
@@ -182,6 +186,7 @@ if command -v python3 >/dev/null 2>&1; then
     python3 "$ROOT/tests/zsh-deploy-interactive.py"
     python3 "$ROOT/tests/mise-bootstrap-interactive.py"
     python3 "$ROOT/tests/cleanup-interactive.py"
+    python3 "$ROOT/tests/opencode-sandbox.py"
     python3 "$ROOT/tests/dev-setup-interactive.py"
 else
     printf 'SKIP: interactive bootstrap tests (python3 not found)\n'

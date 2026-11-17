@@ -7,6 +7,7 @@ automatic.
 | Workload | Default direction |
 | --- | --- |
 | Developer runtimes and CLI tools | mise where suitable |
+| Coding agents that execute commands | Rootless per-project container by default on Pop!_OS; separate VM for higher-risk work |
 | Essential OS tools and desktop applications | apt (Pop!_OS) or Homebrew (macOS) |
 | Long-running/self-hosted services | Evaluate containers for isolation, upgrades and persistence |
 | Apps needing direct hardware/desktop integration | Prefer native packaging when containers add friction |
@@ -16,5 +17,9 @@ decisions should document the container runtime, network isolation, volume
 ownership, secrets injection, restart behaviour, backups and update strategy.
 The choice between Docker/Compose and alternatives is **not yet accepted**.
 
-No container definitions or services are currently installed by this repo.
-Before adding them, create a focused decision record and a manual test plan.
+A reviewed **rootless OpenCode CLI container launcher** is implemented as an
+explicit personal-workflow option, not a daemon or background service. It
+requires a manually installed Podman runtime and gives the agent write access
+to a single selected Git checkout; see the [security guide](../guides/opencode.md).
+No long-running service containers are installed by this repo. Before adding
+one, create a focused decision record and manual test plan.
