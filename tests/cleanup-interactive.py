@@ -73,7 +73,8 @@ esac
     def run_quiet(args, input_text=None, overrides=None):
         return subprocess.run(
             ["bash", str(SCRIPT), *args], cwd=base, env={**env, **(overrides or {})},
-            input=input_text, stdin=subprocess.PIPE if input_text is not None else subprocess.DEVNULL,
+            input=input_text,
+            **({"stdin": subprocess.DEVNULL} if input_text is None else {}),
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
             check=False, timeout=12,
         )
