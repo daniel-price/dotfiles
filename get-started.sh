@@ -85,12 +85,20 @@ ensure_git() {
 }
 
 checkout_once() {
-    local target=$1 existing_origin top
+    local target=$1 existing_origin top resolved_target resolved_top
     if [[ -e "$target" || -L "$target" ]]; then
         [[ -d "$target" && ! -L "$target" ]] ||
             fail "Checkout destination already exists as a file or symlink: $target"
         top=$(git -C "$target" rev-parse --show-toplevel 2>/dev/null || :)
-        [[ "$top" == "$target" ]] ||
+        [[ -n "$top" ]] ||
+            fail "Checkout destination is not a Git repository: $target"
+        # On macOS, /var may be an alias of /private/var. Compare physical
+        # directories, while still rejecting a nested or unrelated checkout.
+        resolved_target=$(cd "$target" && pwd -P) ||
+            fail "Could not resolve checkout destination: $target"
+        resolved_top=$(cd "$top" && pwd -P) ||
+            fail "Could not resolve Git repository root: $top"
+        [[ "$resolved_top" == "$resolved_target" ]] ||
             fail "Checkout destination is not its own Git repository: $target"
         existing_origin=$(git -C "$target" remote get-url origin 2>/dev/null || :)
         case "$existing_origin" in
