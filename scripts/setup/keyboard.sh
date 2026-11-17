@@ -51,7 +51,7 @@ case "$desktop" in
             line="${BASH_REMATCH[1]}Some(\"ctrl:nocaps\")${BASH_REMATCH[2]}"
         fi
         updated+="$line"$'\n'
-    done < "$config"
+    done <"$config"
     if [[ "$found" -ne 1 ]]; then
         log 'COSMIC keyboard options format was unexpected; no changes made.'
         exit 0
@@ -63,7 +63,7 @@ case "$desktop" in
     if confirm 'Set Caps Lock to act as an additional Ctrl key in COSMIC keyboard settings?'; then
         temp=$(mktemp "$config.XXXXXX")
         trap 'rm -f -- "$temp"' EXIT
-        printf '%s' "$updated" > "$temp"
+        printf '%s' "$updated" >"$temp"
         chmod --reference="$config" "$temp"
         mv -- "$temp" "$config"
         trap - EXIT
