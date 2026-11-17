@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Synthetic cleanup tests: no real tools or home files are ever removed."""
+"""Synthetic manifest-driven cleanup tests; never touch the host environment."""
 import os
 import pty
+import re
 import subprocess
 import tempfile
 from pathlib import Path
@@ -11,11 +12,29 @@ SCRIPT = ROOT / "scripts" / "setup" / "cleanup.sh"
 SOURCE = ROOT / ".config" / "zsh" / "zshrc"
 MANIFEST = ROOT / "scripts" / "setup" / "mise.toml"
 
+
+def declared_tools():
+    # Fixture inventory follows the manifest, not a second list of tool names.
+    tools = {}
+    within = False
+    for row in MANIFEST.read_text().splitlines():
+        if row.strip() == "[tools]":
+            within = True
+            continue
+        if row.startswith("["):
+            within = False
+        if within:
+            match = re.fullmatch(r'([A-Za-z0-9_-]+)\s*=\s*"([^"]+)"', row.strip())
+            if match:
+                tools[match.group(1)] = match.group(2)
+    assert tools, "machine manifest has no tool declarations"
+    return tools
+
+
+pins = declared_tools()
 with tempfile.TemporaryDirectory(prefix="dotfiles-cleanup-") as scratch:
     base = Path(scratch)
-    home = base / "home"
-    bin_dir = base / "bin"
-    state = base / "installed"
+    home, bin_dir, state = (base / name for name in ("home", "bin", "installed"))
     for path in (home, bin_dir, state):
         path.mkdir()
     log = base / "mise.log"
@@ -30,43 +49,49 @@ fi
 printf '%s|%s\\n' "$MISE_GLOBAL_CONFIG_FILE" "$*" >> "$MOCK_LOG"
 [[ "$1" == -C && "$2" == / ]] || exit 22
 shift 2
-case "$*" in
-  "config get --file "*" tools.neovim")
-    echo '0.12.6'
+case "$1" in
+  ls)
+    [[ "$2" == --current && "$3" == --no-header && "$4" == --no-truncate ]] || exit 24
+    printf '%s\\n' "$MOCK_TOOL_ROWS"
     ;;
-  "config get --file "*" tools.zoxide")
-    echo "0.10.0"
+  config)
+    [[ "$2" == get && "$3" == --file ]] || exit 24
+    tool="${5#tools.}"
+    tool="${tool#\\\"}"
+    tool="${tool%\\\"}"
+    if [[ "${MOCK_BAD_VERSION_TOOL:-}" == "$tool" ]]; then
+      echo 'latest'
+      exit 0
+    fi
+    while IFS='=' read -r name version; do
+      [[ "$name" == "$tool" ]] || continue
+      printf '%s\\n' "$version"
+      exit 0
+    done <<< "$MOCK_TOOL_PINS"
+    exit 8
     ;;
-  "config get --file "*" tools.zellij")
-    echo "${MOCK_ZELLIJ_VERSION:-0.46.0}"
+  uninstall)
+    if [[ "$2" == --dry-run-code ]]; then
+      spec=$3
+      [[ -e "$MOCK_STATE/$spec" ]] && exit 1 || exit 0
+    elif [[ "$2" == --yes ]]; then
+      rm -f -- "$MOCK_STATE/$3"
+    else
+      exit 25
+    fi
     ;;
-  "uninstall --dry-run-code neovim@0.12.6")
-    [[ -e "$MOCK_STATE/neovim" ]] && exit 1 || exit 0
+  dot)
+    [[ "$2" == unapply ]] || exit 25
+    if [[ "$3" == --yes ]]; then
+      [[ -L "$HOME/.zshrc" ]] || exit 31
+      rm -f -- "$HOME/.zshrc"
+    elif [[ "$3" == --dry-run ]]; then
+      :
+    else
+      exit 25
+    fi
     ;;
-  "uninstall --dry-run-code zoxide@0.10.0")
-    [[ -e "$MOCK_STATE/zoxide" ]] && exit 1 || exit 0
-    ;;
-  "uninstall --dry-run-code zellij@0.46.0")
-    [[ -e "$MOCK_STATE/zellij" ]] && exit 1 || exit 0
-    ;;
-  "uninstall --yes neovim@0.12.6")
-    rm -f -- "$MOCK_STATE/neovim"
-    ;;
-  "uninstall --yes zoxide@0.10.0")
-    rm -f -- "$MOCK_STATE/zoxide"
-    ;;
-  "uninstall --yes zellij@0.46.0")
-    rm -f -- "$MOCK_STATE/zellij"
-    ;;
-  "dot unapply --dry-run "*)
-    ;;
-  "dot unapply --yes "*)
-    [[ -L "$HOME/.zshrc" ]] || exit 31
-    rm -f -- "$HOME/.zshrc"
-    ;;
-  *)
-    exit 23
-    ;;
+  *) exit 23 ;;
 esac
 """)
     mise.chmod(0o755)
@@ -76,6 +101,12 @@ esac
         "PATH": str(bin_dir) + os.pathsep + "/usr/bin:/bin",
         "MOCK_LOG": str(log),
         "MOCK_STATE": str(state),
+        "MOCK_TOOL_ROWS": "\n".join(
+            f"{name} {version} (missing)" for name, version in pins.items()
+        ),
+        "MOCK_TOOL_PINS": "\n".join(
+            f"{name}={version}" for name, version in pins.items()
+        ),
     })
     target = home / ".zshrc"
 
@@ -114,82 +145,85 @@ esac
     def reset_log():
         log.write_text("")
 
-    (state / "neovim").touch()
-    (state / "zellij").touch()
-    (state / "zoxide").touch()
+    for name, version in pins.items():
+        (state / f"{name}@{version}").touch()
     target.symlink_to(SOURCE)
-    help_result = run_quiet(["--help"])
-    assert help_result.returncode == 0 and "Usage:" in help_result.stdout
+    assert run_quiet(["--help"]).returncode == 0
     assert run_quiet(["--unknown"]).returncode != 0
     assert run_quiet(["--apply", "--yes"]).returncode != 0
 
-    # Default prints only previews and never changes a managed symlink or tools.
+    # The default must be a complete, read-only preview of exact pinned specs.
     preview = run_quiet([])
     assert preview.returncode == 0, preview.stdout
-    assert "Preview only; no changes were made" in preview.stdout, preview.stdout
-    assert target.is_symlink() and (state / "neovim").exists() and (state / "zellij").exists() and (state / "zoxide").exists()
+    assert "Preview only; no changes were made" in preview.stdout
+    assert target.is_symlink()
+    assert all((state / f"{name}@{version}").exists() for name, version in pins.items())
     assert any("dot unapply --dry-run" in line for line in operations())
-    assert any("uninstall --dry-run-code neovim@0.12.6" in line for line in operations())
-    assert any("uninstall --dry-run-code zellij@0.46.0" in line for line in operations())
-    assert any("uninstall --dry-run-code zoxide@0.10.0" in line for line in operations())
+    for name, version in pins.items():
+        assert f"uninstall --dry-run-code {name}@{version}" in operations()
     assert not destructive(), operations()
     assert all(line.startswith(str(MANIFEST) + "|") for line in log.read_text().splitlines())
 
-    # A piped yes cannot authorise removal.
+    # Piped approvals cannot remove anything.
     reset_log()
-    piped = run_quiet(["--apply"], "yes\nyes\nyes\n")
+    piped = run_quiet(["--apply"], "yes\n" * (len(pins) + 1))
     assert piped.returncode == 0, piped.stdout
-    assert target.is_symlink() and (state / "neovim").exists() and (state / "zellij").exists() and (state / "zoxide").exists()
-    assert not destructive(), operations()
+    assert target.is_symlink() and not destructive(), operations()
+    assert all((state / f"{name}@{version}").exists() for name, version in pins.items())
 
-    # Existing different symlinks and ordinary files are never touched.
-    reset_log()
+    # Unrelated shell files and foreign symlinks are never removed.
     target.unlink()
     unrelated = base / "personal-zsh"
     unrelated.write_text("my own configuration\n")
     target.symlink_to(unrelated)
-    foreign = run_quiet(["--apply"], "yes\nyes\nyes\n")
-    assert foreign.returncode == 0 and target.is_symlink() and target.resolve() == unrelated.resolve(), foreign.stdout
-    assert not any("dot unapply" in line for line in operations()), operations()
+    reset_log()
+    foreign = run_quiet(["--apply"], "yes\n" * (len(pins) + 1))
+    assert foreign.returncode == 0 and target.resolve() == unrelated.resolve()
+    assert not any("dot unapply" in line for line in operations())
     target.unlink()
     target.write_text("custom config\n")
     reset_log()
-    real = run_quiet([])
-    assert real.returncode == 0 and target.read_text() == "custom config\n"
-    assert not any("dot unapply" in line for line in operations()), operations()
+    ordinary = run_quiet([])
+    assert ordinary.returncode == 0 and target.read_text() == "custom config\n"
+    assert not any("dot unapply" in line for line in operations())
     target.unlink()
 
-    # Per-component approval: decline zsh, accept Neovim, decline Zellij.
+    # Decline the symlink, approve the first declared tool, decline the rest.
     reset_log()
     target.symlink_to(SOURCE)
-    status, output = run_tty(["--apply"], "n\ny\nn\nn\n")
-    assert status == 0, output
-    assert target.is_symlink() and not (state / "neovim").exists()
-    assert (state / "zellij").exists() and (state / "zoxide").exists(), output
-    assert destructive() == ["-C / uninstall --yes neovim@0.12.6"], operations()
+    first = next(iter(pins))
+    answers = "n\n" + "".join("y\n" if name == first else "n\n" for name in pins)
+    code, out = run_tty(["--apply"], answers)
+    assert code == 0, out
+    assert target.is_symlink()
+    assert not (state / f"{first}@{pins[first]}").exists()
+    assert all((state / f"{name}@{version}").exists()
+               for name, version in pins.items() if name != first)
+    assert destructive() == [f"-C / uninstall --yes {first}@{pins[first]}"], operations()
 
-    # Subsequent run removes only the remaining approved items.
+    # Subsequent approval removes only the remaining declared versions.
     reset_log()
-    status, output = run_tty(["--apply"], "y\ny\ny\n")
-    assert status == 0, output
-    assert not target.exists() and not (state / "zellij").exists() and not (state / "zoxide").exists(), output
+    remaining = [(name, version) for name, version in pins.items() if name != first]
+    code, out = run_tty(["--apply"], "y\n" * (len(remaining) + 1))
+    assert code == 0, out
+    assert not target.exists()
+    assert not any(state.iterdir())
     assert destructive() == [
         f"-C / dot unapply --yes {target}",
-        "-C / uninstall --yes zellij@0.46.0",
-        "-C / uninstall --yes zoxide@0.10.0",
+        *(f"-C / uninstall --yes {name}@{version}" for name, version in remaining),
     ], operations()
 
-    # Repeat is safe; no managed state or tools remain.
     reset_log()
     repeated = run_quiet(["--apply"])
     assert repeated.returncode == 0, repeated.stdout
     assert not destructive(), operations()
 
-    # A changed/unpinned version is never guessed for uninstall.
+    # Malformed versions must fail *before* even a symlink removal is offered.
+    target.symlink_to(SOURCE)
     reset_log()
-    bad_version = run_quiet([], overrides={"MOCK_ZELLIJ_VERSION": "latest"})
-    assert bad_version.returncode != 0, bad_version.stdout
-    assert "not an exact release" in bad_version.stdout
-    assert not destructive(), operations()
+    bad = run_quiet(["--apply"], overrides={"MOCK_BAD_VERSION_TOOL": first})
+    assert bad.returncode != 0, bad.stdout
+    assert "Refusing unpinned machine tool" in bad.stdout
+    assert target.is_symlink() and not destructive(), operations()
 
-    print("PASS: Cleanup preview, zoxide scope, isolated manifest, consent and reruns")
+    print("PASS: Manifest-driven cleanup previews, conflicts, exact pins, consent and reruns")
