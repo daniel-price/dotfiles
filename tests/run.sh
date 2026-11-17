@@ -28,6 +28,12 @@ printf 'PASS: Bash syntax\n'
 bash -n "$ROOT/bin/opencode-sandbox" || fail 'sandbox launcher has invalid Bash syntax'
 [[ -x "$ROOT/bin/,bootstrap" ]] || fail ',bootstrap must be executable'
 bash -n "$ROOT/bin/,bootstrap" || fail ',bootstrap has invalid Bash syntax'
+# These helpers are also run directly from a shell, not just via Bash in Zellij.
+for helper in ,copy-last ,copy-screen ,copy-pick; do
+    [[ -x "$ROOT/bin/$helper" ]] || fail "copy helper is not executable: $helper"
+    bash -n "$ROOT/bin/$helper" || fail "copy helper has invalid Bash syntax: $helper"
+done
+printf 'PASS: Executable Zellij copy helper entry points\n'
 printf 'PASS: Executable OpenCode launcher syntax and layout\n'
 if command -v zsh >/dev/null 2>&1; then
     zsh -n "$ROOT/.config/zsh/zshrc" || fail 'reviewed zsh file has invalid syntax'
@@ -38,7 +44,7 @@ else
     printf 'SKIP: Reviewed zsh syntax (zsh not found)\n'
 fi
 
-for moved in apply-private-overlay cleanup update; do
+for moved in bootstrap apply-private-overlay cleanup update; do
     [[ ! -e "$ROOT/scripts/$moved.sh" ]] || fail "obsolete setup path remains: $moved"
     [[ -x "$ROOT/scripts/setup/$moved.sh" ]] || fail "setup script is not executable: $moved"
 done
@@ -157,13 +163,13 @@ esac
 MISE
 chmod +x "$TEST_ROOT/bin/mise"
 for help in -h --help; do
-    output=$(bash "$ROOT/bin/,bootstrap" "$help")
+    output=$(bash "$ROOT/scripts/setup/bootstrap.sh" "$help")
     [[ "$output" == *'Usage:'* ]] || fail 'bootstrap help missing'
 done
-if bash "$ROOT/bin/,bootstrap" --unknown >"$TEST_ROOT/out" 2>"$TEST_ROOT/err"; then
+if bash "$ROOT/scripts/setup/bootstrap.sh" --unknown >"$TEST_ROOT/out" 2>"$TEST_ROOT/err"; then
     fail 'bootstrap accepted unknown argument'
 fi
-if bash "$ROOT/bin/,bootstrap" --help extra >"$TEST_ROOT/out" 2>"$TEST_ROOT/err"; then
+if bash "$ROOT/scripts/setup/bootstrap.sh" --help extra >"$TEST_ROOT/out" 2>"$TEST_ROOT/err"; then
     fail 'bootstrap accepted extra argument'
 fi
 # Run twice from elsewhere, with an isolated HOME, on a supported host only.
