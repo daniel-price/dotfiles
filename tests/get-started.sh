@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
+
+# Synthetic shell tests must never consume the caller's terminal input.
+# Cases exercising piped approval provide their own stdin explicitly.
+exec </dev/null
 ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-stage-zero.XXXXXX")
 trap 'rm -rf -- "$TMP"' EXIT

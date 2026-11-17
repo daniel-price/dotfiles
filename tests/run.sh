@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# The suite must never consume the caller's terminal input. Tests that need
+# interaction create their own pseudo-terminals and supply input explicitly.
+exec </dev/null
+
 ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
 TEST_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-test.XXXXXX")
 trap 'rm -rf -- "$TEST_ROOT"' EXIT
