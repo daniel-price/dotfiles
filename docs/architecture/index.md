@@ -1,47 +1,22 @@
-# Architecture and tool choices
+# Architecture
 
-The repository deliberately has a small orchestration layer and lets
-specialised tools do most of the work. **This is the intended architecture,
-not a list of installed or working features.**
+Use specialised tools rather than building another configuration manager.
 
-| Responsibility | Chosen or proposed owner | Status |
-| --- | --- | --- |
-| Fresh setup | Bash stage zero + native mise | Verified mise installer; declarative package and pinned tool provisioning with per-component approvals |
-| Recurring update | Not implemented | Planned; no updater executable exists |
-| Runtime and suitable developer tool versions | mise | Neovim and Zellij declared in `scripts/setup/mise.toml`; development tools remain in root `mise.toml` |
-| Checkout development tools and shell Git hooks | mise + Lefthook | Implemented; opt-in developer setup |
-| Managed dotfiles and templating | Native mise dotfiles | Zsh target is declared; explicit conflict preflight and optional private-directory overlay remain |
-| Encrypted values and tracked files | age through mise | Planned; separate mechanisms |
-| Optional private config | Separately authorised Git repo and selected profile | Narrow single-target overlay implemented; full profiles not connected |
-| Machine-local identities and overrides | Outside Git | Policy only |
-| System packages, Pop!_OS | apt | Planned |
-| System packages and apps, macOS | Homebrew | Planned; never use on Pop!_OS |
-| Interactive shell | zsh | Opt-in reviewed startup file implemented; broader configuration planned |
-| Long-running services | Containers where justified | Direction only; no implementation |
+| Responsibility | Owner |
+| --- | --- |
+| Initial setup, approvals and safe updates | Small Bash scripts |
+| Versioned tools, packages and dotfile targets | mise |
+| Public configuration and review history | This Git repository |
+| Non-public configuration | Explicitly selected, authorised private source |
+| Machine-specific keys and overrides | Local files outside Git |
+| Encrypted credentials (planned) | age through mise |
+| Isolated workloads | Rootless containers where appropriate |
 
-## Design boundaries
+The boundaries matter more than the implementation details:
 
-- **Bash** handles OS detection, precise prompts, ordering and reports.
-- **Mise** will own declared tool versions and approved dotfile targets; avoid
-  another general-purpose dotfile manager or custom symlink machinery.
-- **Git** stores reviewable source. The optional private configuration repo
-  and mise's encrypted tracked-file history are **distinct Git stores**.
-- **Layering** should compose public defaults, explicitly enabled private
-  additions/overrides and then machine-local state. The exact mise merge
-  and file-target behaviour must be tested before implementation.
-- **Machine-local state** (age recovery identities, private SSH keys, secrets
-  not deliberately encrypted for sharing, local overrides) stays out of the
-  public repository.
-- **Containers** are for services needing isolation, not automatically every
-  command-line tool or desktop application.
+- **Public setup must work alone.** Private sources are never discovered or cloned automatically.
+- **Inspect before changing.** Conflict refusal, repeatability and explicit approval are defaults.
+- **Keep secrets and identities out of public Git.** A private repository is not equivalent to encryption or permission to store work files.
+- **Containerise selectively.** Host CLI tools, desktop apps, short-lived agents and persistent services have different needs.
 
-## Read next
-
-- [Operating systems](platforms.md)
-- [Public, private and local configuration](private-configuration.md)
-- [Secrets and encryption](secrets.md)
-- [Applications and containers](applications.md)
-- [Repository layout](repository-layout.md)
-- [ADR-0001: choose mise](../decisions/0001-mise-age.md)
-- [Historical scaffold architecture](../reference/scaffold-architecture.md) —
-  implementation details and earlier investigations, not current instructions
+Read more only when relevant: [platforms](platforms.md), [configuration layers](private-configuration.md), [secrets](secrets.md), [apps and containers](applications.md), [repository layout](repository-layout.md) and [architecture decisions](../decisions/0001-mise-age.md). For implementation status and POCs, use the [roadmap](../roadmap.md).

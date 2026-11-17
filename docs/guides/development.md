@@ -1,126 +1,36 @@
 # Develop this repository
 
-Shell scripts use shfmt for formatting and ShellCheck for linting. Lefthook
-runs them before commits and preserves partial staging. These are development
-tools for this checkout; the machine bootstrap does not install them.
-
-## Set up once per checkout
-
-Use macOS or Pop!_OS/Ubuntu-derived Linux with Git, Bash 3.2+ and
-[mise](https://mise.jdx.dev/installing-mise.html) on `PATH`. The supported mise
-version for this workflow is **2026.11.9**, also pinned in CI. Start in the
-repository root and review `mise.toml` and `lefthook.yml` before trusting them.
-
-Run each command deliberately: trust applies to this checkout, tool installation
-downloads the declared pinned tools into mise's tool storage, and the final step
-asks before writing the checkout's Git hook.
+Machine bootstrap and repo development use **different mise manifests**. To install checkout-only tools and optionally enable the pre-commit hook:
 
 ```sh
 bash scripts/dev/run-mise.sh trust mise.toml
 bash scripts/dev/install-dev-tools.sh
 ```
 
-The first command explicitly trusts the reviewed checkout config. The second
-installs the pinned development tools and, **only from an interactive terminal**,
-offers to enable the checkout's pre-commit hook. Answer `y` to enable it.
-The default is no. Piped answers and noninteractive input cannot approve hook
-installation, and CI never installs the hook. Repeating setup skips an
-already-installed hook. Existing unrelated hooks, symlinked hooks and a
-configured `core.hooksPath` are refused so you can resolve the conflict yourself.
+Review the manifest before trusting it. Existing conflicting hooks are preserved; installing the hook requires interactive approval.
 
-You can manage hooks independently at any time:
-```sh
-bash scripts/dev/install-hooks.sh
-```
+## Useful commands
 
-`run-mise.sh` locates mise on `PATH` or at `~/.local/bin/mise`, then runs
-it from the checkout root. This lets setup, linting, formatting and the Git
-hook work even before Zsh activation (or from a shell that doesn't load
-`~/.zshrc`). It does not trust configurations or install tools implicitly.
-
-The root `mise.toml` pins development tools and tasks. It is separate from
-`scripts/setup/mise.toml`, the declarative machine configuration used only during setup. Automatic
-tool installation is disabled in this checkout: use `mise install` explicitly
-when installing missing tools or adopting a reviewed version change.
-
-`bash scripts/dev/install-dev-tools.sh` currently installs Lefthook `2.2.2`, shfmt
-`3.14.1` and ShellCheck `0.11.0` through mise on both supported operating
-systems. It does not use apt or Homebrew. The [installed tool inventory](../architecture/platforms.md#checkout-development-tools)
-also records the separate Zensical documentation dependency and its pip-based
-installer.
-
-## Everyday commands
-
-| Command | Result |
+| Command | Action |
 | --- | --- |
-| `git commit` | Format staged `*.sh` files, stage the formatting, then run ShellCheck. |
-| `bash scripts/dev/format.sh` | Format every tracked `*.sh` file without changing staging. |
-| `bash scripts/dev/format.sh --check` | Check formatting without rewriting or staging files. |
-| `bash scripts/dev/lint.sh` | Run ShellCheck on every tracked `*.sh` file without changing it. |
-| `bash scripts/dev/format.sh -- file.sh` | Format selected files, using the same command as the commit hook. |
-| `bash scripts/dev/lint.sh -- file.sh` | Lint selected files, using the same command as the commit hook. |
-| `bash tests/hooks.sh` | Exercise the hooks in a disposable repository that is removed afterwards. |
-| `bash tests/run.sh` | Run the existing bootstrap checks; Python 3 enables the interactive cases. |
-| `bash scripts/dev/check-clean.sh` | Fail if tracked working files or the index differ from HEAD. |
+| `bash scripts/dev/format.sh --check` | Check shell formatting |
+| `bash scripts/dev/format.sh` | Format tracked shell scripts |
+| `bash scripts/dev/lint.sh` | Run ShellCheck |
+| `bash tests/run.sh` | Run bootstrap and integration checks |
+| `bash scripts/dev/install-hooks.sh` | Offer pre-commit hook setup |
+| `bash scripts/dev/check-clean.sh` | Check tracked checkout cleanliness |
 
-`bash tests/run.sh` disconnects stdin from the caller's terminal by default, so
-shell test fixtures cannot accidentally ask for real keyboard input. Python PTY
-fixtures provide their own simulated terminal input when testing approval flows.
-The standalone stage-zero shell tests also explicitly disconnect stdin when
-run directly.
+The hook uses Lefthook to format and re-stage the staged version of a file before linting. Test partially staged changes carefully: formatting can affect other staged lines, and conflicting unstaged edits can interrupt restoration. CI calls the same scripts and tests on Linux/macOS.
 
-`mise run format` and `mise run lint` are convenience aliases for these scripts.
-`mise run check` runs both the formatting check and linting, reporting failures
-from either command. `mise run test:hooks` runs the disposable hook tests.
+## Build documentation locally
 
-Both scripts accept an optional file list after `--`; without one they select
-tracked `*.sh` files. Combine `--check` with a file list to check selected files:
-`bash scripts/dev/format.sh --check -- file.sh`. Paths are relative to the repository
-root, and names containing spaces are supported. The scripts can be invoked
-from another directory by passing their full path. Shared file selection lives
-in `scripts/lib/shell-files.sh`.
-
-Lefthook runs through the same versioned `scripts/dev/run-mise.sh` wrapper,
-so Git hooks can resolve `~/.local/bin/mise` without relying on shell activation.
-The formatter and linter run sequentially on commit to avoid reading a file
-while the formatter is changing it. ShellCheck errors block the commit.
-
-For partially staged files, Lefthook hides the unstaged edits, formats the
-staged version, stages the result, and restores the unstaged edits. shfmt
-formats the whole staged file, so existing formatting elsewhere in it can also
-change. A conflict while restoring unstaged edits can abort the commit;
-inspect the reported recovery information before retrying.
-
-Only tracked files ending in `.sh` are selected. Zsh configuration and
-extensionless scripts are outside this selection; ShellCheck does not support
-zsh. Add an appropriate separate check when those files are introduced.
-
-## Continuous validation
-
-The **Shell checks** workflow installs the pinned tools, runs
-`bash scripts/dev/format.sh --check` and `bash scripts/dev/lint.sh`, exercises real
-commits and partial staging, and runs the bootstrap tests on Linux and macOS.
-These CI commands are read-only. Local hook installation remains opt-in.
-
-Workflow `run` steps contain script calls. Scripts own the tool invocations,
-arguments and validation so local runs and hooks share the same behaviour.
-Actions handle runtime provisioning, caches, artifact upload and deployment.
-
-## Build the documentation locally
-
-Use Python 3.13, as in the documentation workflow. Create and activate a virtual
-environment before installing dependencies, then call the same scripts as CI:
+Use Python 3.13 in a virtual environment:
 
 ```sh
-docs_env=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-docs.XXXXXX")
-python3 -m venv "$docs_env"
-. "$docs_env/bin/activate"
+python3 -m venv .venv-docs
+. .venv-docs/bin/activate
 bash scripts/dev/install-docs-deps.sh
 bash scripts/dev/build-docs.sh
-deactivate
-rm -rf -- "$docs_env"
 ```
 
-The strict build writes the ignored `site/` directory and exits nonzero for
-documentation errors. The final two commands remove the temporary Python
-environment. The build script can also be called from a Git hook.
+The strict build writes to ignored `site/`. Deactivate and remove `.venv-docs` when finished. GitHub Actions validates documentation on PRs and publishes main to Pages.
