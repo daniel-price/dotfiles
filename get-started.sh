@@ -95,7 +95,8 @@ checkout_once() {
         existing_origin=$(git -C "$target" remote get-url origin 2>/dev/null || :)
         case "$existing_origin" in
         "$REMOTE" | 'https://github.com/daniel-price/dotfiles' | 'git@github.com:daniel-price/dotfiles.git')
-            info "Existing checkout at $target; skipped clone."\n            CHECKOUT_REUSED=1
+            info "Existing checkout at $target; skipped clone."
+            CHECKOUT_REUSED=1
             return
             ;;
         *) fail 'Existing checkout has an unexpected origin; nothing changed.' ;;
