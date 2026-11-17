@@ -11,8 +11,12 @@ case "${1:-}" in
 *) die 'Usage: bash scripts/setup/keyboard.sh --apply' ;;
 esac
 
+if [[ "$(uname -s)" == Darwin ]]; then
+    bash "$ROOT/scripts/setup/keyboard-macos.sh" --apply
+    exit 0
+fi
 if [[ "$(uname -s)" != Linux ]]; then
-    log 'Caps Lock remapping skipped: Linux desktops only.'
+    log 'Caps Lock remapping skipped: unsupported operating system.'
     exit 0
 fi
 
