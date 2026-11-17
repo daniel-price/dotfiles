@@ -1,0 +1,51 @@
+# Portable Git defaults and aliases migrated from .cfg.
+# Personal identity, credential helpers and machine-specific configuration stay local.
+[pull]
+    rebase = true
+[fetch]
+    prune = true
+[rebase]
+    autoStash = true
+[core]
+    editor = nvim
+[init]
+    defaultBranch = main
+[help]
+    autocorrect = prompt
+[pager]
+    branch = false
+
+[alias]
+    a = add
+    aa = add -A
+    ap = add -p
+    ca = commit --amend --no-edit
+    cam = commit -am
+    cm = commit -m
+    cp = cherry-pick
+    cpa = cherry-pick --abort
+    cpc = cherry-pick --continue
+    br = branch
+    brd = branch -d
+    current-branch = branch --show-current
+    d = diff
+    ds = diff --staged
+    f = fetch
+    gr = grep -Ii
+    ll = log --pretty=format:%h%x20%d%x20%s%x20[%cn] --decorate --numstat
+    ls = log --pretty=format:%h%x20%d%x20%s%x20[%cn] --decorate
+    ma = merge --abort
+    mc = merge --continue
+    merged = branch --merged
+    rba = rebase --abort
+    rbc = rebase --continue
+    rbir = rebase -i --root
+    rs = restore --staged
+    s = switch
+    sc = switch -c
+    sd = stash drop
+    sp = stash pop
+    ss = stash show
+    ssp = stash show -p
+    st = status
+    su = stash -u
