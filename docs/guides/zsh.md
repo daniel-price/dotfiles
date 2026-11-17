@@ -7,6 +7,9 @@ small and sources two separate files:
 - [`.config/zsh/p10k.zsh`](../../.config/zsh/p10k.zsh) for the **unchanged**
   Powerlevel10k appearance migrated from the old personal `.cfg/.p10k.zsh`.
 
+Interactive Zsh sessions enable `interactivecomments`, so pasted shell commands
+with `#` comment lines work as expected. Noninteractive Zsh is unaffected.
+
 ## Aliases migrated
 
 | Alias | Meaning |
