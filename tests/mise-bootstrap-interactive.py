@@ -87,9 +87,12 @@ case "$*" in
     spec="$2"
     touch "$MOCK_STATE/$spec"
     ;;
-  "dot diff"|"dot apply --dry-run") exit 0 ;;
-  "dot apply")
-    ln -s "$MOCK_DOT_SOURCE" "$HOME/.zshrc"
+  "dot status --missing")
+    [[ -L "$HOME/.zshrc" ]] && exit 0 || exit 1
+    ;;
+  "dot apply --dry-run") exit 0 ;;
+  "dot apply --yes")
+    if [[ ! -e "$HOME/.zshrc" && ! -L "$HOME/.zshrc" ]]; then ln -s "$MOCK_DOT_SOURCE" "$HOME/.zshrc"; fi
     exit 0
     ;;
   *) exit 21 ;;
@@ -142,14 +145,14 @@ esac
     target = home / ".zshrc"
 
     # Each component requires its own approval. Declines are safe.
-    declined = run("n\n" * (1 + len(pins)))
+    declined = run("n\n" * (2 + len(pins)))
     assert declined.returncode == 0, declined.stdout
     assert not list(state.iterdir()), declined.stdout
     assert "Skipped zsh" in declined.stdout and "Skipped neovim" in declined.stdout
     assert "Zsh configuration: skipped (zsh unavailable)" in declined.stdout
-    assert not any("dot " in line for line in log.read_text().splitlines())
+    assert not any("dot apply --yes" in line for line in log.read_text().splitlines())
 
-    # The two initial approvals are for Zsh and its reviewed symlink.
+    # The two initial approvals are for Zsh and the mise-managed dotfile.
     # Generate tool approvals from the manifest so adding a tool doesn't
     # silently approve it or hang an interactive test waiting for input.
     approved_tools = {"neovim", "zoxide"}
@@ -167,8 +170,8 @@ esac
     assert "Zsh configuration: applied" in approved.stdout
     calls = log.read_text().splitlines()
     assert any("dot apply --dry-run" in line for line in calls)
-    assert sum(line.endswith("dot apply") for line in calls) == 1
-    assert next(i for i, line in enumerate(calls) if line.endswith("dot apply")) < next(
+    assert sum(line.endswith("dot apply --yes") for line in calls) == 1
+    assert next(i for i, line in enumerate(calls) if line.endswith("dot apply --yes")) < next(
         i for i, line in enumerate(calls) if line.endswith(f"install neovim@{pins['neovim']}")
     ), calls
     assert any(line.endswith(f"install zoxide@{pins['zoxide']}") for line in calls), calls
@@ -180,12 +183,12 @@ esac
     assert any(line.endswith("bootstrap repos apply --dry-run") for line in calls), calls
     assert not any("scripts/dev" in line for line in calls), calls
 
-    dot_before_repeat = sum("dot " in line for line in log.read_text().splitlines())
+    dot_before_repeat = sum("dot apply --yes" in line for line in log.read_text().splitlines())
     zoxide_before_repeat = sum(line.endswith(f"install zoxide@{pins['zoxide']}") for line in calls)
     repeated = run()
     assert repeated.returncode == 0, repeated.stdout
-    assert "Zsh configuration: already applied" in repeated.stdout
-    assert sum("dot " in line for line in log.read_text().splitlines()) == dot_before_repeat
+    assert "Zsh configuration: applied" in repeated.stdout
+    assert sum("dot apply --yes" in line for line in log.read_text().splitlines()) == dot_before_repeat
     assert sum(line.endswith(f"install zoxide@{pins['zoxide']}") for line in log.read_text().splitlines()) == zoxide_before_repeat
     assert not (state / f"zellij@{pins['zellij']}").exists(), repeated.stdout
     for name, version in pins.items():
@@ -221,9 +224,9 @@ esac
     before = len(log.read_text().splitlines())
     conflict = run()
     assert conflict.returncode == 0, conflict.stdout
-    assert "Zsh configuration: skipped (existing ~/.zshrc conflict)" in conflict.stdout
+    assert "Zsh configuration: not applied" in conflict.stdout
     assert target.read_text() == "personal shell setup\\n"
-    assert not any("dot " in line for line in log.read_text().splitlines()[before:])
+    assert not any("dot apply --yes" in line for line in log.read_text().splitlines()[before:])
     target.unlink()
 
     other = base / "other.zshrc"
@@ -232,7 +235,7 @@ esac
     conflict_link = run()
     assert conflict_link.returncode == 0, conflict_link.stdout
     assert target.is_symlink() and target.resolve() == other.resolve()
-    assert "existing ~/.zshrc conflict" in conflict_link.stdout
+    assert "Zsh configuration: not applied" in conflict_link.stdout
     target.unlink()
 
     # Noninteractive runs preview the safe deployment but never approve it.
@@ -240,13 +243,13 @@ esac
     unattended = run()
     assert unattended.returncode == 0, unattended.stdout
     assert not target.exists()
-    assert "Zsh configuration: declined or noninteractive" in unattended.stdout
+    assert "Zsh configuration: not applied" in unattended.stdout
     assert any("dot apply --dry-run" in line for line in log.read_text().splitlines()[before:])
-    assert not any(line.endswith("dot apply") for line in log.read_text().splitlines()[before:])
+    assert not any(line.endswith("dot apply --yes") for line in log.read_text().splitlines()[before:])
 
     # An earlier mise cannot safely run the new bootstrap phases.
     fake_mise.write_text("#!/usr/bin/env bash\necho '2026.8.15 fake'\n")
     old = run()
     assert old.returncode != 0, old.stdout
     assert "2026.11.9 or newer" in old.stdout, old.stdout
-    print("PASS: Native mise packages, early Zsh activation, conflict preservation and tools")
+    print("PASS: Native mise packages, Zsh dotfile, consent and tools")

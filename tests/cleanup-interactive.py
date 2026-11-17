@@ -83,8 +83,8 @@ case "$1" in
   dot)
     [[ "$2" == unapply ]] || exit 25
     if [[ "$3" == --yes ]]; then
-      [[ -L "$HOME/.zshrc" ]] || exit 31
-      rm -f -- "$HOME/.zshrc"
+      # Approximate mise's conservative unapply: only links to reviewed sources.
+      if [[ -L "$HOME/.zshrc" && "$HOME/.zshrc" -ef "$MOCK_DOT_SOURCE" ]]; then rm -f -- "$HOME/.zshrc"; fi
     elif [[ "$3" == --dry-run ]]; then
       :
     else
@@ -101,6 +101,7 @@ esac
         "PATH": str(bin_dir) + os.pathsep + "/usr/bin:/bin",
         "MOCK_LOG": str(log),
         "MOCK_STATE": str(state),
+        "MOCK_DOT_SOURCE": str(SOURCE),
         "MOCK_TOOL_ROWS": "\n".join(
             f"{name} {version} (missing)" for name, version in pins.items()
         ),
@@ -179,13 +180,13 @@ esac
     reset_log()
     foreign = run_quiet(["--apply"], "yes\n" * (len(pins) + 1))
     assert foreign.returncode == 0 and target.resolve() == unrelated.resolve()
-    assert not any("dot unapply" in line for line in operations())
+    assert any("dot unapply --dry-run" in line for line in operations())
     target.unlink()
     target.write_text("custom config\n")
     reset_log()
     ordinary = run_quiet([])
     assert ordinary.returncode == 0 and target.read_text() == "custom config\n"
-    assert not any("dot unapply" in line for line in operations())
+    assert any("dot unapply --dry-run" in line for line in operations())
     target.unlink()
 
     # Decline the symlink, approve the first declared tool, decline the rest.
@@ -209,7 +210,7 @@ esac
     assert not target.exists()
     assert not any(state.iterdir())
     assert destructive() == [
-        f"-C / dot unapply --yes {target}",
+        "-C / dot unapply --yes",
         *(f"-C / uninstall --yes {name}@{version}" for name, version in remaining),
     ], operations()
 
