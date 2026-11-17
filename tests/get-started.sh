@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
+
+# Synthetic shell tests must never consume the caller's terminal input.
+# Cases exercising piped approval provide their own stdin explicitly.
+exec </dev/null
 ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-stage-zero.XXXXXX")
 trap 'rm -rf -- "$TMP"' EXIT
@@ -45,8 +49,6 @@ printf 'yes\n' | HOME="$TMP/home" PATH="$TMP/bin:$PATH" \
 grep -q 'Clone declined' "$TMP/out" || fail 'noninteractive clone not declined'
 [[ ! -e "$TMP/home/.dotfiles" ]] || fail 'checkout created without consent'
 
-# Declined/refused cases must not inherit the developer's terminal.
-# CI uses noninteractive stdin by default, but local Bash tests often don't.
 # Existing checkout with exact origin should be skipped without changing it.
 mkdir -p "$TMP/home/.dotfiles/scripts/setup"
 cat >"$TMP/home/.dotfiles/scripts/setup/bootstrap.sh" <<'BOOT'
@@ -54,13 +56,13 @@ cat >"$TMP/home/.dotfiles/scripts/setup/bootstrap.sh" <<'BOOT'
 printf 'unexpected bootstrap execution\n' > "$HOME/bootstrap-invoked"
 BOOT
 HOME="$TMP/home" PATH="$TMP/bin:$PATH" \
-    bash "$ROOT/get-started.sh" </dev/null >"$TMP/out" 2>&1
+    bash "$ROOT/get-started.sh" >"$TMP/out" 2>&1
 grep -q 'skipped clone and update' "$TMP/out" || fail 'existing clone not skipped'
 grep -q 'Bootstrap execution declined' "$TMP/out" || fail 'bootstrap should require a separate approval'
 [[ ! -e "$TMP/home/bootstrap-invoked" ]] || fail 'bootstrap executed without terminal approval'
 
 if HOME="$TMP/home" SIMULATE_REMOTE='https://example.invalid/other' \
-    PATH="$TMP/bin:$PATH" bash "$ROOT/get-started.sh" </dev/null >"$TMP/out" 2>&1; then
+    PATH="$TMP/bin:$PATH" bash "$ROOT/get-started.sh" >"$TMP/out" 2>&1; then
     fail 'unrecognised origin accepted'
 fi
 grep -q 'unexpected origin' "$TMP/out" || fail 'missing origin error'
@@ -69,7 +71,7 @@ grep -q 'unexpected origin' "$TMP/out" || fail 'missing origin error'
 mv "$TMP/home/.dotfiles/scripts/setup/bootstrap.sh" "$TMP/home/.dotfiles/scripts/bootstrap.sh"
 rmdir "$TMP/home/.dotfiles/scripts/setup"
 HOME="$TMP/home" PATH="$TMP/bin:$PATH" \
-    bash "$ROOT/get-started.sh" </dev/null >"$TMP/out" 2>&1
+    bash "$ROOT/get-started.sh" >"$TMP/out" 2>&1
 grep -q 'Bootstrap execution declined' "$TMP/out" || fail 'previous bootstrap approval was not requested'
 [[ ! -e "$TMP/home/bootstrap-invoked" ]] || fail 'previous bootstrap ran without approval'
 
@@ -77,14 +79,14 @@ grep -q 'Bootstrap execution declined' "$TMP/out" || fail 'previous bootstrap ap
 mv "$TMP/home/.dotfiles/scripts/bootstrap.sh" "$TMP/home/.dotfiles/bootstrap.sh"
 rmdir "$TMP/home/.dotfiles/scripts"
 HOME="$TMP/home" PATH="$TMP/bin:$PATH" \
-    bash "$ROOT/get-started.sh" </dev/null >"$TMP/out" 2>&1
+    bash "$ROOT/get-started.sh" >"$TMP/out" 2>&1
 grep -q 'Bootstrap execution declined' "$TMP/out" || fail 'root bootstrap approval was not requested'
 [[ ! -e "$TMP/home/bootstrap-invoked" ]] || fail 'root bootstrap ran without approval'
 rm "$TMP/home/.dotfiles/bootstrap.sh"
 rmdir "$TMP/home/.dotfiles"
 printf 'untouched\n' >"$TMP/home/.dotfiles"
 if HOME="$TMP/home" PATH="$TMP/bin:$PATH" \
-    bash "$ROOT/get-started.sh" </dev/null >"$TMP/out" 2>&1; then
+    bash "$ROOT/get-started.sh" >"$TMP/out" 2>&1; then
     fail 'existing file accepted'
 fi
 [[ "$(cat "$TMP/home/.dotfiles")" == untouched ]] || fail 'conflict overwritten'
