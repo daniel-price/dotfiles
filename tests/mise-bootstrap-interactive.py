@@ -45,9 +45,9 @@ echo 'zsh fake'
 """)
     fake_zsh.chmod(0o755)
 
-    # Never query or change the CI runner keyboard from this bootstrap test.
+    # Simulate an existing unrelated mapping: bootstrap must leave it alone.
     fake_hidutil = bin_dir / "hidutil"
-    fake_hidutil.write_text('#!/usr/bin/env bash\nif [[ "$*" == "property --get UserKeyMapping" ]]; then echo "[]"; else exit 1; fi\n')
+    fake_hidutil.write_text('#!/usr/bin/env bash\nif [[ "$*" == "property --get UserKeyMapping" ]]; then echo '{ "UserKeyMapping": [{ "HIDKeyboardModifierMappingSrc": 1, "HIDKeyboardModifierMappingDst": 2 }] }'; else exit 1; fi\n')
     fake_hidutil.chmod(0o755)
 
     fake_mise = bin_dir / "mise"
@@ -142,7 +142,7 @@ esac
                                     stderr=subprocess.STDOUT)
             os.close(slave)
             slave = -1
-            os.write(master, (answers + "n\n" * 2).encode())
+            os.write(master, answers.encode())
             out = proc.communicate(timeout=20)[0].decode(errors="replace")
             return subprocess.CompletedProcess([], proc.returncode, out)
         finally:
