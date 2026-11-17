@@ -139,14 +139,14 @@ git --git-dir="$history" push -q "$origin" refs/heads/main:refs/heads/main
 # Git never carries the private identity or the synthetic plaintext.
 if git --git-dir="$origin" rev-list --objects --all |
     grep -Fq 'identity.txt'; then
-    printf '%s\\n' 'FAIL: private identity appeared in the origin.' >&2
+    printf '%s\n' 'FAIL: private identity appeared in the origin.' >&2
     exit 1
 fi
 while IFS= read -r object; do
     [[ "$(git --git-dir="$origin" cat-file -t "$object")" == blob ]] || continue
     if git --git-dir="$origin" cat-file blob "$object" |
         LC_ALL=C grep -aEq 'synthetic-file-poc-v[12]|AGE-SECRET-KEY-'; then
-        printf '%s\\n' 'FAIL: private data appeared in the origin.' >&2
+        printf '%s\n' 'FAIL: private data appeared in the origin.' >&2
         exit 1
     fi
 done < <(git --git-dir="$origin" rev-list --objects --all | cut -d ' ' -f 1)
@@ -174,23 +174,23 @@ adopt_in_fresh_home() (
     mise -C "$HOME" bootstrap --adopt "$origin" --yes >"$fresh-adopt.log" 2>&1
 )
 if adopt_in_fresh_home recovery-no-key "$work/nonexistent-identity"; then
-    printf '%s\\n' 'FAIL: clean home unexpectedly adopted encrypted file without identity.' >&2
+    printf '%s\n' 'FAIL: clean home unexpectedly adopted encrypted file without identity.' >&2
     exit 1
 fi
 [[ ! -e "$work/recovery-no-key/home/.config/poc/example.conf" ]] || {
-    printf '%s\\n' 'FAIL: missing-key adoption wrote a plaintext target.' >&2
+    printf '%s\n' 'FAIL: missing-key adoption wrote a plaintext target.' >&2
     exit 1
 }
 if ! adopt_in_fresh_home recovery-with-key "$work/identity.txt"; then
-    printf 'FAIL: keyed fresh-home adoption failed; see %s\\n' "$work/recovery-with-key-adopt.log" >&2
+    printf 'FAIL: keyed fresh-home adoption failed; see %s\n' "$work/recovery-with-key-adopt.log" >&2
     exit 1
 fi
 grep -Fxq 'sample=synthetic-file-poc-v1' \
     "$work/recovery-with-key/home/.config/poc/example.conf" || {
-    printf '%s\\n' 'FAIL: fresh-home restoration produced unexpected contents.' >&2
+    printf '%s\n' 'FAIL: fresh-home restoration produced unexpected contents.' >&2
     exit 1
 }
-printf '%s\\n' 'PASS: separate clean homes refused missing key and restored with the correct identity.'
+printf '%s\n' 'PASS: separate clean homes refused missing key and restored with the correct identity.'
 
 printf 'Demo workspace: %s\n' "$work"
 printf 'History (separate from public Git): %s\n' "$history"
