@@ -49,7 +49,7 @@ export MISE_GLOBAL_CONFIG_FILE="$manifest"
 
 if [[ -e "$target" || -L "$target" ]]; then
     if [[ -L "$target" || ! -d "$target/.git" ||
-          ! -f "$target/powerlevel10k.zsh-theme" ]]; then
+        ! -f "$target/powerlevel10k.zsh-theme" ]]; then
         log "Preserving conflicting existing prompt path at $target; no clone or update attempted."
     elif "$mise" -C / bootstrap repos status --missing >/dev/null 2>&1; then
         log 'The pinned Powerlevel10k checkout is already present; no changes made.'
