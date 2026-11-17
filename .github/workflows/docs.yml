@@ -13,6 +13,8 @@ jobs:
   build:
     name: Validate documentation
     runs-on: ubuntu-latest
+    outputs:
+      preview_url: ${{ steps.preview.outputs.artifact-url }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
@@ -24,11 +26,21 @@ jobs:
         run: bash tests/run.sh
       - name: Build and validate site
         run: bash scripts/dev/build-docs.sh
+      - name: Upload PR documentation preview
+        id: preview
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation-preview
+          path: site/
+          if-no-files-found: error
+          retention-days: 14
       - name: Upload Pages artifact
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v5
         with:
           path: site
+
 
   deploy:
     name: Publish to GitHub Pages
