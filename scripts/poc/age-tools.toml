@@ -1,0 +1,7 @@
+# Only used for the isolated age environment-value POC.
+# Not loaded by machine bootstrap or regular shell startup.
+[tools]
+age = "1.3.2"
+
+[settings]
+auto_install = false
