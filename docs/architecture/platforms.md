@@ -28,6 +28,8 @@ when bootstrap is already running as root.
 | curl | `sudo apt-get install --no-upgrade curl` | `HOMEBREW_NO_AUTO_UPDATE=1 brew install curl` | Checkout bootstrap; only if curl is missing |
 | mise `v2026.11.9` | Verified GitHub Release installer writes `~/.local/bin/mise` | Same verified GitHub Release installer and destination | Checkout bootstrap; only if mise is missing |
 | Neovim `0.12.6` | `mise install neovim@0.12.6` through `scripts/provision-tool.sh` | Same mise command on both operating systems | Checkout bootstrap; only if this version is not already installed |
+| Node `24.11.0` | `mise install node@24.11.0` through `scripts/provision-tool.sh` | Same mise command on both operating systems | Checkout bootstrap; runtime required by the OpenCode npm package lifecycle |
+| OpenCode `2.3.0` | `mise install opencode@2.3.0` through `scripts/provision-tool.sh` | Same mise command on both operating systems | Checkout bootstrap; installed after Node; no credentials are configured |
 | Zellij `0.46.0` | `mise install zellij@0.46.0` through `scripts/provision-tool.sh` | Same mise command on both operating systems | Checkout bootstrap; only if this version is not already installed |
 | Ghostty `1.4.0` upstream release | `apt-get install ghostty`; if unavailable, optional PPA add after separate approval | `brew install --cask ghostty` | Checkout bootstrap; only if not already installed; distro package version may lag upstream |
 
@@ -36,8 +38,12 @@ does **not** install Homebrew. Standard macOS installations normally already
 include both tools. The mise flow downloads the pinned official GitHub Release
 installer to a temporary file, verifies its committed SHA-256, then asks again
 before it writes the executable. It does not use apt or Homebrew, activate mise
-or edit shell startup files. The currently managed CLI tools are Neovim and
-Zellij, installed through mise after their own confirmation. Ghostty is a
+or edit shell startup files. The currently managed CLI tools are Neovim,
+Node, OpenCode and Zellij, each installed through mise after its own
+confirmation. OpenCode `2.3.0` uses mise's npm backend; Node `24.11.0` is
+provisioned first because the package's postinstall script needs a Node runtime.
+This installs the CLI only; model or account credentials are deliberately not
+configured. Ghostty is a
 desktop application installed by `scripts/install-ghostty.sh`; on Linux it uses
 the distribution package or, after a separate explicit approval, the community
 PPA. See
