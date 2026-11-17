@@ -126,6 +126,17 @@ esac
 # shellcheck disable=SC2119
 platform=$(detect_os) || die 'Unsupported platform.'
 log "Detected platform: $platform."
+
+# Bootstrap never changes its own checkout. Warn when invoked directly from a
+# different branch; switching/fetching belongs to the separately approved
+# updater, before any bootstrap commands start.
+if command -v git >/dev/null 2>&1 &&
+    [[ "$(git -C "$ROOT" rev-parse --show-toplevel 2>/dev/null || :)" == "$ROOT" ]]; then
+    checkout_branch=$(git -C "$ROOT" symbolic-ref --quiet --short HEAD 2>/dev/null || :)
+    if [[ "$checkout_branch" != main ]]; then
+        log "Running bootstrap from ${checkout_branch:-detached HEAD}; run bash scripts/setup/update.sh --apply to offer a main update first."
+    fi
+fi
 ensure_mise "$platform"
 
 if ! mise=$(mise_command); then

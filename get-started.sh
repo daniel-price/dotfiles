@@ -5,6 +5,7 @@
 # SSH configuration or any sibling scripts from the checkout.
 # Once Git is available, it clones the public repo and separately asks
 # permission before running the checkout's scripts/setup/bootstrap.sh.
+# Existing trusted checkouts may optionally fetch/switch/fast-forward first.
 # Bash 3.2+ is expected on our supported macOS and Pop!_OS installations.
 set -euo pipefail
 REMOTE='https://github.com/daniel-price/dotfiles.git'
@@ -94,7 +95,7 @@ checkout_once() {
         existing_origin=$(git -C "$target" remote get-url origin 2>/dev/null || :)
         case "$existing_origin" in
         "$REMOTE" | 'https://github.com/daniel-price/dotfiles' | 'git@github.com:daniel-price/dotfiles.git')
-            info "Existing checkout at $target; skipped clone and update."
+            info "Existing checkout at $target; skipped clone."\n            CHECKOUT_REUSED=1
             return
             ;;
         *) fail 'Existing checkout has an unexpected origin; nothing changed.' ;;
@@ -113,7 +114,7 @@ main() {
     case "${1:-}" in
     -h | --help)
         printf '%s\n' 'Usage: bash dotfiles-get-started.sh [--help]' \
-            'Standalone Git prerequisite, one HTTPS clone and approved checkout bootstrap handoff.'
+            'Standalone Git prerequisite, one HTTPS clone, optional guarded update and approved bootstrap handoff.'
         return
         ;;
     '') ;;
@@ -125,10 +126,25 @@ main() {
     info "Detected $os."
     ensure_git "$os"
     local target="$HOME/.dotfiles"
+    CHECKOUT_REUSED=0
     checkout_once "$target"
     if [[ ! -d "$target" ]]; then
         info 'No checkout available; bootstrap not run.'
         return
+    fi
+    # Run the updater from the existing checkout before resolving bootstrap's
+    # path; a successful update may replace that script with newer code.
+    # Older checkouts remain supported, but cannot safely self-update without
+    # an already-reviewed updater; never download and execute a remote script.
+    if [[ "$CHECKOUT_REUSED" == 1 ]]; then
+        updater="$target/scripts/setup/update.sh"
+        if [[ -f "$updater" && ! -L "$updater" ]]; then
+            info 'Checking existing checkout; updates require separate approval.'
+            bash "$updater" --apply || fail 'Checkout update check failed.'
+        else
+            info 'Existing checkout has no reviewed updater; using the current checkout.'
+            info 'Update manually when ready, then rerun to enable safe update offers.'
+        fi
     fi
     local bootstrap='scripts/setup/bootstrap.sh'
     # Do not update older checkouts implicitly. Use their original entry point
