@@ -51,6 +51,12 @@ installer.
 | `bash tests/run.sh` | Run the existing bootstrap checks; Python 3 enables the interactive cases. |
 | `bash scripts/dev/check-clean.sh` | Fail if tracked working files or the index differ from HEAD. |
 
+`bash tests/run.sh` disconnects stdin from the caller's terminal by default, so
+shell test fixtures cannot accidentally ask for real keyboard input. Python PTY
+fixtures provide their own simulated terminal input when testing approval flows.
+The standalone stage-zero shell tests also explicitly disconnect stdin when
+run directly.
+
 `mise run format` and `mise run lint` are convenience aliases for these scripts.
 `mise run check` runs both the formatting check and linting, reporting failures
 from either command. `mise run test:hooks` runs the disposable hook tests.
