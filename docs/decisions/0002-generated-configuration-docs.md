@@ -14,7 +14,8 @@ configured, not narrate migration history.
 
 Generate configuration references when building documentation, not in Git.
 Use one local entrypoint (`scripts/docs/generate.py`) to invoke small,
-format-specific extractors for Zsh and Zellij. Read the checked-in configuration
+format-specific extractors for Zsh and Zellij, plus the standard-library
+TOML parser for the machine and checkout development tool manifests. Read the checked-in configuration
 as data, without executing it. Derive aliases, keybindings and simple settings
 from declarations; keep only short `# doc:` / `// doc:` annotations where
 user-facing behaviour needs clarification. Omit historical migration details.
@@ -25,7 +26,7 @@ by hand.
 
 ## Consequences
 
-Changing a binding or alias updates the published reference on the next build.
+Changing a binding, alias or tool version updates the published reference on the next build.
 Extractors intentionally support the project's current source syntax, rather
 than becoming general-purpose language parsers. Fail loudly on unsupported
 structures or orphaned annotations, and test the extractors when config syntax
