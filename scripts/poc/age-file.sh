@@ -9,17 +9,32 @@ usage() {
         'Requires git and mise; offers pinned age if age-keygen is missing.'
 }
 case "${1:-}" in
--h | --help) usage; exit 0 ;;
-'') [[ $# -eq 0 ]] || exit 2; mode=preview ;;
---apply) [[ $# -eq 1 ]] || exit 2; mode=apply ;;
-*) usage >&2; exit 2 ;;
+-h | --help)
+    usage
+    exit 0
+    ;;
+'')
+    [[ $# -eq 0 ]] || exit 2
+    mode=preview
+    ;;
+--apply)
+    [[ $# -eq 1 ]] || exit 2
+    mode=apply
+    ;;
+*)
+    usage >&2
+    exit 2
+    ;;
 esac
 
 printf '%s\n' 'POC 1B: encrypt two versions of a FAKE file in a disposable mise Git history,' \
     'inspect every reachable Git blob, verify missing-key refusal, and restore an earlier version.' \
     'No public Git repository, actual HOME, bootstrap manifest, or remote is changed.'
 [[ "$mode" == apply ]] || exit 0
-[[ -t 0 && -t 1 ]] || { printf '%s\n' 'Interactive terminal required.' >&2; exit 1; }
+[[ -t 0 && -t 1 ]] || {
+    printf '%s\n' 'Interactive terminal required.' >&2
+    exit 1
+}
 for tool in git mise; do
     command -v "$tool" >/dev/null 2>&1 || {
         printf 'Missing prerequisite: %s\n' "$tool" >&2
@@ -81,7 +96,10 @@ export MISE_AGE_KEY_FILE="$work/identity.txt"
 export MISE_HISTORY_SYNC=manual
 mkdir -p "$MISE_CONFIG_DIR" "$HOME/.config/poc"
 recipient=$(sed -n 's/^# public key: //p' "$MISE_AGE_KEY_FILE")
-[[ "$recipient" == age1* ]] || { printf '%s\n' 'Cannot read age recipient.' >&2; exit 1; }
+[[ "$recipient" == age1* ]] || {
+    printf '%s\n' 'Cannot read age recipient.' >&2
+    exit 1
+}
 
 # Configure encryption BEFORE the very first tracked version.
 printf '[settings]\nexperimental = true\n\n[settings.history]\nsync = "manual"\n\n[history.encryption]\nrecipients = ["%s"]\n' "$recipient" >"$MISE_GLOBAL_CONFIG_FILE"
@@ -92,9 +110,15 @@ printf '%s\n' 'sample=synthetic-file-poc-v2' >"$file"
 mise -C "$HOME" dot save --description 'synthetic encrypted file version two' >/dev/null
 
 history="$MISE_STATE_DIR/history/repo.git"
-[[ -d "$history" ]] || { printf '%s\n' 'Mise did not create a history repository.' >&2; exit 1; }
+[[ -d "$history" ]] || {
+    printf '%s\n' 'Mise did not create a history repository.' >&2
+    exit 1
+}
 count=$(git --git-dir="$history" rev-list --count --all)
-[[ "$count" -ge 2 ]] || { printf '%s\n' 'Expected at least two history commits.' >&2; exit 1; }
+[[ "$count" -ge 2 ]] || {
+    printf '%s\n' 'Expected at least two history commits.' >&2
+    exit 1
+}
 
 # Scan all reachable blobs, including intermediate versions, not only HEAD.
 while IFS= read -r object; do
