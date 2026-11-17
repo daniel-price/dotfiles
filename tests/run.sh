@@ -185,6 +185,7 @@ if command -v python3 >/dev/null 2>&1; then
     python3 "$ROOT/tests/docs-generation.py"
     python3 "$ROOT/tests/get-started-interactive.py"
     python3 "$ROOT/tests/update-interactive.py"
+    python3 "$ROOT/tests/bootstrap-command.py"
     python3 "$ROOT/tests/bootstrap-interactive.py"
     python3 "$ROOT/tests/tool-overlay-interactive.py"
     python3 "$ROOT/tests/zsh-profile.py"
