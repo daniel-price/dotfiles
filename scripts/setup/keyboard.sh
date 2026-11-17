@@ -13,7 +13,6 @@ Darwin) strategy=macos ;;
 Linux)
     case "${XDG_CURRENT_DESKTOP:-}" in
     *COSMIC* | *cosmic*) strategy=cosmic ;;
-    *GNOME* | *gnome*) strategy=gnome ;;
     *)
         log "Caps Lock mapping skipped: unsupported or unrecognised desktop (${XDG_CURRENT_DESKTOP:-none})."
         exit 0
