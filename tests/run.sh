@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# The suite must never consume the caller's terminal input. Tests that need
+# interaction create their own pseudo-terminals and supply input explicitly.
+exec </dev/null
+
 ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
 TEST_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-test.XXXXXX")
 trap 'rm -rf -- "$TEST_ROOT"' EXIT
@@ -157,7 +161,7 @@ fi
     fail 'entry point wrote to isolated home or working directory'
 printf 'PASS: Entry-point help, errors and repeatable smoke execution\n'
 bash "$ROOT/tests/check-clean.sh"
-bash "$ROOT/tests/get-started.sh" </dev/null
+bash "$ROOT/tests/get-started.sh"
 if command -v python3 >/dev/null 2>&1; then
     python3 "$ROOT/tests/get-started-interactive.py"
     python3 "$ROOT/tests/bootstrap-interactive.py"
