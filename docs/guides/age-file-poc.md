@@ -15,15 +15,15 @@ bash scripts/poc/age-file.sh
 bash scripts/poc/age-file.sh --apply
 ```
 
-The default is read-only. `--apply` requires a terminal and explicit approval. It creates a new disposable directory under `${TMPDIR:-/tmp}`, with isolated HOME, XDG paths and mise config/data/state/cache. It generates a **disposable age identity** outside the history store, writes fake versions of `example.conf`, tracks the file with `--encrypt` *before* its first save, and checks every reachable Git blob for either plaintext version. It then verifies a missing-key rollback fails without modifying the live file and a keyed rollback restores version one.
+The default is read-only. `--apply` requires a terminal and explicit approval. It creates a new disposable directory under `${TMPDIR:-/tmp}`, with isolated HOME, XDG paths and mise config/data/state/cache. It generates a **disposable age identity** outside the history store, writes fake versions of `example.conf`, tracks the file with `--encrypt` *before* its first save, and checks every reachable Git blob for either plaintext version. It then verifies a missing-key rollback fails without modifying the live file and a keyed rollback restores version one. Finally, it tracks its public mise configuration, pushes synthetic checkpoints into a **local-only bare Git origin**, and runs `mise bootstrap --adopt` from two separate disposable homes: one without the identity (must fail without restoring the target), then one with the identity (must restore version one). No external Git remote or real machine state is used.
 
 The script prints the workspace and history paths but never the identity or decrypted contents. It does not configure a remote, launch a watcher, touch your real dotfiles checkout, or run bootstrap. A second accepted run creates a different workspace. Declining creates nothing.
 
 ## Independent fresh-machine recovery check
 
-The script's rollback exercises local decryption but is **not** a second-machine test. To validate that separately, use two disposable homes or an isolated test machine, **never** your actual home:
+The script now automates a **simulated second-machine recovery** in two independent disposable homes, using a local bare Git origin. The following optional manual exercise covers transport and restoration on an actual second machine. Do **not** point either workflow at your real home:
 
-1. Complete `--apply`. Note the printed workspace. The history is at `home/.local/state/mise/history/repo.git`; the identity is `identity.txt`. Do **not** put the identity into history.
+1. Complete `--apply`. Note the printed workspace. The history is at `home/.local/state/mise/history/repo.git`, the local transport is `setup-origin.git`, and the identity is `identity.txt`. Do **not** put the identity into history.
 2. Create a second disposable home with fresh XDG paths and a new mise global configuration. Give it the same public recipient under `[history.encryption]`, and configure `[dotfiles]` for its own `~/.config/poc/example.conf` with `{ mode = "track", encrypt = true }`. Set `[settings.history]` `sync = "manual"`.
 3. Transfer only the history Git repository into the second home's `$MISE_STATE_DIR/history/repo.git`. Do not copy the first home's configuration, private identity, or plaintext file. Verify `git --git-dir="$MISE_STATE_DIR/history/repo.git" log --all` succeeds.
 4. **Without the key**, attempt `mise dot rollback "$HOME/.config/poc/example.conf" --to latest --dry-run` then the real rollback if the preview indicates a write. It must refuse to decrypt; the target must not be populated. If a particular mise version does not support a missing live file with rollback, use `mise dot history` and document that limitation rather than bypassing encryption or changing the real HOME.
@@ -35,11 +35,11 @@ For a stricter transport test, use a **local bare Git origin**, configure it man
 ## Manual acceptance checks
 
 - Preview and decline change nothing. Noninteractive `--apply` refuses.
-- With permission, the script reports both PASS lines; a second run uses a fresh workspace.
+- With permission, the script reports **three** PASS lines (history inspection, keyed local rollback, and isolated-home recovery); a second run uses a fresh workspace.
 - `git --git-dir="<printed-history>" rev-list --all` includes multiple commits. Inspect commits and blobs, not merely the HEAD worktree.
 - The history repository contains ciphertext, but the tracked live file is plaintext and mode-restricted.
 - A missing identity refuses to restore; a matching identity restores the expected older version.
-- Repeat on Pop!_OS and macOS where available; record mise version and any CLI differences.
+- The fresh-home test requires no actual second machine; repeat on macOS where available and record mise version and any CLI differences. Independent device recovery remains optional manual validation.
 - No Git remote is configured; no change appears in the public dotfiles checkout.
 
 **Important:** Encrypting a previously tracked file cannot remove plaintext from older Git history. Mise's encryption protects saved file *contents*, not file names, public metadata, plaintext live files, identities, or secrets exposed to running processes. A private origin alone does not replace encryption. The script is deliberately not wired into machine setup until the fresh-machine restore has been manually verified.
