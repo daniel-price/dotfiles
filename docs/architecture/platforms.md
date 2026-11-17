@@ -38,6 +38,13 @@ there is no installation-ownership ledger.
 
 ## Checkout development tools
 
+The checkout setup script installs pinned developer tools from the root
+`mise.toml` and offers to enable a local Git hook only from an interactive
+terminal, after a separate approval. Formatting, linting and the hook command
+use `scripts/dev/run-mise.sh` to resolve mise on `PATH` or at
+`~/.local/bin/mise`. They do not depend on the currently running shell.
+
+
 The root `mise.toml` pins Lefthook `2.2.2`, shfmt `3.14.1`
 and ShellCheck `0.11.0`. Only `bash scripts/dev/install-dev-tools.sh`
 installs those versions for contributing or CI. Documentation builds use
