@@ -34,7 +34,7 @@ jobs:
             const current = await github.rest.pulls.get({
               owner, repo, pull_number: issue_number
             });
-            if (current.data.head.sha !== run.head_sha) {
+            if (pr.head?.sha && current.data.head.sha !== pr.head.sha) {
               core.info('Skipping preview for an outdated PR commit.');
               return;
             }
