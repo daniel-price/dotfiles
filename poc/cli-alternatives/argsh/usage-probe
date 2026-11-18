@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+: "${ARGSH_POC_LIB:?Set ARGSH_POC_LIB to pinned argsh.min.sh}"
+# shellcheck disable=SC1090
+. "$ARGSH_POC_LIB"
+main::convert() {
+  local text
+  local -a args=('text' 'Text to convert')
+  :args 'Convert text' "$@"
+  printf '%s\n' "$text"
+}
+main() {
+  local -a usage=('convert' 'Convert text')
+  :usage 'Argsh completion/docgen probe' "$@"
+  "${usage[@]}"
+}
+main "$@"
