@@ -34,10 +34,72 @@ for helper in ,copy-last ,copy-screen ,copy-pick; do
     bash -n "$ROOT/bin/$helper" || fail "copy helper has invalid Bash syntax: $helper"
 done
 printf 'PASS: Executable Zellij copy helper entry points\n'
+# Portable commands must be executable and valid independently of Zsh.
+for helper in ,vv ,uuid ,wt; do
+    [[ -x "$ROOT/bin/$helper" ]] || fail "comma command is not executable: $helper"
+    bash -n "$ROOT/bin/$helper" || fail "invalid Bash syntax: $helper"
+done
+uuid=$("$ROOT/bin/,uuid" --lowercase --no-hyphens) || fail ',uuid failed'
+[[ "$uuid" =~ ^[0-9a-f]{32}$ ]] || fail ',uuid did not produce a compact lowercase UUID'
+[[ "$("$ROOT/bin/,uuid" --help)" == Usage:* ]] || fail ',uuid help failed'
+[[ -f "$ROOT/.config/zsh/functions/cdWorktree" ]] || fail 'missing cdWorktree function'
+for helper in ,mason-plugins ,nvim-plugins ,wt; do
+    [[ ! -e "$ROOT/.config/zsh/functions/$helper" ]] || fail "obsolete comma function remains: $helper"
+done
+for helper in cdNvimPlugins cdMasonPlugins; do
+    if grep -q "^alias $helper=" "$ROOT/.config/zsh/aliases.zsh"; then
+        fail "obsolete navigation alias remains: $helper"
+    fi
+done
+if command -v zsh >/dev/null 2>&1; then
+    for helper in "$ROOT"/.config/zsh/functions/*; do
+        zsh -n "$helper" || fail "invalid autoload function: $helper"
+    done
+fi
+git init -q "$TEST_ROOT/worktree-source"
+git -C "$TEST_ROOT/worktree-source" -c user.name=Test -c user.email=test@example.invalid \
+    commit -q --allow-empty -m initial || fail 'failed to create worktree test fixture'
+worktree_path=$(cd "$TEST_ROOT/worktree-source" && "$ROOT/bin/,wt" feature/test) || fail ',wt failed'
+assert_equal "$TEST_ROOT/worktree-source-wt-feature-test" "$worktree_path" ',wt prints destination'
+[[ -d "$worktree_path" ]] || fail ',wt did not create the worktree'
+[[ "$(git -C "$worktree_path" branch --show-current)" == feature/test ]] || fail 'wrong worktree branch'
+if (cd "$TEST_ROOT/worktree-source" && "$ROOT/bin/,wt" feature/test) >"$TEST_ROOT/out" 2>"$TEST_ROOT/err"; then
+    fail ',wt accepted duplicate branch'
+fi
+[[ ! -s "$TEST_ROOT/out" ]] || fail ',wt printed path on failure'
+if command -v zsh >/dev/null 2>&1; then
+    ROOT="$ROOT" TEST_ROOT="$TEST_ROOT" zsh -fc '
+      fpath=("$ROOT/.config/zsh/functions" $fpath)
+      export PATH="$ROOT/bin:$PATH"
+      autoload -Uz cdWorktree
+      cd "$TEST_ROOT/worktree-source" || exit
+      cdWorktree feature/test || exit
+      [[ "$PWD" == "$TEST_ROOT/worktree-source-wt-feature-test" ]] || exit 1
+      cd "$TEST_ROOT/worktree-source" || exit
+      cdWorktree missing </dev/null && exit 1
+      [[ ! -e "$TEST_ROOT/worktree-source-wt-missing" ]] || exit 1
+    ' || fail 'cdWorktree navigation or noninteractive refusal failed'
+fi
+printf 'PASS: Portable comma commands and worktree navigation\n'
+
 printf 'PASS: Executable OpenCode launcher syntax and layout\n'
 if command -v zsh >/dev/null 2>&1; then
     zsh -n "$ROOT/.config/zsh/zshrc" || fail 'reviewed zsh file has invalid syntax'
     zsh -n "$ROOT/.config/zsh/aliases.zsh" || fail 'reviewed zsh aliases have invalid syntax'
+    zsh -n "$ROOT/.config/zsh/zoxide-bookmarks.zsh" || fail 'zoxide bookmarks have invalid syntax'
+    zsh -n "$ROOT/.config/zsh/completions.zsh" || fail 'zoxide completions have invalid syntax'
+    mkdir -p "$TEST_ROOT/data/nvim/lazy" "$TEST_ROOT/data/nvim/mason/packages"
+    ROOT="$ROOT" TEST_ROOT="$TEST_ROOT" zsh -fc '
+      export XDG_DATA_HOME="$TEST_ROOT/data"
+      __zoxide_z() { [[ "$1" == fallback ]] || return 1; }
+      source "$ROOT/.config/zsh/zoxide-bookmarks.zsh" || exit
+      z nvim-plugins || exit
+      [[ "$PWD" == "$TEST_ROOT/data/nvim/lazy" ]] || exit 1
+      z mason-plugins || exit
+      [[ "$PWD" == "$TEST_ROOT/data/nvim/mason/packages" ]] || exit 1
+      z fallback || exit
+      z unknown-bookmark >/dev/null 2>&1 && exit 1
+    ' || fail 'zoxide bookmarks navigation or fallback failed'
     zsh -n "$ROOT/.config/zsh/p10k.zsh" || fail 'reviewed p10k config has invalid syntax'
     printf 'PASS: Reviewed zsh syntax\n'
 else

@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# doc: command ,wt | Create a Git worktree for a new branch and print its path.
+if (( $# != 1 )); then
+    printf 'Usage: ,wt <new-branch>\n' >&2
+    exit 2
+fi
+branch=$1
+root=$(git rev-parse --show-toplevel 2>/dev/null) || {
+    printf ',wt: not inside a Git repository\n' >&2
+    exit 1
+}
+git check-ref-format --branch "$branch" >/dev/null || exit 2
+target="${root%/*}/${root##*/}-wt-${branch//\//-}"
+if [[ -e "$target" || -L "$target" ]]; then
+    printf ',wt: destination already exists: %s\n' "$target" >&2
+    exit 1
+fi
+git -C "$root" worktree add -b "$branch" "$target" >&2
+printf '%s\n' "$target"
