@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# doc: command ,uuid | Generate a UUID, optionally lowercase and/or without hyphens.
+lower=0
+compact=0
+while (( $# )); do
+    case "$1" in
+    -l | --lowercase) lower=1 ;;
+    -n | --no-hyphens) compact=1 ;;
+    -h | --help)
+        printf 'Usage: ,uuid [-l|--lowercase] [-n|--no-hyphens]\n'
+        exit 0
+        ;;
+    *) printf ',uuid: unknown option: %s\n' "$1" >&2; exit 2 ;;
+    esac
+    shift
+done
+if command -v uuidgen >/dev/null 2>&1; then
+    value=$(uuidgen)
+elif command -v python3 >/dev/null 2>&1; then
+    value=$(python3 -c 'import uuid; print(uuid.uuid4())')
+else
+    printf ',uuid: requires uuidgen or python3\n' >&2
+    exit 127
+fi
+if (( lower )); then value=${value,,}; fi
+if (( compact )); then value=${value//-/}; fi
+printf '%s\n' "$value"
