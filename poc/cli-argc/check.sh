@@ -10,7 +10,10 @@ if [[ "${1:-}" != --inside ]]; then
     case "${1:-}" in
     --install) mise -C "$POC_DIR" install ;;
     "") ;;
-    *) printf 'Usage: bash poc/cli-argc/check.sh [--install]\n' >&2; exit 2 ;;
+    *)
+        printf 'Usage: bash poc/cli-argc/check.sh [--install]\n' >&2
+        exit 2
+        ;;
     esac
     exec mise -C "$POC_DIR" exec -- bash "$POC_DIR/check.sh" --inside
 fi
@@ -23,7 +26,7 @@ CLI="$POC_DIR/bin/,case-text"
 TMP=$(mktemp -d)
 trap 'rm -rf -- "$TMP"' EXIT
 
-help=$("$CLI" --help)
+help=$("$CLI" --help 2>&1)
 [[ "$help" == *--case* && "$help" == *--no-newline* && "$help" == *lower* ]]
 [[ "$("$CLI" --case upper "Hello World")" == "HELLO WORLD" ]]
 [[ "$("$CLI" --case lower "Hello World")" == "hello world" ]]
