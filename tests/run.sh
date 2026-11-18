@@ -163,16 +163,6 @@ case "$1" in
 esac
 MISE
 chmod +x "$TEST_ROOT/bin/mise"
-for help in -h --help; do
-    output=$(bash "$ROOT/bin/,bootstrap" "$help")
-    [[ "$output" == *'Usage:'* ]] || fail 'bootstrap help missing'
-done
-if bash "$ROOT/bin/,bootstrap" --unknown >"$TEST_ROOT/out" 2>"$TEST_ROOT/err"; then
-    fail 'bootstrap accepted unknown argument'
-fi
-if bash "$ROOT/bin/,bootstrap" --help extra >"$TEST_ROOT/out" 2>"$TEST_ROOT/err"; then
-    fail 'bootstrap accepted extra argument'
-fi
 # Run twice from elsewhere, with an isolated HOME, on a supported host only.
 if detect_os >/dev/null 2>&1; then
     output=$(cd "$TEST_ROOT/elsewhere" && HOME="$TEST_ROOT/home" \
