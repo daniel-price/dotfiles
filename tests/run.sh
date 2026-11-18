@@ -34,6 +34,24 @@ for helper in ,copy-last ,copy-screen ,copy-pick; do
     bash -n "$ROOT/bin/$helper" || fail "copy helper has invalid Bash syntax: $helper"
 done
 printf 'PASS: Executable Zellij copy helper entry points\n'
+# Portable commands must be executable and valid independently of Zsh.
+for helper in ,vv ,uuid; do
+    [[ -x "$ROOT/bin/$helper" ]] || fail "comma command is not executable: $helper"
+    bash -n "$ROOT/bin/$helper" || fail "invalid Bash syntax: $helper"
+done
+uuid=$("$ROOT/bin/,uuid" --lowercase --no-hyphens) || fail ',uuid failed'
+[[ "$uuid" =~ ^[0-9a-f]{32}$ ]] || fail ',uuid did not produce a compact lowercase UUID'
+[[ "$("$ROOT/bin/,uuid" --help)" == Usage:* ]] || fail ',uuid help failed'
+for helper in ,mason-plugins ,nvim-plugins ,wt; do
+    [[ -f "$ROOT/.config/zsh/functions/$helper" ]] || fail "missing autoload function: $helper"
+done
+if command -v zsh >/dev/null 2>&1; then
+    for helper in "$ROOT"/.config/zsh/functions/,*; do
+        zsh -n "$helper" || fail "invalid autoload function: $helper"
+    done
+fi
+printf 'PASS: Portable comma commands and Zsh autoload layout\n'
+
 printf 'PASS: Executable OpenCode launcher syntax and layout\n'
 if command -v zsh >/dev/null 2>&1; then
     zsh -n "$ROOT/.config/zsh/zshrc" || fail 'reviewed zsh file has invalid syntax'
