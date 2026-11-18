@@ -1,0 +1,14 @@
+#compdef ,case-text
+_case-text() {
+  local bin=${CLI_POC_CASE_TEXT:?Set CLI_POC_CASE_TEXT to POC executable path}
+  local prev='' prefix=${words[CURRENT]}
+  (( CURRENT > 2 )) && prev=${words[CURRENT-1]}
+  local -a values descriptions
+  local value description
+  while IFS=$'\t' read -r value description; do
+    [[ -n $value ]] || continue
+    values+=("$value")
+    descriptions+=("$description")
+  done < <("$bin" --_poc_complete "$prev" "$prefix")
+  if (( ${#values} )); then compadd -Q -d descriptions -- "${values[@]}"; else _files; fi
+}
