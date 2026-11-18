@@ -1,0 +1,18 @@
+#compdef ,case-text ,jump-demo
+_poc_getoptions() {
+  local bin prev='' prefix=${words[CURRENT]} value description
+  case ${words[1]} in
+    ,case-text) bin=$CLI_POC_GETOPTIONS_CASE ;;
+    ,jump-demo) bin=$CLI_POC_GETOPTIONS_JUMP ;;
+    *) return 1 ;;
+  esac
+  (( CURRENT > 2 )) && prev=${words[CURRENT-1]}
+  local -a candidates=() descriptions=()
+  while IFS=$'\t' read -r value description; do
+    [[ -n $value ]] || continue
+    candidates+=("$value")
+    descriptions+=("$description")
+  done < <(bash "$bin" --_poc_complete "$prev" "$prefix")
+  (( ${#candidates} )) && compadd -Q -d descriptions -- "${candidates[@]}"
+  [[ ${words[1]} == ,jump-demo ]] && _files -/
+}
