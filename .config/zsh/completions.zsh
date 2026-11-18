@@ -11,3 +11,16 @@ _dotfiles_wt() {
 compdef _dotfiles_repeat ,repeat
 compdef _dotfiles_until_failure ,until-failure
 compdef _dotfiles_wt ,wt
+
+# Offer exact bookmark names while retaining Zoxide's native completion.
+_dotfiles_z() {
+  if (( CURRENT == 2 && ${+functions[__zoxide_z_complete]} )); then
+    local -a bookmarks
+    bookmarks=("${(@k)DOTFILES_Z_BOOKMARKS}")
+    compadd -Q -a bookmarks
+  fi
+  __zoxide_z_complete "$@"
+}
+if (( ${+functions[__zoxide_z_complete]} )); then
+  compdef _dotfiles_z z
+fi
