@@ -1,0 +1,20 @@
+name: POC custom CLI registry
+on:
+  pull_request:
+    paths:
+      - "poc/cli-custom/**"
+      - ".github/workflows/poc-cli-custom.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Bash CLI POC
+        run: bash poc/cli-custom/check.sh

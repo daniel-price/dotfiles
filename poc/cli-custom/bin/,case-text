@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+POC_DIR=$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
+. "$POC_DIR/lib/cli.sh"
+CLI_TITLE=',case-text'
+define_cli() {
+  cli_option --case '' 'lower|upper' lower 'Convert text to this case'
+  cli_flag --no-newline -n 'Do not print a trailing newline'
+  cli_arg text 'Text to convert (required)'
+}
+define_cli
+case ${1-} in
+  --_poc_markdown) cli_markdown; exit ;;
+  --_poc_complete) shift; cli_complete "${1-}" "${2-}"; exit ;;
+esac
+if cli_parse "$@"; then :; else status=$?; [[ $status == 10 ]] && exit 0; exit "$status"; fi
+case ${CLI_VALUE[0]} in
+  upper) out=$(printf '%s' "${CLI_POSITIONAL[0]}" | tr '[:lower:]' '[:upper:]') ;;
+  lower) out=$(printf '%s' "${CLI_POSITIONAL[0]}" | tr '[:upper:]' '[:lower:]') ;;
+esac
+if [[ ${CLI_VALUE[1]} == true ]]; then printf '%s' "$out"; else printf '%s\n' "$out"; fi

@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# A resolver cannot change the parent Zsh cwd; the wrapper performs builtin cd.
+set -euo pipefail
+POC_DIR=$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
+. "$POC_DIR/lib/cli.sh"
+CLI_TITLE=',jump-demo'
+CLI_ARG_NAME='target'
+cli_arg target 'Existing directory or disposable demo bookmark'
+case ${1-} in
+  --_poc_markdown) cli_markdown; exit ;;
+  --_poc_complete) shift; cli_complete "${1-}" "${2-}"; printf 'demo\tDisposable demo bookmark\n'; exit ;;
+esac
+if cli_parse "$@"; then :; else status=$?; [[ $status == 10 ]] && exit 0; exit "$status"; fi
+target=${CLI_POSITIONAL[0]}
+if [[ $target == demo ]]; then
+  [[ -n ${CLI_POC_DEMO_ROOT:-} ]] || { cli_error 'set CLI_POC_DEMO_ROOT to a disposable test directory'; exit 2; }
+  target=$CLI_POC_DEMO_ROOT
+fi
+[[ -d $target ]] || { cli_error "not a directory: $target"; exit 2; }
+CDPATH='' cd -- "$target"
+pwd -P
