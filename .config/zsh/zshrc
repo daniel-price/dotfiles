@@ -53,12 +53,12 @@ if (( $+commands[zoxide] )); then
   eval "$(zoxide init zsh)"
 fi
 
-# Custom commands: bin/ for executables; autoload shell-state functions on demand.
+# Custom commands: bin/ for executables; autoload shell-state helpers on demand.
 if [[ -o interactive ]]; then
   _dotfiles_function_dir="${${(%):-%x}:A:h}/functions"
   if [[ -d "$_dotfiles_function_dir" ]]; then
     fpath=("$_dotfiles_function_dir" $fpath)
-    for _dotfiles_function in "$_dotfiles_function_dir"/,*(N-.); do
+    for _dotfiles_function in "$_dotfiles_function_dir"/*(N-.); do
       autoload -Uz "${_dotfiles_function:t}"
     done
     unset _dotfiles_function
