@@ -53,12 +53,18 @@ if (( $+commands[zoxide] )); then
   eval "$(zoxide init zsh)"
 fi
 
-# Portable optional interactive helpers; no machine-local paths or work logic.
-_dotfiles_functions="${${(%):-%x}:A:h}/functions.zsh"
-if [[ -o interactive && -r "$_dotfiles_functions" ]]; then
-  source "$_dotfiles_functions"
+# Custom commands: bin/ for executables; autoload shell-state functions on demand.
+if [[ -o interactive ]]; then
+  _dotfiles_function_dir="${${(%):-%x}:A:h}/functions"
+  if [[ -d "$_dotfiles_function_dir" ]]; then
+    fpath=("$_dotfiles_function_dir" $fpath)
+    for _dotfiles_function in "$_dotfiles_function_dir"/,*(N-.); do
+      autoload -Uz "${_dotfiles_function:t}"
+    done
+    unset _dotfiles_function
+  fi
+  unset _dotfiles_function_dir
 fi
-unset _dotfiles_functions
 
 # Enable completion only for interactive shells, with no external dependencies.
 if [[ -o interactive ]]; then
