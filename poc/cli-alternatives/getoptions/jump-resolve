@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -euo pipefail
+POC_DIR=$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
+. "$POC_DIR/vendor/getoptions_base.sh"
+. "$POC_DIR/getoptions/poc-adapter.sh"
+POC_TITLE=',jump-demo'
+POC_SYNOPSIS=',jump-demo [OPTIONS] <target>'
+parser_definition() {
+  setup REST -- 'Usage: ,jump-demo [OPTIONS] <target>'
+  disp :poc_help -h --help
+  poc_arg target 'Existing directory or demo bookmark'
+}
+case ${1-} in
+  --_poc_markdown) poc_markdown; exit ;;
+  --_poc_complete)
+    shift
+    poc_complete "${1-}" "${2-}"
+    [[ demo == "${2-}"* ]] && printf '%s\t%s\n' demo 'Disposable test bookmark'
+    exit ;;
+esac
+eval "$(getoptions parser_definition parse)"
+parse "$@"
+eval "set -- $REST"
+(($# == 1)) || { printf 'Error: expected exactly one <target>\n' >&2; exit 2; }
+if [[ $1 == demo ]]; then
+  [[ -d ${CLI_POC_DEMO_ROOT:-} ]] || { printf 'Error: CLI_POC_DEMO_ROOT must be a directory\n' >&2; exit 2; }
+  target=$CLI_POC_DEMO_ROOT
+else
+  target=$1
+fi
+[[ -d $target ]] || { printf 'Error: not a directory: %s\n' "$target" >&2; exit 2; }
+CDPATH='' cd -- "$target"
+pwd -P

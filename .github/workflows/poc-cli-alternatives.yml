@@ -1,0 +1,28 @@
+name: POC CLI alternatives
+on:
+  pull_request:
+    paths:
+      - "poc/cli-alternatives/**"
+      - ".github/workflows/poc-cli-alternatives.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Bash syntax
+        run: |
+          for f in poc/cli-alternatives/getoptions/{case-text,jump-resolve,check.sh,poc-adapter.sh} poc/cli-alternatives/argsh/{case-text,usage-probe,check.sh} poc/cli-alternatives/check.sh; do
+            bash -n "$f"
+          done
+      - name: Check getoptions and Argsh
+        run: bash poc/cli-alternatives/check.sh --install
+      - name: Exercise Zsh completion bridge (not PTY Tab)
+        if: matrix.os == 'macos-latest'
+        run: zsh poc/cli-alternatives/zsh-smoke.zsh

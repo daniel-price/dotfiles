@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# Pin a particular Argsh library with ARGSH_POC_LIB; never access current dotfiles setup.
+: "${ARGSH_POC_LIB:?Run bash poc/cli-alternatives/argsh/check.sh --install first}"
+# shellcheck disable=SC1090
+. "$ARGSH_POC_LIB"
+
+to::letter_case() {
+  case ${1-} in
+    lower|upper) printf '%s\n' "$1" ;;
+    *) return 1 ;;
+  esac
+}
+main() {
+  local case=lower no_newline text
+  local -a args=(
+    'case|:~letter_case' 'Conversion case (lower or upper; default lower)'
+    'no-newline|n:+' 'Do not print a trailing newline'
+    'text' 'Required text to convert'
+  )
+  :args 'Convert text to upper or lower case' "$@"
+  local result
+  if [[ $case == upper ]]; then
+    result=$(printf '%s' "$text" | tr '[:lower:]' '[:upper:]')
+  else
+    result=$(printf '%s' "$text" | tr '[:upper:]' '[:lower:]')
+  fi
+  if [[ ${no_newline:-0} == 1 ]]; then printf '%s' "$result"; else printf '%s\n' "$result"; fi
+}
+main "$@"

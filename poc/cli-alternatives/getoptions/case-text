@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+POC_DIR=$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
+# Vendored CC0 source from ko1nksm/getoptions v3.3.2.
+. "$POC_DIR/vendor/getoptions_base.sh"
+. "$POC_DIR/getoptions/poc-adapter.sh"
+
+parser_definition() {
+  setup REST -- 'Usage: ,case-text [OPTIONS] <text>'
+  param CASE --case init:=lower pattern:'lower|upper' -- 'Conversion case'
+  flag NO_NEWLINE -n --no-newline -- 'Omit trailing newline'
+  disp :poc_help -h --help
+  poc_arg text 'Required text to convert'
+}
+case ${1-} in
+  --_poc_markdown) poc_markdown; exit ;;
+  --_poc_complete) shift; poc_complete "${1-}" "${2-}"; exit ;;
+esac
+# Generate parser in memory on every invocation: no build or generation after edits.
+eval "$(getoptions parser_definition parse)"
+parse "$@"
+eval "set -- $REST"
+(($# == 1)) || { printf 'Error: expected exactly one <text>\n' >&2; exit 2; }
+if [[ $CASE == upper ]]; then
+  result=$(printf '%s' "$1" | tr '[:lower:]' '[:upper:]')
+else
+  result=$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')
+fi
+if [[ ${NO_NEWLINE:-} == 1 ]]; then printf '%s' "$result"; else printf '%s\n' "$result"; fi
