@@ -1,0 +1,19 @@
+# doc: function ,wt | Create a Git worktree next to the current checkout for a new branch.
+if (( $# != 1 )); then
+  print -u2 'Usage: ,wt <new-branch>'
+  return 2
+fi
+local root branch target
+branch=$1
+root=$(command git rev-parse --show-toplevel 2>/dev/null) || {
+  print -u2 ',wt: not inside a Git repository'
+  return 1
+}
+command git check-ref-format --branch "$branch" >/dev/null || return 2
+target="${root:h}/${root:t}-wt-${branch//\//-}"
+if [[ -e "$target" || -L "$target" ]]; then
+  print -u2 ",wt: destination already exists: $target"
+  return 1
+fi
+command git -C "$root" worktree add -b "$branch" "$target" || return
+builtin cd -- "$target"
