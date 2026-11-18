@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ $# -eq 0 ]]; then
+    printf 'Usage: ,curltime <curl arguments including URL>\n' >&2
+    exit 2
+fi
+
+# Use curl's built-in timing metrics, discarding the response body.
+# User-supplied arguments can override -o/-s; do not pass sensitive URLs.
+curl --silent --show-error --output /dev/null --write-out '
+DNS:       %{time_namelookup}s
+TCP:       %{time_connect}s
+TLS:       %{time_appconnect}s
+First byte:%{time_starttransfer}s
+Total:     %{time_total}s
+HTTP:      %{http_code}
+' "$@"
