@@ -1,0 +1,2 @@
+# doc: function ,nvim-plugins | Navigate to installed lazy.nvim plugins.
+builtin cd -- "${XDG_DATA_HOME:-$HOME/.local/share}/nvim/lazy"
