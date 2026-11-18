@@ -1,0 +1,19 @@
+#!/usr/bin/env -S usage bash
+#USAGE flag "--case <case>" help="Convert text to this case" default="lower" {
+#USAGE   choices "lower" "upper"
+#USAGE }
+#USAGE flag "-n --no-newline" help="Do not print a trailing newline"
+#USAGE arg "<text>" help="Text to convert"
+
+set -euo pipefail
+
+case "$usage_case" in
+lower) result=$(printf '%s' "$usage_text" | tr '[:upper:]' '[:lower:]') ;;
+upper) result=$(printf '%s' "$usage_text" | tr '[:lower:]' '[:upper:]') ;;
+esac
+
+if [[ "${usage_no_newline:-false}" == true ]]; then
+    printf '%s' "$result"
+else
+    printf '%s\n' "$result"
+fi

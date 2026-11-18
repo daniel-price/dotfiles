@@ -1,0 +1,5 @@
+[tools]
+usage = "7.4.0"
+
+[settings]
+auto_install = false
