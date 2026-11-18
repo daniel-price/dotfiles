@@ -1,0 +1,15 @@
+#compdef ,jump-demo
+_jump-demo() {
+  local bin=${CLI_POC_JUMP_RESOLVER:?Set CLI_POC_JUMP_RESOLVER}
+  local prev='' prefix=${words[CURRENT]}
+  (( CURRENT > 2 )) && prev=${words[CURRENT-1]}
+  local -a values descriptions
+  local value description
+  while IFS=$'\t' read -r value description; do
+    [[ -n $value ]] || continue
+    values+=("$value")
+    descriptions+=("$description")
+  done < <("$bin" --_poc_complete "$prev" "$prefix")
+  (( ${#values} )) && compadd -Q -d descriptions -- "${values[@]}"
+  _files -/
+}
