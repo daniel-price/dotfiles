@@ -86,6 +86,20 @@ printf 'PASS: Executable OpenCode launcher syntax and layout\n'
 if command -v zsh >/dev/null 2>&1; then
     zsh -n "$ROOT/.config/zsh/zshrc" || fail 'reviewed zsh file has invalid syntax'
     zsh -n "$ROOT/.config/zsh/aliases.zsh" || fail 'reviewed zsh aliases have invalid syntax'
+    zsh -n "$ROOT/.config/zsh/zoxide-bookmarks.zsh" || fail 'zoxide bookmarks have invalid syntax'
+    zsh -n "$ROOT/.config/zsh/completions.zsh" || fail 'zoxide completions have invalid syntax'
+    mkdir -p "$TEST_ROOT/data/nvim/lazy" "$TEST_ROOT/data/nvim/mason/packages"
+    ROOT="$ROOT" TEST_ROOT="$TEST_ROOT" zsh -fc '
+      export XDG_DATA_HOME="$TEST_ROOT/data"
+      __zoxide_z() { [[ "$1" == fallback ]] || return 1; }
+      source "$ROOT/.config/zsh/zoxide-bookmarks.zsh" || exit
+      z nvim-plugins || exit
+      [[ "$PWD" == "$TEST_ROOT/data/nvim/lazy" ]] || exit 1
+      z mason-plugins || exit
+      [[ "$PWD" == "$TEST_ROOT/data/nvim/mason/packages" ]] || exit 1
+      z fallback || exit
+      z unknown-bookmark >/dev/null 2>&1 && exit 1
+    ' || fail 'zoxide bookmarks navigation or fallback failed'
     zsh -n "$ROOT/.config/zsh/p10k.zsh" || fail 'reviewed p10k config has invalid syntax'
     printf 'PASS: Reviewed zsh syntax\n'
 else
