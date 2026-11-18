@@ -23,3 +23,6 @@ jobs:
           done
       - name: Check getoptions and Argsh
         run: bash poc/cli-alternatives/check.sh --install
+      - name: Exercise Zsh completion bridge (not PTY Tab)
+        if: matrix.os == 'macos-latest'
+        run: zsh poc/cli-alternatives/zsh-smoke.zsh
