@@ -51,6 +51,12 @@ fi
 # If zoxide is not installed, preserve startup without an error.
 if (( $+commands[zoxide] )); then
   eval "$(zoxide init zsh)"
+  # Exact named bookmarks first; all other queries retain Zoxide's behaviour.
+  _dotfiles_bookmarks="${${(%):-%x}:A:h}/zoxide-bookmarks.zsh"
+  if [[ -r "$_dotfiles_bookmarks" ]]; then
+    source "$_dotfiles_bookmarks"
+  fi
+  unset _dotfiles_bookmarks
 fi
 
 # Custom commands: bin/ for executables; autoload shell-state helpers on demand.
