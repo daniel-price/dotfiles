@@ -5,9 +5,11 @@ setup() {
 }
 
 @test "bootstrap help is available without provisioning" {
-  run "$BOOTSTRAP" --help
-  [ "$status" -eq 0 ]
-  [[ "$output" == *'Usage: ,bootstrap'* ]]
+  for flag in -h --help; do
+    run "$BOOTSTRAP" "$flag"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'Usage: ,bootstrap'* ]]
+  done
 }
 
 @test "bootstrap rejects unexpected options" {
