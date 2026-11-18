@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if [[ $# -eq 0 ]]; then
-    printf 'Usage: ,untilFailure <command> [arguments...]\n' >&2
+    printf 'Usage: ,until-failure <command> [arguments...]\n' >&2
     exit 2
 fi
 
