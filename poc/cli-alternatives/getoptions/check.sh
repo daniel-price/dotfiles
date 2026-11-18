@@ -12,12 +12,12 @@ for args in '--case invalid Hello' '--unknown Hello' '--case' ''; do
   # shellcheck disable=SC2086
   if bash "$CLI" $args >/dev/null 2>&1; then echo "Unexpected success: $args" >&2; exit 1; fi
 done
-bash "$CLI" --help | grep -q -- '--case'
-bash "$CLI" --_poc_markdown | grep -q 'lower|upper'
-bash "$CLI" --_poc_complete '' '' | grep -q -- '--case'
-bash "$CLI" --_poc_complete '' '--' | grep -q -- '--no-newline'
-bash "$CLI" --_poc_complete '--case' '' | grep -q 'upper'
-bash "$CLI" --_poc_complete '' '--case=' | grep -q -- '--case=upper'
+bash "$CLI" --help | grep -- '--case'
+bash "$CLI" --_poc_markdown | grep 'lower|upper'
+bash "$CLI" --_poc_complete '' '' | grep -- '--case'
+bash "$CLI" --_poc_complete '' '--' | grep -- '--no-newline'
+bash "$CLI" --_poc_complete '--case' '' | grep 'upper'
+bash "$CLI" --_poc_complete '' '--case=' | grep -- '--case=upper'
 TMP=$(mktemp -d); trap 'rm -rf -- "$TMP"' EXIT
 mkdir -p "$TMP/bookmark"
 [[ $(CLI_POC_DEMO_ROOT="$TMP/bookmark" bash "$JUMP" demo) == "$TMP/bookmark" ]]
