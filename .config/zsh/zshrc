@@ -104,3 +104,13 @@ if [[ -o interactive && "${TERM_PROGRAM:-}" != vscode ]]; then
   unset _dotfiles_p10k_theme
 fi
 unset _dotfiles_zsh_dir
+
+# Optional fish-style inline suggestions; bookmark matches take priority over history.
+# Never install packages or fail startup when the optional plugin is absent.
+if [[ -o interactive ]]; then
+  _dotfiles_autosuggestions="${${(%):-%x}:A:h}/autosuggestions.zsh"
+  if [[ -r "$_dotfiles_autosuggestions" ]]; then
+    source "$_dotfiles_autosuggestions"
+  fi
+  unset _dotfiles_autosuggestions
+fi
