@@ -24,6 +24,6 @@ else
     printf ',uuid: requires uuidgen or python3\n' >&2
     exit 127
 fi
-if (( lower )); then value=${value,,}; fi
+if (( lower )); then value=$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]'); fi
 if (( compact )); then value=${value//-/}; fi
 printf '%s\n' "$value"
