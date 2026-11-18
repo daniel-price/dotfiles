@@ -47,7 +47,9 @@ for helper in ,mason-plugins ,nvim-plugins ,wt; do
     [[ ! -e "$ROOT/.config/zsh/functions/$helper" ]] || fail "obsolete comma function remains: $helper"
 done
 for helper in cdNvimPlugins cdMasonPlugins; do
-    grep -q "^alias $helper=" "$ROOT/.config/zsh/aliases.zsh" || fail "missing navigation alias: $helper"
+    if grep -q "^alias $helper=" "$ROOT/.config/zsh/aliases.zsh"; then
+        fail "obsolete navigation alias remains: $helper"
+    fi
 done
 if command -v zsh >/dev/null 2>&1; then
     for helper in "$ROOT"/.config/zsh/functions/*; do
@@ -71,11 +73,14 @@ if command -v zsh >/dev/null 2>&1; then
       export PATH="$ROOT/bin:$PATH"
       autoload -Uz cdWorktree
       cd "$TEST_ROOT/worktree-source" || exit
-      cdWorktree second || exit
-      [[ "$PWD" == "$TEST_ROOT/worktree-source-wt-second" ]] || exit 1
-    ' || fail 'cdWorktree failed to change current shell directory'
+      cdWorktree feature/test || exit
+      [[ "$PWD" == "$TEST_ROOT/worktree-source-wt-feature-test" ]] || exit 1
+      cd "$TEST_ROOT/worktree-source" || exit
+      cdWorktree missing </dev/null && exit 1
+      [[ ! -e "$TEST_ROOT/worktree-source-wt-missing" ]] || exit 1
+    ' || fail 'cdWorktree navigation or noninteractive refusal failed'
 fi
-printf 'PASS: Portable comma commands, aliases and worktrees\n'
+printf 'PASS: Portable comma commands and worktree navigation\n'
 
 printf 'PASS: Executable OpenCode launcher syntax and layout\n'
 if command -v zsh >/dev/null 2>&1; then
