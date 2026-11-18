@@ -1,11 +1,11 @@
 #!/usr/bin/env zsh
 # Zsh bridge smoke test. This invokes the completion function, not an actual Tab key.
-emulate -L zsh
+emulate zsh
 setopt errexit nounset pipefail
-local here=$PWD/poc/cli-alternatives
+typeset here=$PWD/poc/cli-alternatives
 export CLI_POC_GETOPTIONS_CASE="$here/getoptions/case-text"
 export CLI_POC_GETOPTIONS_JUMP="$here/getoptions/jump-resolve"
-local tmp=$(mktemp -d)
+typeset tmp=$(mktemp -d)
 trap 'rm -rf -- "$tmp"' EXIT
 mkdir -p "$tmp/bookmark"
 export CLI_POC_DEMO_ROOT="$tmp/bookmark"
@@ -13,11 +13,11 @@ source "$here/completion/_poc_getoptions"
 compadd() { print -rl -- "$@"; }
 _files() { :; }
 
-local -a words
-local CURRENT
+typeset -a words
+typeset -i CURRENT
 words=(',case-text' '')
 CURRENT=2
-local output=$(_poc_getoptions)
+typeset output=$(_poc_getoptions)
 [[ $output == *--case* && $output == *--no-newline* ]] || { print -u2 'bare-word candidate assertion failed'; return 1; }
 
 words=(',case-text' '--')
