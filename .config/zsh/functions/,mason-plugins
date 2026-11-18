@@ -1,0 +1,2 @@
+# doc: function ,mason-plugins | Navigate to installed Mason packages.
+builtin cd -- "${XDG_DATA_HOME:-$HOME/.local/share}/nvim/mason/packages"
