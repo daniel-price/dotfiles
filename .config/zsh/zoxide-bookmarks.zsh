@@ -5,13 +5,12 @@ typeset -gA DOTFILES_Z_BOOKMARKS=(
 )
 
 function z() {
-  if (( $# == 1 && ${+DOTFILES_Z_BOOKMARKS[$1]} )); then
-    if [[ ! -d "${DOTFILES_Z_BOOKMARKS[$1]}" ]]; then
-      print -u2 "z: bookmark '$1' points to a missing directory: ${DOTFILES_Z_BOOKMARKS[$1]}"
-      return 1
-    fi
-    builtin cd -- "${DOTFILES_Z_BOOKMARKS[$1]}"
-  else
-    __zoxide_z "$@"
+  local target="${DOTFILES_Z_BOOKMARKS[$1]-}"
+
+  if (( $# == 1 )) && [[ -n "$target" ]]; then
+    builtin cd -- "$target"
+    return
   fi
+
+  __zoxide_z "$@"
 }
