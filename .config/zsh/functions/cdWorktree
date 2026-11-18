@@ -1,4 +1,38 @@
-# doc: function cdWorktree | Create a Git worktree and navigate into it.
-local target
-target=$(command ,wt "$@") || return
+# doc: function cdWorktree | Enter a Git worktree by branch, prompting to create it if absent.
+if (( $# != 1 )); then
+  print -u2 'Usage: cdWorktree <branch>'
+  return 2
+fi
+local branch=$1 root line target=''
+command git check-ref-format --branch "$branch" >/dev/null || return 2
+root=$(command git rev-parse --show-toplevel 2>/dev/null) || {
+  print -u2 'cdWorktree: not inside a Git repository'
+  return 1
+}
+
+# Resolve the actual registered worktree rather than guessing its directory.
+for line in "${(@f)$(command git -C "$root" worktree list --porcelain)}"; do
+  case "$line" in
+    'worktree '*) target=${line#worktree } ;;
+    'branch refs/heads/'*)
+      if [[ "${line#branch refs/heads/}" == "$branch" ]]; then
+        builtin cd -- "$target"
+        return
+      fi
+      ;;
+  esac
+done
+
+# Never create a worktree without an explicit interactive confirmation.
+if [[ ! -t 0 ]]; then
+  print -u2 "cdWorktree: no worktree for '$branch' (use ,wt '$branch' to create one)"
+  return 1
+fi
+local REPLY
+if ! read -q "REPLY?No worktree for '$branch'. Create it? [y/N] "; then
+  print
+  return 1
+fi
+print
+target=$(command ,wt "$branch") || return
 builtin cd -- "$target"
