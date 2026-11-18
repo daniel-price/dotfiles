@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2016,SC2034 # Dynamic parser registry and generated Markdown literals
 # Experimental Bash 3.2-compatible registry: no generated code.
 CLI_KIND=() CLI_NAME=() CLI_SHORT=() CLI_CHOICES=() CLI_DEFAULT=() CLI_DESC=()
 cli_option() {
