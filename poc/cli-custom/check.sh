@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2016 # literal Markdown backticks in assertion strings
 set -euo pipefail
 HERE=$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
 CLI="$HERE/bin/,case-text"
