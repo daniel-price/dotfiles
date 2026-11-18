@@ -1,0 +1,4 @@
+# doc: function cdWorktree | Create a Git worktree and navigate into it.
+local target
+target=$(command ,wt "$@") || return
+builtin cd -- "$target"
