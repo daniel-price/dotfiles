@@ -3,6 +3,7 @@
 lefthook = "2.2.2"
 shfmt = "3.14.1"
 shellcheck = "0.11.0"
+bats = "1.14.0"
 
 [settings]
 # Installing or changing tool versions is an explicit developer action.
@@ -32,3 +33,11 @@ run = "bash scripts/dev/lint.sh"
 [tasks."test:hooks"]
 description = "Test auto-formatting and partial staging in a disposable repository"
 run = "bash tests/hooks.sh"
+
+[tasks.test]
+description = "Run the CLI Bats suite and existing integration tests"
+run = "bash scripts/dev/test.sh"
+
+[tasks."test:bats"]
+description = "Run individual Bats CLI tests"
+run = "bash scripts/dev/test-bats.sh"
