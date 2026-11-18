@@ -35,22 +35,47 @@ for helper in ,copy-last ,copy-screen ,copy-pick; do
 done
 printf 'PASS: Executable Zellij copy helper entry points\n'
 # Portable commands must be executable and valid independently of Zsh.
-for helper in ,vv ,uuid; do
+for helper in ,vv ,uuid ,wt; do
     [[ -x "$ROOT/bin/$helper" ]] || fail "comma command is not executable: $helper"
     bash -n "$ROOT/bin/$helper" || fail "invalid Bash syntax: $helper"
 done
 uuid=$("$ROOT/bin/,uuid" --lowercase --no-hyphens) || fail ',uuid failed'
 [[ "$uuid" =~ ^[0-9a-f]{32}$ ]] || fail ',uuid did not produce a compact lowercase UUID'
 [[ "$("$ROOT/bin/,uuid" --help)" == Usage:* ]] || fail ',uuid help failed'
+[[ -f "$ROOT/.config/zsh/functions/cdWorktree" ]] || fail 'missing cdWorktree function'
 for helper in ,mason-plugins ,nvim-plugins ,wt; do
-    [[ -f "$ROOT/.config/zsh/functions/$helper" ]] || fail "missing autoload function: $helper"
+    [[ ! -e "$ROOT/.config/zsh/functions/$helper" ]] || fail "obsolete comma function remains: $helper"
+done
+for helper in cdNvimPlugins cdMasonPlugins; do
+    grep -q "^alias $helper=" "$ROOT/.config/zsh/aliases.zsh" || fail "missing navigation alias: $helper"
 done
 if command -v zsh >/dev/null 2>&1; then
-    for helper in "$ROOT"/.config/zsh/functions/,*; do
+    for helper in "$ROOT"/.config/zsh/functions/*; do
         zsh -n "$helper" || fail "invalid autoload function: $helper"
     done
 fi
-printf 'PASS: Portable comma commands and Zsh autoload layout\n'
+git init -q "$TEST_ROOT/worktree-source"
+git -C "$TEST_ROOT/worktree-source" -c user.name=Test -c user.email=test@example.invalid \
+    commit -q --allow-empty -m initial || fail 'failed to create worktree test fixture'
+worktree_path=$(cd "$TEST_ROOT/worktree-source" && "$ROOT/bin/,wt" feature/test) || fail ',wt failed'
+assert_equal "$TEST_ROOT/worktree-source-wt-feature-test" "$worktree_path" ',wt prints destination'
+[[ -d "$worktree_path" ]] || fail ',wt did not create the worktree'
+[[ "$(git -C "$worktree_path" branch --show-current)" == feature/test ]] || fail 'wrong worktree branch'
+if (cd "$TEST_ROOT/worktree-source" && "$ROOT/bin/,wt" feature/test) >"$TEST_ROOT/out" 2>"$TEST_ROOT/err"; then
+    fail ',wt accepted duplicate branch'
+fi
+[[ ! -s "$TEST_ROOT/out" ]] || fail ',wt printed path on failure'
+if command -v zsh >/dev/null 2>&1; then
+    ROOT="$ROOT" TEST_ROOT="$TEST_ROOT" zsh -fc '
+      fpath=("$ROOT/.config/zsh/functions" $fpath)
+      export PATH="$ROOT/bin:$PATH"
+      autoload -Uz cdWorktree
+      cd "$TEST_ROOT/worktree-source" || exit
+      cdWorktree second || exit
+      [[ "$PWD" == "$TEST_ROOT/worktree-source-wt-second" ]] || exit 1
+    ' || fail 'cdWorktree failed to change current shell directory'
+fi
+printf 'PASS: Portable comma commands, aliases and worktrees\n'
 
 printf 'PASS: Executable OpenCode launcher syntax and layout\n'
 if command -v zsh >/dev/null 2>&1; then
