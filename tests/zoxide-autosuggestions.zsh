@@ -8,6 +8,7 @@ trap 'rm -rf -- "$tmp_dir"' EXIT
 mkdir -p "$tmp_dir/nvim" "$tmp_dir/mason"
 typeset -A DOTFILES_Z_BOOKMARKS
 DOTFILES_Z_BOOKMARKS=(nvim-plugins "$tmp_dir/nvim" mason-plugins "$tmp_dir/mason" missing "$tmp_dir/absent")
+DOTFILES_ZSH_AUTOSUGGESTIONS_FILE="$tmp_dir/not-installed"
 source "$local_dir/.config/zsh/autosuggestions.zsh"
 check() {
   local input=$1 expected=$2
