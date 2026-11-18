@@ -101,6 +101,8 @@ if command -v zsh >/dev/null 2>&1; then
       z unknown-bookmark >/dev/null 2>&1 && exit 1
     ' || fail 'zoxide bookmarks navigation or fallback failed'
     zsh -n "$ROOT/.config/zsh/p10k.zsh" || fail 'reviewed p10k config has invalid syntax'
+    zsh -n "$ROOT/.config/zsh/autosuggestions.zsh" || fail 'autosuggestion config has invalid syntax'
+    zsh "$ROOT/tests/zoxide-autosuggestions.zsh" || fail 'bookmark suggestion smoke test failed'
     printf 'PASS: Reviewed zsh syntax\n'
 else
     printf 'SKIP: Reviewed zsh syntax (zsh not found)\n'
