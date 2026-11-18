@@ -10,7 +10,10 @@ if [[ "${1:-}" != --inside ]]; then
     case "${1:-}" in
     --install) mise -C "$POC_DIR" install ;;
     "") ;;
-    *) printf 'Usage: bash poc/cli-usage/check.sh [--install]\n' >&2; exit 2 ;;
+    *)
+        printf 'Usage: bash poc/cli-usage/check.sh [--install]\n' >&2
+        exit 2
+        ;;
     esac
     exec mise -C "$POC_DIR" exec -- bash "$POC_DIR/check.sh" --inside
 fi
