@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2329 # functions used dynamically by the getoptions DSL
 # Inspect the same getoptions parser_definition DSL for documentation and completion.
 poc_arg() { :; }
 poc_emit() {
