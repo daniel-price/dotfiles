@@ -24,8 +24,3 @@ fi
 if (( $+commands[eza] )); then
   alias ls='eza'
 fi
-
-# doc: alias cdNvimPlugins | Navigate to installed lazy.nvim plugins.
-alias cdNvimPlugins='cd "${XDG_DATA_HOME:-$HOME/.local/share}/nvim/lazy"'
-# doc: alias cdMasonPlugins | Navigate to installed Mason packages.
-alias cdMasonPlugins='cd "${XDG_DATA_HOME:-$HOME/.local/share}/nvim/mason/packages"'
