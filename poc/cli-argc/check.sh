@@ -49,6 +49,20 @@ argc --argc-mangen "$CLI" "$TMP/man"
 argc --argc-completions zsh ,case-text >"$TMP/completion.zsh"
 [[ -s "$TMP/completion.zsh" ]]
 [[ -n "$(find "$TMP/man" -type f -print -quit)" ]]
+# Generate Markdown directly from argc's structured export, not by scraping script comments.
+argc --argc-export "$CLI" | python3 "$POC_DIR/export_to_markdown.py" >"$TMP/reference.md"
+[[ -s "$TMP/reference.md" ]]
+grep -q -- '--case' "$TMP/reference.md"
+grep -q -- '--no-newline' "$TMP/reference.md"
+grep -q -- 'lower' "$TMP/reference.md"
+grep -q -- 'upper' "$TMP/reference.md"
+grep -q -- 'TEXT' "$TMP/reference.md"
+grep -q -- 'Convert text' "$TMP/reference.md"
+# Invalid export input must fail without silently generating misleading docs.
+if printf 'not json' | python3 "$POC_DIR/export_to_markdown.py" >"$TMP/invalid.md" 2>"$TMP/invalid.err"; then
+    printf 'Invalid argc export was accepted.\n' >&2
+    exit 1
+fi
 argc --argc-build "$CLI" "$TMP/built-case-text"
 [[ "$(env PATH=/usr/bin:/bin bash "$TMP/built-case-text" --case upper "Hello World")" == "HELLO WORLD" ]]
-printf 'PASS: argc parsed flags, validated choices and required arguments, produced help, man pages and Zsh completion; compiled output runs without argc.\n'
+printf 'PASS: argc parsed flags, validated choices and required arguments, produced help, Markdown, man pages and Zsh completion; compiled output runs without argc.\n'
