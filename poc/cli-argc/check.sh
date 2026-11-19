@@ -51,6 +51,8 @@ argc --argc-completions zsh ,case-text >"$TMP/completion.zsh"
 [[ -n "$(find "$TMP/man" -type f -print -quit)" ]]
 # Generate Markdown directly from argc's structured export, not by scraping script comments.
 argc --argc-export "$CLI" | python3 "$POC_DIR/export_to_markdown.py" >"$TMP/reference.md"
+printf "Generated Markdown from argc export:\n"
+cat "$TMP/reference.md"
 [[ -s "$TMP/reference.md" ]]
 grep -q -- '--case' "$TMP/reference.md"
 grep -q -- '--no-newline' "$TMP/reference.md"
