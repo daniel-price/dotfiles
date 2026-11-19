@@ -60,7 +60,11 @@ def render(command, prefix="", level=1):
 
     opts = []
     for option in command.get("flag_options", []):
-        names = ", ".join(option.get("names", []))
+        # argc 1.24.0 emits long_name/short_name; newer docs also describe names[].
+        spelling = option.get("names") or [
+            option[key] for key in ("short_name", "long_name") if option.get(key)
+        ]
+        names = ", ".join(spelling)
         if not option.get("flag") and option.get("notations"):
             names += " " + " ".join("<" + val + ">" for val in option["notations"])
         opts.append((TICK + clean(names) + TICK, clean(option.get("describe", "")),
