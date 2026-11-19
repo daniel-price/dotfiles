@@ -1,0 +1,5 @@
+[tools]
+argc = "1.24.0"
+
+[settings]
+auto_install = false

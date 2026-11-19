@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# @describe Convert text to upper or lower case (CLI declaration POC).
+# @option --case[=lower|upper]  Convert text to this case
+# @flag -n --no-newline       Do not print a trailing newline
+# @arg text! <TEXT>          Text to convert
+
+set -euo pipefail
+eval "$(argc --argc-eval "$0" "$@")"
+
+case "$argc_case" in
+lower) result=$(printf '%s' "$argc_text" | tr '[:upper:]' '[:lower:]') ;;
+upper) result=$(printf '%s' "$argc_text" | tr '[:lower:]' '[:upper:]') ;;
+esac
+
+if [[ "${argc_no_newline:-0}" == 1 ]]; then
+    printf '%s' "$result"
+else
+    printf '%s\n' "$result"
+fi
