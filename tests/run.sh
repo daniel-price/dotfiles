@@ -7,6 +7,9 @@ exec </dev/null
 
 ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
 TEST_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-test.XXXXXX")
+# macOS may report /var through /private/var and TMPDIR can end in a slash.
+# Use a physical path when comparing paths returned by Git worktree commands.
+TEST_ROOT=$(cd "$TEST_ROOT" && pwd -P)
 trap 'rm -rf -- "$TEST_ROOT"' EXIT
 
 fail() {
