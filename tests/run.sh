@@ -96,12 +96,15 @@ if command -v zsh >/dev/null 2>&1; then
       export XDG_DATA_HOME="$TEST_ROOT/data"
       __zoxide_z() { [[ "$1" == fallback ]] || return 1; }
       source "$ROOT/.config/zsh/zoxide-bookmarks.zsh" || exit
-      z nvim-plugins || exit
-      [[ "$PWD" == "$TEST_ROOT/data/nvim/lazy" ]] || exit 1
-      z mason-plugins || exit
-      [[ "$PWD" == "$TEST_ROOT/data/nvim/mason/packages" ]] || exit 1
-      z fallback || exit
-      z unknown-bookmark >/dev/null 2>&1 && exit 1
+      z nvim-plugins || { print -u2 "nvim-plugins bookmark failed"; exit 1; }
+      [[ "$(pwd -P)" == "$(cd "$TEST_ROOT/data/nvim/lazy" && pwd -P)" ]] ||
+        { print -u2 "nvim-plugins path mismatch: $PWD"; exit 1; }
+      z mason-plugins || { print -u2 "mason-plugins bookmark failed"; exit 1; }
+      [[ "$(pwd -P)" == "$(cd "$TEST_ROOT/data/nvim/mason/packages" && pwd -P)" ]] ||
+        { print -u2 "mason-plugins path mismatch: $PWD"; exit 1; }
+      z fallback || { print -u2 "zoxide fallback failed"; exit 1; }
+      z unknown-bookmark >/dev/null 2>&1 &&
+        { print -u2 "unknown bookmark unexpectedly succeeded"; exit 1; }
     ' || fail 'zoxide bookmarks navigation or fallback failed'
     zsh -n "$ROOT/.config/zsh/p10k.zsh" || fail 'reviewed p10k config has invalid syntax'
     printf 'PASS: Reviewed zsh syntax\n'
