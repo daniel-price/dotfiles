@@ -118,8 +118,9 @@ done
 [[ ! -e "$ROOT/scripts/update.sh" && ! -e "$ROOT/scripts/setup/provision-tool.sh" &&
     ! -e "$ROOT/scripts/setup/deploy-zsh-config.sh" && ! -e "$ROOT/scripts/setup/deploy-zellij-config.sh" ]] ||
     fail 'obsolete setup placeholders should not remain'
-[[ -f "$ROOT/get-started.sh" && -f "$ROOT/mise.toml" && -f "$ROOT/lefthook.yml" ]] ||
-    fail 'expected root entry points or tool configuration missing'
+[[ ! -e "$ROOT/get-started.sh" ]] || fail "obsolete stage-zero installer should not remain"
+[[ -f "$ROOT/mise.toml" && -f "$ROOT/lefthook.yml" ]] ||
+    fail 'expected checkout tool configuration missing'
 printf 'PASS: Checkout script layout and executable modes\n'
 # Validate the real machine manifest with mise without installing anything.
 # This must not accidentally include the root checkout's developer tools.
@@ -241,10 +242,8 @@ fi
     fail 'entry point wrote to isolated home or working directory'
 printf 'PASS: Entry-point help, errors and repeatable smoke execution\n'
 bash "$ROOT/tests/check-clean.sh"
-bash "$ROOT/tests/get-started.sh"
 if command -v python3 >/dev/null 2>&1; then
     python3 "$ROOT/tests/docs-generation.py"
-    python3 "$ROOT/tests/get-started-interactive.py"
     python3 "$ROOT/tests/update-interactive.py"
     python3 "$ROOT/tests/bootstrap-command.py"
     python3 "$ROOT/tests/bootstrap-interactive.py"

@@ -1,25 +1,19 @@
 # Getting started
 
-Supported systems: Pop!_OS (Debian/Ubuntu-derived Linux) and macOS. Requires **Bash and curl**. Git and GitHub SSH access are not required initially.
+Supported systems: Pop!_OS (Debian/Ubuntu-derived Linux) and macOS. **Install Git first.** Bash and curl are also required (normally present on these systems). The public repository can be cloned over HTTPS without GitHub SSH credentials.
 
 ## Install on a new machine
 
-Review [get-started.sh](https://github.com/daniel-price/dotfiles/blob/main/get-started.sh), then run:
+Review [`bin/,bootstrap`](https://github.com/daniel-price/dotfiles/blob/main/bin/,bootstrap), then run these two steps:
 
 ```sh
-(
-  tmp_dir=$(mktemp -d) || exit 1
-  script="$tmp_dir/get-started.sh"
-  trap 'rm -rf "$tmp_dir"' EXIT
-  curl -fsSLo "$script" \
-    https://raw.githubusercontent.com/daniel-price/dotfiles/main/get-started.sh &&
-    bash "$script"
-)
+git clone https://github.com/daniel-price/dotfiles.git ~/.dotfiles
+bash ~/.dotfiles/bin/,bootstrap --no-update
 ```
 
-The script can install missing Git, clone to `~/.dotfiles` and offer to run bootstrap. **Each change requires confirmation.** Existing files and conflicting checkouts are preserved. Do not pipe the download directly into Bash; the script needs interactive input.
+The second command provisions the freshly cloned revision without a redundant fetch. Bootstrap asks for confirmation before each change. It offers mise, Zsh, pinned machine tools, reviewed `~/.zshrc` and `~/.config/zellij/config.kdl` symlinks, the optional Powerlevel10k theme, and Zsh as the login shell. Conflicting files are preserved; declined components can be installed later. A login-shell change takes effect on your next login.
 
-Bootstrap then offers the reviewed mise, Zsh and pinned machine tools. It also offers mise-managed `~/.zshrc` and `~/.config/zellij/config.kdl` symlinks, installs the optional Powerlevel10k theme and set Zsh as your login shell. The latter takes effect on your next login, not in the current terminal. Declined components can be installed later.
+If `~/.dotfiles` already exists, do not clone over it. Use the update commands below instead. Git must be installed separately; bootstrap does not install Git.
 
 ## Re-run or update an existing installation
 
@@ -29,7 +23,7 @@ If the fetch, branch switch or fast-forward is declined or fails, it stops
 without running bootstrap. The command preserves your existing Git changes.
 
 ```sh
-,bootstrap                 # Update (with approval), then bootstrap
+,bootstrap                                        # Update (with approval), then bootstrap
 bash ~/.dotfiles/scripts/setup/update.sh          # Local status (no network)
 bash ~/.dotfiles/scripts/setup/update.sh --apply  # Approve fetch/update
 bash ~/.dotfiles/bin/,bootstrap --no-update       # Provision checked-out version only

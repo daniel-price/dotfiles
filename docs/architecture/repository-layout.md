@@ -2,7 +2,7 @@
 
 | Path | Purpose |
 | --- | --- |
-| `get-started.sh` | Standalone bootstrap before Git clone |
+| `bin/,bootstrap` | Sole machine bootstrap command (run after Git clone) |
 | `scripts/setup/` | Machine setup, updates and cleanup |
 | `scripts/dev/` | Repo formatting, linting, hooks, CI and docs |
 | `scripts/lib/` | Shared Bash helpers (not standalone commands) |
