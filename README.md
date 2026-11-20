@@ -6,19 +6,13 @@ Personal development environment for **Pop!_OS and macOS**, using Bash and mise.
 
 ## Install
 
-Requires Bash and curl. Review [the installer](get-started.sh) first:
+Install Git first. Bash and curl are also required and normally available on supported systems. Review [the bootstrap command](bin/,bootstrap), then run:
 
 ```sh
-(
-  tmp_dir=$(mktemp -d) || exit 1
-  script="$tmp_dir/get-started.sh"
-  trap 'rm -rf "$tmp_dir"' EXIT
-  curl -fsSLo "$script" \
-    https://raw.githubusercontent.com/daniel-price/dotfiles/main/get-started.sh &&
-    bash "$script"
-)
+git clone https://github.com/daniel-price/dotfiles.git ~/.dotfiles
+bash ~/.dotfiles/bin/,bootstrap --no-update
 ```
 
-Git is installed if missing, the repo is cloned to `~/.dotfiles`, and bootstrap is offered. Changes require confirmation; existing conflicting files are preserved.
+The first run uses the fresh checkout without fetching again. Bootstrap asks before installing tools or changing configuration; existing conflicts are preserved. For an existing checkout, use `,bootstrap` to offer a guarded update before provisioning.
 
 For updating, managing tools/config, Zsh and optional rootless OpenCode, see the [guides](docs/guides/index.md). Secrets and full private-profile management remain planned. **Never commit plaintext credentials or work-owned private files here.**

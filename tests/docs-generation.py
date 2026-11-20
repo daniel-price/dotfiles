@@ -69,6 +69,7 @@ with tempfile.TemporaryDirectory() as temporary:
 
 cli_page = cli.render()
 assert "## Update and bootstrap" in cli_page
+assert "## Initial setup" not in cli_page
 assert "Usage: ,bootstrap" in cli_page
 assert "## OpenCode sandbox" in cli_page
 assert "ANTHROPIC_API_KEY" in cli_page

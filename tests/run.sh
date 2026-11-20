@@ -7,6 +7,9 @@ exec </dev/null
 
 ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
 TEST_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-test.XXXXXX")
+# macOS may report /var through /private/var and TMPDIR can end in a slash.
+# Use a physical path when comparing paths returned by Git worktree commands.
+TEST_ROOT=$(cd "$TEST_ROOT" && pwd -P)
 trap 'rm -rf -- "$TEST_ROOT"' EXIT
 
 fail() {
@@ -93,12 +96,17 @@ if command -v zsh >/dev/null 2>&1; then
       export XDG_DATA_HOME="$TEST_ROOT/data"
       __zoxide_z() { [[ "$1" == fallback ]] || return 1; }
       source "$ROOT/.config/zsh/zoxide-bookmarks.zsh" || exit
-      z nvim-plugins || exit
-      [[ "$PWD" == "$TEST_ROOT/data/nvim/lazy" ]] || exit 1
-      z mason-plugins || exit
-      [[ "$PWD" == "$TEST_ROOT/data/nvim/mason/packages" ]] || exit 1
-      z fallback || exit
-      z unknown-bookmark >/dev/null 2>&1 && exit 1
+      z nvim-plugins || { print -u2 "nvim-plugins bookmark failed"; exit 1; }
+      [[ "$(pwd -P)" == "$(cd "$TEST_ROOT/data/nvim/lazy" && pwd -P)" ]] ||
+        { print -u2 "nvim-plugins path mismatch: $PWD"; exit 1; }
+      z mason-plugins || { print -u2 "mason-plugins bookmark failed"; exit 1; }
+      [[ "$(pwd -P)" == "$(cd "$TEST_ROOT/data/nvim/mason/packages" && pwd -P)" ]] ||
+        { print -u2 "mason-plugins path mismatch: $PWD"; exit 1; }
+      z fallback || { print -u2 "zoxide fallback failed"; exit 1; }
+      if z unknown-bookmark >/dev/null 2>&1; then
+        print -u2 "unknown bookmark unexpectedly succeeded"
+        exit 1
+      fi
     ' || fail 'zoxide bookmarks navigation or fallback failed'
     zsh -n "$ROOT/.config/zsh/p10k.zsh" || fail 'reviewed p10k config has invalid syntax'
     printf 'PASS: Reviewed zsh syntax\n'
@@ -118,8 +126,9 @@ done
 [[ ! -e "$ROOT/scripts/update.sh" && ! -e "$ROOT/scripts/setup/provision-tool.sh" &&
     ! -e "$ROOT/scripts/setup/deploy-zsh-config.sh" && ! -e "$ROOT/scripts/setup/deploy-zellij-config.sh" ]] ||
     fail 'obsolete setup placeholders should not remain'
-[[ -f "$ROOT/get-started.sh" && -f "$ROOT/mise.toml" && -f "$ROOT/lefthook.yml" ]] ||
-    fail 'expected root entry points or tool configuration missing'
+[[ ! -e "$ROOT/get-started.sh" ]] || fail "obsolete stage-zero installer should not remain"
+[[ -f "$ROOT/mise.toml" && -f "$ROOT/lefthook.yml" ]] ||
+    fail 'expected checkout tool configuration missing'
 printf 'PASS: Checkout script layout and executable modes\n'
 # Validate the real machine manifest with mise without installing anything.
 # This must not accidentally include the root checkout's developer tools.
@@ -241,10 +250,8 @@ fi
     fail 'entry point wrote to isolated home or working directory'
 printf 'PASS: Entry-point help, errors and repeatable smoke execution\n'
 bash "$ROOT/tests/check-clean.sh"
-bash "$ROOT/tests/get-started.sh"
 if command -v python3 >/dev/null 2>&1; then
     python3 "$ROOT/tests/docs-generation.py"
-    python3 "$ROOT/tests/get-started-interactive.py"
     python3 "$ROOT/tests/update-interactive.py"
     python3 "$ROOT/tests/bootstrap-command.py"
     python3 "$ROOT/tests/bootstrap-interactive.py"

@@ -135,20 +135,18 @@ exec "@GIT@" "$@"
     status, out = run([script, "--apply"], "y\n")
     assert status == 0 and "already current" in out, out
 
-    # Stage zero must update first and execute the NEW canonical bootstrap.
+    # The independent updater can switch from a feature branch and fast-forward
+    # main. It must not run provisioning; the caller runs bootstrap separately.
     git("-C", checkout, "switch", "-qc", "feature/test")
     feature_head = git("-C", checkout, "rev-parse", "HEAD")
     push("v3")
-    home_checkout = home / ".dotfiles"
-    checkout.rename(home_checkout)
-    checkout = home_checkout
-    script = checkout / "scripts/setup/update.sh"
-    status, out = run([ROOT / "get-started.sh"], "y\ny\ny\n")
-    assert status == 0, out
+    status, out = run([script, "--apply"], "y\ny\n")
+    assert status == 0 and "Checkout update complete" in out, out
     assert git("-C", checkout, "branch", "--show-current") == "main"
     assert git("-C", checkout, "rev-parse", "HEAD") == git("-C", seed, "rev-parse", "HEAD")
     assert git("-C", checkout, "rev-parse", "refs/heads/feature/test") == feature_head
-    assert (base / "bootstrap.log").read_text().splitlines() == ["v3"]
+    assert "v3" in (checkout / "bin/,bootstrap").read_text()
+    assert not (base / "bootstrap.log").exists(), "updater must not run provisioning"
 
     # A dirty checkout (including untracked files) must not fetch or switch.
     git("-C", checkout, "switch", "-q", "feature/test")
@@ -187,4 +185,4 @@ exec "@GIT@" "$@"
     assert status == 0 and "Detached HEAD" in out, out
     assert git("-C", checkout, "rev-parse", "HEAD") == local_head
 
-    print("PASS: Local Git update preview, consent, fast-forward, branch safety and bootstrap handoff")
+    print("PASS: Local Git update preview, consent, fast-forward, branch safety and no automatic provisioning")
