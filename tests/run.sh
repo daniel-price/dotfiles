@@ -103,8 +103,10 @@ if command -v zsh >/dev/null 2>&1; then
       [[ "$(pwd -P)" == "$(cd "$TEST_ROOT/data/nvim/mason/packages" && pwd -P)" ]] ||
         { print -u2 "mason-plugins path mismatch: $PWD"; exit 1; }
       z fallback || { print -u2 "zoxide fallback failed"; exit 1; }
-      z unknown-bookmark >/dev/null 2>&1 &&
-        { print -u2 "unknown bookmark unexpectedly succeeded"; exit 1; }
+      if z unknown-bookmark >/dev/null 2>&1; then
+        print -u2 "unknown bookmark unexpectedly succeeded"
+        exit 1
+      fi
     ' || fail 'zoxide bookmarks navigation or fallback failed'
     zsh -n "$ROOT/.config/zsh/p10k.zsh" || fail 'reviewed p10k config has invalid syntax'
     printf 'PASS: Reviewed zsh syntax\n'
