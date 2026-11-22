@@ -268,7 +268,6 @@ MISE
         python3 "$ROOT/tests/podman-setup.py"
         python3 "$ROOT/tests/prompt-setup.py"
         python3 "$ROOT/tests/font-setup.py"
-        python3 "$ROOT/tests/ghostty-setup.py"
         python3 "$ROOT/tests/autosuggestions-setup.py"
         python3 "$ROOT/tests/dev-setup-interactive.py"
     else
