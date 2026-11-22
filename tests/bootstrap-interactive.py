@@ -48,7 +48,7 @@ with tempfile.TemporaryDirectory(prefix="dotfiles-mise-installer-") as scratch:
     (bin_dir / "zsh").chmod(0o755)
 
     # This suite tests the mise installer, not optional desktop packages.
-    (bin_dir / "ghostty").write_text("#!/usr/bin/env bash\\nexit 0\\n")
+    (bin_dir / "ghostty").write_text("#!/usr/bin/env bash\nexit 0\n")
     (bin_dir / "ghostty").chmod(0o755)
 
     curl = bin_dir / "curl"
