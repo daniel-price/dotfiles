@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 # Sourced library: leave shell options and traps to each entry point.
 
+# Create a temporary directory and return its physical path. Git may report
+# /private/var where mktemp returns /var on macOS.
+make_temp_dir_physical() {
+    local dir
+    dir=$(mktemp -d "${TMPDIR:-/tmp}/$1.XXXXXX") || return
+    (cd "$dir" && pwd -P)
+}
+
 log() {
     printf '[info] %s\n' "$*"
 }
