@@ -14,7 +14,6 @@ PROMPT = ROOT / ".config/zsh/p10k.zsh"
 assert ZSHRC.is_file() and ALIASES.is_file() and PROMPT.is_file()
 assert "POWERLEVEL9K_CONFIG_FILE" in PROMPT.read_text()
 assert "alias zj='zellij'" in ALIASES.read_text()
-assert 'source "$_dotfiles_zsh_dir/aliases.zsh"' in ZSHRC.read_text()
 assert 'source "$_dotfiles_zsh_dir/profiles.zsh"' in ZSHRC.read_text()
 assert "_dotfiles_profiles_init" not in ZSHRC.read_text()
 assert "_dotfiles_profiles_functions" not in ZSHRC.read_text()
@@ -23,6 +22,7 @@ PROFILES = ROOT / ".config/zsh/profiles.zsh"
 assert PROFILES.is_file()
 assert "() {" in PROFILES.read_text()
 assert "local -a profiles=()" in PROFILES.read_text()
+assert 'source "$zsh_dir/aliases.zsh"' in PROFILES.read_text()
 
 assert 'source "$_dotfiles_zsh_dir/p10k.zsh"' in ZSHRC.read_text()
 assert "git clone" not in ZSHRC.read_text()
