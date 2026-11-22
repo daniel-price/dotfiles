@@ -7,7 +7,7 @@ The public repository may eventually contain reviewed **age-encrypted values**. 
 | Data | Location |
 | --- | --- |
 | Public configuration | This repository |
-| Approved non-public settings | Explicitly selected private source |
+| Approved non-public Profile settings | Explicitly selected authorised repository |
 | Encrypted values | Only after testing ciphertext-only history |
 | Encrypted tracked files | Separate, explicitly configured history origin |
 | age identities and per-machine SSH private keys | Outside Git, with secure recovery backup |

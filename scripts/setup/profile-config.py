@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Preview and safely compose explicitly approved, locally cloned machine profiles.
+"""Preview and safely compose explicitly approved, separately cloned profiles.
 
 This deliberately accepts only exact mise tool pins and static file mappings.
 No config is sourced, packages installed or Git remotes contacted here.
@@ -201,7 +201,7 @@ def build(root, home, checkout_root, name, selected_profiles=None):
         for source in contained_files(repo / "config"):
             relative = source.relative_to(repo / "config")
             if relative.parts[0] in ("mise", "dotfiles"):
-                refuse(f"Reserved private configuration target: {relative}")
+                refuse(f"Reserved profile configuration target: {relative}")
             target = home / ".config" / relative
             parents_safe(target, home)
             if target in mappings:

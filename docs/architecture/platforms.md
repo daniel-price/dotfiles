@@ -27,6 +27,6 @@ The root `mise.toml` contains checkout-only tools (Lefthook, shfmt and ShellChec
 
 The reviewed Zsh startup activates mise and zoxide when installed; it resolves the managed config even through a symlink. The theme is optional. Setting the login shell affects future sessions, not the running Bash terminal.
 
-Rootless [OpenCode](../guides/opencode.md) and [optional Podman setup](../guides/podman.md) are currently **Linux-only**. Long-running container services, OS preferences and full private configuration remain planned; see the [roadmap](../roadmap.md).
+Rootless [OpenCode](../guides/opencode.md) and [optional Podman setup](../guides/podman.md) are currently **Linux-only**. Long-running container services, OS preferences and Profile updates and full lifecycle management remain planned; see the [roadmap](../roadmap.md).
 
 To inspect or undo eligible managed items, use the [cleanup commands](../getting-started/index.md#common-follow-up-tasks). The cleanup command is intentionally selective, not a full uninstall.

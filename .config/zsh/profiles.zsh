@@ -1,4 +1,4 @@
-# Optional machine profiles are activated explicitly by ,profile.
+# Optional reusable profiles are activated explicitly by ,profile.
 # Keep private-path, mise and shell composition out of zshrc.
 typeset -a _dotfiles_profiles
 _dotfiles_profiles=()

@@ -30,7 +30,7 @@ unset _dotfiles_bin
 
 # Load approved profile directories and the effective mise config before activation.
 _dotfiles_zsh_dir=${${(%):-%x}:A:h}
-source "$_dotfiles_zsh_dir/private-profiles.zsh"
+source "$_dotfiles_zsh_dir/profiles.zsh"
 _dotfiles_profiles_init "${_dotfiles_zsh_dir:h:h}"
 
 if (( $+commands[mise] )); then

@@ -11,7 +11,7 @@ nav = [
   { "Architecture" = [
     "architecture/index.md",
     { "Operating systems" = "architecture/platforms.md" },
-    { "Private configuration layers" = "architecture/private-configuration.md" },
+    { "Base and Profiles" = "architecture/configuration.md" },
     { "Secrets and encryption" = "architecture/secrets.md" },
     { "Applications and containers" = "architecture/applications.md" },
     { "Repository layout" = "architecture/repository-layout.md" },
@@ -22,7 +22,8 @@ nav = [
     { "Add a tool" = "guides/add-tool.md" },
     { "Manage a dotfile" = "guides/manage-dotfile.md" },
     { "Manage a secret" = "guides/manage-secret.md" },
-    { "Private profiles" = "guides/private-profiles.md" },
+    { "Profiles (POC)" = "guides/profiles.md" },
+    { "Legacy directory link" = "guides/directory-link.md" },
   ] },
   { "Roadmap" = "roadmap.md" },
   { "Reference & history (detailed)" = "reference/index.md" },

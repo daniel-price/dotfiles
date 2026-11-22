@@ -1,10 +1,9 @@
-# Use an optional private configuration profile
+# Legacy directory-link utility
 
 **Status: narrow single-directory prototype implemented.** This guide covers
 the original helper for symlinking one already-present directory to one target.
-For real independent private Git repositories, approved profile selection,
-tool pins and Bash/Zsh/app configuration, use the
-[profile-repositories POC](private-profiles-poc.md) instead.
+For current **Base + Profiles** configuration, use the
+[Profiles guide](profiles.md). This legacy helper links a single already-present directory; it does not activate a Profile.
 
 The public setup never needs private access. Only run this script on a machine
 and for a source you are explicitly authorised to use. Never put a private
@@ -63,13 +62,13 @@ rerun. Declining the confirmation leaves the target unchanged.
 Automated checks use synthetic Git repositories and fake mise commands. They
 cover refusal, preview, approval, repeat application, real-path conflicts,
 different symlinks, dirty checkouts and divergence. They do not use real
-private repositories or credentials. See `tests/tool-overlay-interactive.py`.
+profile repositories or credentials. See `tests/tool-overlay-interactive.py`.
 
 For a manual test, create two disposable directories with synthetic files and
 use them as `PRIVATE_SOURCE` and a target under a temporary `HOME`. After the
 test, remove the created symlink and temporary directories. Do not test against
 a live editor configuration until you have reviewed the preview.
 
-See [configuration layers](../architecture/private-configuration.md),
+See [Base and Profiles](../architecture/configuration.md),
 [Secrets](../architecture/secrets.md) and
-[ADR-0003](../decisions/0003-private-config-layers.md).
+[ADR-0003](../decisions/0003-base-profiles.md).

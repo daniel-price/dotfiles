@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Opt-in private machine profile. Clone only a selected repo; never fetch automatically.
+# Opt-in reusable profile. Clone only a selected repo; never fetch automatically.
 set -euo pipefail
 
 ROOT=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
@@ -16,7 +16,7 @@ main() {
         printf '%s\n' 'Usage: bash scripts/setup/profile.sh --name NAME --repo URL [--apply]' \
             '       bash scripts/setup/profile.sh --name NAME --deactivate [--apply]' \
             'Default: preview only. --apply asks before clone, configuration and each tool install.' \
-            'Supports explicitly selected private GitHub HTTPS/SSH URLs or local Git paths for tests.' \
+            'Supports explicitly selected GitHub HTTPS/SSH URLs or local Git paths for tests.' \
             'Never fetches, pulls, discovers repositories, or installs tools without approval.'
     }
 

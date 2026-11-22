@@ -14,4 +14,4 @@ Alternatively, rerun `bash ~/.dotfiles/bin/,bootstrap --no-update` to provision 
 
 Mise refuses to replace existing regular files without `--force`, but may repoint an existing symlink to the declared source. Review the preview and never use `--force` during bootstrap. The manifest stays separate from the checkout-only development `mise.toml`.
 
-For removal, preview with `bash ~/.dotfiles/scripts/setup/cleanup.sh` and approve selective cleanup with `--apply`. See [Zellij keybindings](zellij.md) and [private profiles](private-profiles.md).
+For removal, preview with `bash ~/.dotfiles/scripts/setup/cleanup.sh` and approve selective cleanup with `--apply`. See [Zellij keybindings](zellij.md) and [Profiles](profiles.md).
