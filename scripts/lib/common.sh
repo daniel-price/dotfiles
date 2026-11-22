@@ -18,7 +18,6 @@ die() {
     exit 1
 }
 
-
 # Use inside `if confirm 'Describe the exact action'; then ...; fi`.
 # Return 0 only for an explicit yes from terminal stdin; never perform an action.
 confirm() {
