@@ -3,7 +3,6 @@ set -euo pipefail
 
 ROOT=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
 
-
 # shellcheck source=scripts/lib/shell-files.sh
 source "$ROOT/scripts/lib/shell-files.sh"
 
