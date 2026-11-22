@@ -13,6 +13,7 @@ argc = "1.24.0"
 
 [bootstrap.packages]
 "apt:zsh" = { os = "linux" }
+"apt:wl-clipboard" = { os = "linux" }
 "brew:zsh" = { os = "macos" }
 
 [dotfiles]

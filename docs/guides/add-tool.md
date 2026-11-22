@@ -2,7 +2,7 @@
 
 Machine tools are pinned in [`scripts/setup/mise.toml`](../../scripts/setup/mise.toml), separate from the root `mise.toml` used for repository development.
 
-1. Add or change an exact version under `[tools]`. Use `[bootstrap.packages]` for OS packages.
+1. Add or change an exact version under `[tools]`. Use `[bootstrap.packages]` for OS packages (for example, `apt:wl-clipboard` on Linux).
 2. Review the source/version and run `bash bin/,bootstrap --no-update`. It previews missing components and asks before installing.
 3. Test an already-installed tool, refusal and repeat run before merging.
 

@@ -180,18 +180,46 @@ main() {
     tool_specs=$(machine_tool_specs "$mise" "$MISE_GLOBAL_CONFIG_FILE") ||
         die 'Could not read the reviewed machine tool declarations.'
 
+    # Apply package declarations independently so an approval never installs
+    # unrelated packages (or silently skips clipboard support on repeat runs).
+    if [[ "$platform" == debian ]]; then
+        zsh_package='apt:zsh'
+    else
+        zsh_package='brew:zsh'
+    fi
     if command -v zsh >/dev/null 2>&1 && zsh --version >/dev/null 2>&1; then
         log 'zsh is available; no package installation needed.'
     else
-        "$mise" -C / bootstrap --only packages --dry-run ||
+        "$mise" -C / bootstrap packages apply --dry-run "$zsh_package" ||
             die 'Could not preview the zsh package install.'
         if confirm 'Install missing zsh using the native package manager via mise?'; then
-            "$mise" -C / bootstrap --only packages || die 'mise could not install zsh.'
+            "$mise" -C / bootstrap packages apply --yes "$zsh_package" ||
+                die 'mise could not install zsh.'
             if ! command -v zsh >/dev/null 2>&1 || ! zsh --version >/dev/null 2>&1; then
                 die 'Mise package installation finished but zsh is still unavailable.'
             fi
         else
             log 'Skipped zsh package installation.'
+        fi
+    fi
+
+    # macOS has pbcopy/pbpaste; Debian-based Linux needs Wayland clipboard tools.
+    if [[ "$platform" == debian ]]; then
+        if command -v wl-copy >/dev/null 2>&1 && wl-copy --version >/dev/null 2>&1 &&
+            command -v wl-paste >/dev/null 2>&1 && wl-paste --version >/dev/null 2>&1; then
+            log 'Wayland clipboard utilities are already available.'
+        else
+            "$mise" -C / bootstrap packages apply --dry-run apt:wl-clipboard ||
+                die 'Could not preview the wl-clipboard package install.'
+            if confirm 'Install missing wl-clipboard for Neovim and terminal clipboard support?'; then
+                "$mise" -C / bootstrap packages apply --yes apt:wl-clipboard ||
+                    die 'mise could not install wl-clipboard.'
+                if ! command -v wl-copy >/dev/null 2>&1 || ! command -v wl-paste >/dev/null 2>&1; then
+                    die 'Mise package installation finished but wl-clipboard is still unavailable.'
+                fi
+            else
+                log 'Skipped wl-clipboard package installation.'
+            fi
         fi
     fi
 
