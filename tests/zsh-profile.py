@@ -69,4 +69,22 @@ with tempfile.TemporaryDirectory(prefix="dotfiles-zsh-profile-") as temporary:
     )
     assert vscode.returncode == 0 and "THEME=off" in vscode.stdout, vscode.stdout
 
-    print("PASS: Symlinked Zsh aliases, missing-theme fallback, pinned theme loading and VS Code skip")
+    # An installed plugin is sourced in interactive shells, not in scripts.
+    plugin_dir = home / ".local/share/dotfiles/zsh-autosuggestions"
+    plugin_dir.mkdir(parents=True)
+    (plugin_dir / "zsh-autosuggestions.zsh").write_text(
+        "typeset -g _DOTFILES_AUTOSUGGESTIONS_LOADED=yes\n"
+        "_zsh_autosuggest_start() { :; }\n"
+    )
+    plugin = run(
+        'print -r -- "PLUGIN=${_DOTFILES_AUTOSUGGESTIONS_LOADED:-off}" '
+        '"STRATEGIES=${(j:,:)ZSH_AUTOSUGGEST_STRATEGY}"',
+        interactive=True,
+    )
+    assert plugin.returncode == 0, plugin.stdout
+    assert "PLUGIN=yes" in plugin.stdout, plugin.stdout
+    assert "STRATEGIES=dotfiles_bookmarks,history" in plugin.stdout, plugin.stdout
+    no_plugin = run('print -r -- "PLUGIN=${_DOTFILES_AUTOSUGGESTIONS_LOADED:-off}"')
+    assert no_plugin.returncode == 0 and "PLUGIN=off" in no_plugin.stdout, no_plugin.stdout
+
+    print("PASS: Zsh aliases, optional prompt and autosuggestions startup")

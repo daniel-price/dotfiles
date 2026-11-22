@@ -104,3 +104,13 @@ if [[ -o interactive && "${TERM_PROGRAM:-}" != vscode ]]; then
   unset _dotfiles_p10k_theme
 fi
 unset _dotfiles_zsh_dir
+
+# doc: inline autosuggestions | Bookmark-first suggestions, then command history.
+# Load only in interactive shells; startup must never install dependencies.
+if [[ -o interactive ]]; then
+  _dotfiles_autosuggestions="${${(%):-%x}:A:h}/autosuggestions.zsh"
+  if [[ -r "$_dotfiles_autosuggestions" ]]; then
+    source "$_dotfiles_autosuggestions"
+  fi
+  unset _dotfiles_autosuggestions
+fi

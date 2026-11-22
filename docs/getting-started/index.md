@@ -11,7 +11,7 @@ git clone https://github.com/daniel-price/dotfiles.git ~/.dotfiles
 bash ~/.dotfiles/bin/,bootstrap --no-update
 ```
 
-The second command provisions the freshly cloned revision without a redundant fetch. Bootstrap asks for confirmation before each change. It offers mise, Zsh, pinned machine tools, reviewed `~/.zshrc` and `~/.config/zellij/config.kdl` symlinks, the optional Powerlevel10k theme, and Zsh as the login shell. Conflicting files are preserved; declined components can be installed later. A login-shell change takes effect on your next login.
+The second command provisions the freshly cloned revision without a redundant fetch. Bootstrap asks for confirmation before each change. It offers mise, Zsh, pinned machine tools, reviewed `~/.zshrc` and `~/.config/zellij/config.kdl` symlinks, optional pinned Powerlevel10k and Zsh autosuggestions, and Zsh as the login shell. Conflicting files are preserved; declined components can be installed later. A login-shell change takes effect on your next login.
 
 If `~/.dotfiles` already exists, do not clone over it. Use the update commands below instead. Git must be installed separately; bootstrap does not install Git.
 
