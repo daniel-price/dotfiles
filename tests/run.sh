@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# The suite must never consume the caller's terminal input. Tests that need
-# interaction create their own pseudo-terminals and supply input explicitly.
-exec </dev/null
-
 ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
 # shellcheck source=scripts/lib/common.sh
 source "$ROOT/scripts/lib/common.sh"
@@ -14,6 +10,10 @@ source "$ROOT/scripts/lib/mise.sh"
 source "$ROOT/scripts/lib/machine-tools.sh"
 # shellcheck source=scripts/lib/os.sh
 source "$ROOT/scripts/lib/os.sh"
+
+# The suite must never consume the caller's terminal input. Tests that need
+# interaction create their own pseudo-terminals and supply input explicitly.
+exec </dev/null
 
 TEST_ROOT=$(make_temp_dir_physical dotfiles-test)
 trap 'rm -rf -- "$TEST_ROOT"' EXIT
