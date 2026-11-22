@@ -116,7 +116,7 @@ case "$*" in
     touch "$MOCK_STATE/$spec"
     ;;
   "dot status --missing")
-    [[ -L "$HOME/.zshrc" && -L "$HOME/.config/zellij/config.kdl" ]] && exit 0 || exit 1
+    [[ -L "$HOME/.zshrc" && -L "$HOME/.config/zellij/config.kdl" && -L "$HOME/.config/ghostty/config" ]] && exit 0 || exit 1
     ;;
   "dot apply --dry-run --force") exit 0 ;;
   "dot apply --dry-run")
@@ -125,12 +125,14 @@ case "$*" in
     exit 0
     ;;
   "dot apply --yes")
-    mkdir -p "$HOME/.config/zellij"
+    mkdir -p "$HOME/.config/zellij" "$HOME/.config/ghostty"
     [[ ! -e "$MOCK_STATE/fail-dot-apply" ]] || exit 18
     [[ ! -e "$HOME/.zshrc" || -L "$HOME/.zshrc" ]] || exit 17
     [[ ! -e "$HOME/.config/zellij/config.kdl" || -L "$HOME/.config/zellij/config.kdl" ]] || exit 17
+    [[ ! -e "$HOME/.config/ghostty/config" || -L "$HOME/.config/ghostty/config" ]] || exit 17
     if [[ ! -e "$HOME/.zshrc" && ! -L "$HOME/.zshrc" ]]; then ln -s "$MOCK_DOT_SOURCE" "$HOME/.zshrc"; fi
     if [[ ! -e "$HOME/.config/zellij/config.kdl" && ! -L "$HOME/.config/zellij/config.kdl" ]]; then ln -s "$MOCK_ZELLIJ_SOURCE" "$HOME/.config/zellij/config.kdl"; fi
+    if [[ ! -e "$HOME/.config/ghostty/config" && ! -L "$HOME/.config/ghostty/config" ]]; then ln -s "$MOCK_GHOSTTY_SOURCE" "$HOME/.config/ghostty/config"; fi
     exit 0
     ;;
   *) exit 21 ;;
@@ -159,6 +161,7 @@ esac
                MOCK_STATE=str(state), MOCK_LOG=str(log),
                MOCK_DOT_SOURCE=str(ROOT / ".config" / "zsh" / "zshrc"),
                MOCK_ZELLIJ_SOURCE=str(ROOT / ".config" / "zellij" / "config.kdl"),
+               MOCK_GHOSTTY_SOURCE=str(ROOT / ".config" / "ghostty" / "config"),
                MOCK_TOOL_ROWS=tool_rows, MOCK_TOOL_PINS=tool_pins)
 
     def run(answers=None):
@@ -208,6 +211,8 @@ esac
     assert target.is_symlink() and target.resolve() == (ROOT / ".config/zsh/zshrc").resolve()
     zellij_target = home / ".config/zellij/config.kdl"
     assert zellij_target.is_symlink() and zellij_target.resolve() == (ROOT / ".config/zellij/config.kdl").resolve()
+    ghostty_target = home / ".config/ghostty/config"
+    assert ghostty_target.is_symlink() and ghostty_target.resolve() == (ROOT / ".config/ghostty/config").resolve()
     assert "Zsh configuration: applied" in approved.stdout
     calls = log.read_text().splitlines()
     assert any("dot apply --dry-run" in line for line in calls)
