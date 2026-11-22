@@ -8,6 +8,13 @@ exec </dev/null
 ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
 # shellcheck source=scripts/lib/common.sh
 source "$ROOT/scripts/lib/common.sh"
+# shellcheck source=scripts/lib/mise.sh
+source "$ROOT/scripts/lib/mise.sh"
+# shellcheck source=scripts/lib/machine-tools.sh
+source "$ROOT/scripts/lib/machine-tools.sh"
+# shellcheck source=scripts/lib/os.sh
+source "$ROOT/scripts/lib/os.sh"
+
 TEST_ROOT=$(make_temp_dir_physical dotfiles-test)
 trap 'rm -rf -- "$TEST_ROOT"' EXIT
 
@@ -132,8 +139,6 @@ printf 'PASS: Checkout script layout and executable modes\n'
 # Validate the real machine manifest with mise without installing anything.
 # This must not accidentally include the root checkout's developer tools.
 # Resolve mise as setup does: it may be installed outside the current PATH.
-# shellcheck source=scripts/lib/mise.sh
-source "$ROOT/scripts/lib/mise.sh"
 if mise=$(mise_command); then
     machine_config="$ROOT/scripts/setup/mise.toml"
     MISE_GLOBAL_CONFIG_FILE="$machine_config" "$mise" -C / config ls >/dev/null ||
@@ -146,8 +151,6 @@ if mise=$(mise_command); then
         fail 'developer tools leaked into machine setup'
     # Exercise the real mise CLI (rather than just synthetic fixtures) to
     # ensure the shared enumerator handles requested-but-missing versions.
-    # shellcheck source=scripts/lib/machine-tools.sh
-    source "$ROOT/scripts/lib/machine-tools.sh"
     machine_specs=$(MISE_GLOBAL_CONFIG_FILE="$machine_config" \
         machine_tool_specs "$mise" "$machine_config") ||
         fail 'machine tool enumerator could not read the reviewed mise config'
@@ -157,7 +160,6 @@ if mise=$(mise_command); then
     printf 'PASS: Native mise machine manifest loads without developer tools\n'
 fi
 
-source "$ROOT/scripts/lib/os.sh"
 
 assert_equal macos "$(detect_os Darwin "$TEST_ROOT/missing")" 'macOS without Linux metadata'
 
