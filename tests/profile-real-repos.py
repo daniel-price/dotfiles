@@ -143,7 +143,7 @@ exit 0
     assert code(reapply) == 0, stdout(reapply)
     assert git(checkout, "rev-parse", "HEAD") == before
     assert registry.read_text().splitlines().count("personal") == 1
-    assert "install opencode@2.3.0" in log.read_text(), "Approved tool not offered"
+    assert "install opencode@2.3.0" in log.read_text(), (stdout(reapply), log.read_text())
 
     # Independent second repo, distinct config target, activates both profiles.
     server = create_remote(tmp, "server", "fd", "10.5.2", settings="server.toml")

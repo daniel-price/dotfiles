@@ -126,7 +126,7 @@ main() {
         return
     fi
     export MISE_GLOBAL_CONFIG_FILE="$HOME/.config/mise/dotfiles-profiles.toml"
-    while IFS= read -r spec; do
+    while IFS= read -r spec <&3; do
         [[ -n "$spec" ]] || continue
         if "$mise" -C / install --dry-run-code "$spec"; then
             log "$spec is already installed."
@@ -143,7 +143,7 @@ main() {
         else
             log "Skipped optional tool $spec; its version remains declared with auto_install=false."
         fi
-    done <<<"$specs"
+    done 3<<<"$specs"
 }
 
 main "$@"
