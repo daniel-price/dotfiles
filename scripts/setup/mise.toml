@@ -19,6 +19,7 @@ ghostty = { ppa = "mkasberg/ghostty-ubuntu" }
 
 [bootstrap.packages]
 "apt:zsh" = { os = "linux" }
+"apt:wl-clipboard" = { os = "linux" }
 "brew:zsh" = { os = "macos" }
 "apt:ghostty" = { os = "linux" }
 "brew-cask:ghostty" = { os = "macos" }

@@ -64,11 +64,17 @@ printf '%s|%s\\n' "$MISE_GLOBAL_CONFIG_FILE" "$*" >> "$MOCK_LOG"
 shift 2
 case "$*" in
   "bootstrap packages status --missing")
-    [[ -e "$MOCK_STATE/zsh" && -e "$MOCK_STATE/ghostty" ]]
+    [[ -e "$MOCK_STATE/zsh" && -e "$MOCK_STATE/ghostty" ]] || exit 1
+    if [[ "$MOCK_LINUX" == 1 ]]; then
+      [[ -e "$MOCK_STATE/wl-clipboard" ]] || exit 1
+    fi
     ;;
   "bootstrap packages apply --dry-run") exit 0 ;;
   "bootstrap packages apply --yes")
     touch "$MOCK_STATE/zsh" "$MOCK_STATE/ghostty"
+    if [[ "$MOCK_LINUX" == 1 ]]; then
+      touch "$MOCK_STATE/wl-clipboard"
+    fi
     ;;
   "bootstrap repos apply --dry-run") exit 0 ;;
   "bootstrap repos apply --yes")
@@ -164,6 +170,7 @@ esac
 
     env = dict(os.environ, HOME=str(home), PATH=str(bin_dir) + ":/usr/bin:/bin",
                MOCK_STATE=str(state), MOCK_LOG=str(log),
+               MOCK_LINUX="1" if platform.system() == "Linux" else "0",
                MOCK_DOT_SOURCE=str(ROOT / ".config" / "zsh" / "zshrc"),
                MOCK_ZELLIJ_SOURCE=str(ROOT / ".config" / "zellij" / "config.kdl"),
                MOCK_GHOSTTY_SOURCE=str(ROOT / ".config" / "ghostty" / "config"),
@@ -210,6 +217,8 @@ esac
     approved = run("\n".join(answers + ["n", "n", "n"]) + "\n")
     assert approved.returncode == 0, approved.stdout
     assert (state / "zsh").exists() and (state / "ghostty").exists() and (state / f"neovim@{pins['neovim']}").exists() and (state / f"zoxide@{pins['zoxide']}").exists(), (approved.stdout, log.read_text(), list(state.iterdir()), pins)
+    if platform.system() == "Linux":
+        assert (state / "wl-clipboard").exists(), approved.stdout
     assert all(
         not (state / f"{name}@{version}").exists()
         for name, version in pins.items() if name not in approved_tools
@@ -243,11 +252,13 @@ esac
     assert not any("scripts/dev" in line for line in calls), calls
 
     dot_before_repeat = sum("dot apply --yes" in line for line in log.read_text().splitlines())
+    packages_before_repeat = sum("bootstrap packages apply --yes" in line for line in log.read_text().splitlines())
     zoxide_before_repeat = sum(line.endswith(f"install zoxide@{pins['zoxide']}") for line in calls)
     repeated = run()
     assert repeated.returncode == 0, repeated.stdout
     assert "Zsh configuration: applied" in repeated.stdout
     assert sum("dot apply --yes" in line for line in log.read_text().splitlines()) == dot_before_repeat
+    assert sum("bootstrap packages apply --yes" in line for line in log.read_text().splitlines()) == packages_before_repeat
     assert sum(line.endswith(f"install zoxide@{pins['zoxide']}") for line in log.read_text().splitlines()) == zoxide_before_repeat
     assert not (state / f"zellij@{pins['zellij']}").exists(), repeated.stdout
     for name, version in pins.items():
