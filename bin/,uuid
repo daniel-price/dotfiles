@@ -9,13 +9,6 @@ set -euo pipefail
 ROOT=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
 
 main() {
-    if ! command -v argc >/dev/null 2>&1; then
-        printf ',uuid: argc is required; install the pinned tool through ,bootstrap.\n' >&2
-        return 127
-    fi
-
-    eval "$(argc --argc-eval "$0" "$@")"
-
     local value
     if command -v uuidgen >/dev/null 2>&1; then
         value=$(uuidgen)
@@ -35,4 +28,9 @@ main() {
     printf '%s\n' "$value"
 }
 
-main "$@"
+# The argc dispatcher runs main automatically; calling it directly would run twice.
+if ! command -v argc >/dev/null 2>&1; then
+    printf ',uuid: argc is required; install the pinned tool through ,bootstrap.\n' >&2
+    exit 127
+fi
+eval "$(argc --argc-eval "$0" "$@")"
