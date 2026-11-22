@@ -38,6 +38,7 @@ main() {
 
     [[ -n "${HOME:-}" && -d "$HOME" ]] || die 'HOME must be an existing directory.'
     [[ "$(id -u)" != 0 ]] || die 'Do not install user fonts as root.'
+    # shellcheck disable=SC2119
     platform=$(detect_os) || die 'Unsupported OS for user font installation.'
     case "$platform" in
     macos) target="$HOME/Library/Fonts" ;;
