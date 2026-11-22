@@ -63,8 +63,13 @@ printf '%s|%s\\n' "$MISE_GLOBAL_CONFIG_FILE" "$*" >> "$MOCK_LOG"
 [[ "$1" == -C && "$2" == / ]] || exit 20
 shift 2
 case "$*" in
-  "bootstrap --only packages --dry-run") exit 0 ;;
-  "bootstrap --only packages") touch "$MOCK_STATE/zsh"; exit 0 ;;
+  "bootstrap packages status --missing")
+    [[ -e "$MOCK_STATE/zsh" && -e "$MOCK_STATE/ghostty" ]]
+    ;;
+  "bootstrap packages apply --dry-run") exit 0 ;;
+  "bootstrap packages apply --yes")
+    touch "$MOCK_STATE/zsh" "$MOCK_STATE/ghostty"
+    ;;
   "bootstrap repos apply --dry-run") exit 0 ;;
   "bootstrap repos apply --yes")
     case "$MISE_GLOBAL_CONFIG_FILE" in
@@ -190,11 +195,12 @@ esac
     declined = run("n\n" * (2 + len(pins)))
     assert declined.returncode == 0, declined.stdout
     assert not list(state.iterdir()), declined.stdout
-    assert "Skipped zsh" in declined.stdout and "Skipped neovim" in declined.stdout
+    assert "Skipped OS package installation" in declined.stdout and "Skipped neovim" in declined.stdout
     assert "Zsh configuration: skipped (zsh unavailable)" in declined.stdout
     assert not any("dot apply --yes" in line for line in log.read_text().splitlines())
+    assert not any("bootstrap packages apply --yes" in line for line in log.read_text().splitlines()), "Declining package consent must never install Ghostty or its PPA"
 
-    # The two initial approvals are for Zsh and both mise-managed dotfiles.
+    # The two initial approvals are for the OS packages and mise-managed dotfiles.
     # Generate tool approvals from the manifest so adding a tool doesn't
     # silently approve it or hang an interactive test waiting for input.
     approved_tools = {"neovim", "zoxide"}
@@ -203,7 +209,7 @@ esac
     ]
     approved = run("\n".join(answers + ["n", "n", "n"]) + "\n")
     assert approved.returncode == 0, approved.stdout
-    assert (state / "zsh").exists() and (state / f"neovim@{pins['neovim']}").exists() and (state / f"zoxide@{pins['zoxide']}").exists(), (approved.stdout, log.read_text(), list(state.iterdir()), pins)
+    assert (state / "zsh").exists() and (state / "ghostty").exists() and (state / f"neovim@{pins['neovim']}").exists() and (state / f"zoxide@{pins['zoxide']}").exists(), (approved.stdout, log.read_text(), list(state.iterdir()), pins)
     assert all(
         not (state / f"{name}@{version}").exists()
         for name, version in pins.items() if name not in approved_tools
@@ -213,6 +219,7 @@ esac
     assert zellij_target.is_symlink() and zellij_target.resolve() == (ROOT / ".config/zellij/config.kdl").resolve()
     ghostty_target = home / ".config/ghostty/config"
     assert ghostty_target.is_symlink() and ghostty_target.resolve() == (ROOT / ".config/ghostty/config").resolve()
+    assert any(line.endswith("bootstrap packages apply --yes") for line in log.read_text().splitlines()), log.read_text()
     assert "Zsh configuration: applied" in approved.stdout
     calls = log.read_text().splitlines()
     assert any("dot apply --dry-run" in line for line in calls)

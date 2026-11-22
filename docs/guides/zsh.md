@@ -34,6 +34,21 @@ bash ~/.dotfiles/scripts/setup/setup-fonts.sh --apply
 
 Fonts are downloaded from an immutable `powerlevel10k-media` commit. Installation is user-local (`~/.local/share/fonts` on Linux, `~/Library/Fonts` on macOS), without elevated privileges. Restart Ghostty or reload its configuration after installation. On macOS, Ghostty's application-specific config may override the shared config. If another terminal renders the prompt, select `MesloLGS NF` in that terminal too.
 
+## Ghostty application
+
+The Ghostty application and configuration are both declared in the regular machine `scripts/setup/mise.toml`. Bootstrap previews the OS package changes and asks for **one explicit approval** to install missing Zsh/Ghostty packages.
+
+- **Pop!_OS 24.04:** `apt:ghostty` uses the **unofficial** [mkasberg Ghostty PPA](https://github.com/mkasberg/ghostty-ubuntu). Approval also enables this persistent APT source, which can supply future updates.
+- **macOS:** `brew-cask:ghostty` uses Homebrew.
+
+Preview the same shared declaration manually:
+
+```sh
+MISE_GLOBAL_CONFIG_FILE="$HOME/.dotfiles/scripts/setup/mise.toml" mise -C / bootstrap packages apply --dry-run
+```
+
+Headless machines can decline the OS package offer; noninteractive bootstrap will not approve it. Mise leaves installed packages at their current version, unless explicitly asked to upgrade. If the PPA was added and is no longer wanted, remove `/etc/apt/sources.list.d/mise-ghostty.sources` manually.
+
 ## Manual verification
 
 1. Open interactive Zsh, type `z n`, and verify the remainder of `nvim-plugins` is dimmed (when its target exists).

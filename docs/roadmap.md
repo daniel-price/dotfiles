@@ -51,7 +51,7 @@ Start with real-profile manual validation and safe Git update/rollback. Environm
 | Shell config | Zsh aliases, bookmarks, Powerlevel10k and autosuggestions | Implemented; optional pinned plugins |
 | Repo tooling | shfmt, ShellCheck, Lefthook | Implemented; opt-in hooks |
 | On-demand isolated app | OpenCode through rootless Podman | Implemented on Linux; approval required |
-| GUI apps/config | Ghostty and Neovim configs | Incremental migration; not a generic GUI installer |
+| GUI apps/config | Ghostty and Neovim configs | Ghostty: declarative mise OS package (Pop!_OS 24.04 PPA/macOS cask); incremental config migration |
 | Long-running services | Jellyfin, Radarr (examples) | Not implemented |
 
 Add a **capability POC** only for a new mechanism. Add an **application change** to its existing manifest/config once the mechanism is proven. Desktop apps, CLI tools, short-lived agents and persistent services need not share an installation strategy.
