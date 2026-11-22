@@ -61,10 +61,10 @@ main() {
 
     profiles_root="$HOME/.dotfiles-profiles"
     checkout="$profiles_root/$name"
-    if [[ -L "$profiles_root" || ( -e "$profiles_root" && ! -d "$profiles_root" ) ]]; then
+    if [[ -L "$profiles_root" || (-e "$profiles_root" && ! -d "$profiles_root") ]]; then
         die "Profile root is not a normal directory: $profiles_root"
     fi
-    if [[ -L "$checkout" || ( -e "$checkout" && ! -d "$checkout" ) ]]; then
+    if [[ -L "$checkout" || (-e "$checkout" && ! -d "$checkout") ]]; then
         die "Profile destination is not a normal directory: $checkout"
     fi
 
