@@ -127,7 +127,7 @@ main() {
 
     [[ ! -e "$ROOT/scripts/setup/bootstrap.sh" ]] || fail "obsolete bootstrap script should not remain"
     [[ ! -e "$ROOT/scripts/setup/apply-private-overlay.sh" &&
-       ! -e "$ROOT/tests/tool-overlay-interactive.py" ]] ||
+        ! -e "$ROOT/tests/tool-overlay-interactive.py" ]] ||
         fail 'obsolete directory-link POC must not remain'
     for moved in cleanup update; do
         [[ ! -e "$ROOT/scripts/$moved.sh" ]] || fail "obsolete setup path remains: $moved"
