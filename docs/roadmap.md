@@ -11,7 +11,7 @@ Two tracks: **capabilities** prove reusable mechanisms; **tools/apps** adopt the
 | Dotfile deployment | Zsh and Zellij implemented with mise | Add reviewed configs as needed |
 | Optional pinned Git dependencies | Powerlevel10k and zsh-autosuggestions implemented | Reuse as needed |
 | Guarded Git update and selective cleanup | Implemented | Explicit upgrades, drift and rollback |
-| Private configuration layers | Single directory overlay implemented | Test public/private/local precedence and conflicts |
+| Private configuration layers | Single directory overlay implemented; [synthetic laptop/server profile POC](guides/private-profiles-poc.md) for tools, commands and settings | Test authorised private GitHub source, real mise layering, local precedence and conflicts before production use |
 | Encrypted environment values | POC ready for manual validation | [**POC 1A:** age + mise, fake token and second-machine restore](guides/age-env-poc.md) |
 | Encrypted files/history | POC ready for manual validation | [**POC 1B:** synthetic encrypted file, Git history inspection and restore](guides/age-file-poc.md) |
 | Machine-local identities | Planned | New SSH identity and age recovery POC |
