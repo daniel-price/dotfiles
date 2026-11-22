@@ -23,7 +23,7 @@ Every install requires approval. The shell starts normally without the plugin; s
 
 Powerlevel10k is a separate optional pinned checkout, offered by `scripts/setup/setup-prompt.sh`. It loads outside VS Code with the reviewed `p10k.zsh` configuration.
 
-The prompt expects **MesloLGS NF**, Powerlevel10k's recommended Nerd Font. The reviewed Ghostty configuration (`~/.config/ghostty/config`) selects it. Bootstrap offers to install the four font faces when Ghostty is detected; headless machines skip this step, and existing user font files are never overwritten.
+The prompt expects **MesloLGS NF**, Powerlevel10k's recommended Nerd Font. The reviewed Ghostty configuration (`~/.config/ghostty/config`) selects it. Bootstrap offers to install the four font faces alongside the optional Zsh prompt setup, regardless of terminal; headless machines can decline, and existing user font files are never overwritten.
 
 Preview or install missing faces manually on macOS or Pop!_OS:
 
