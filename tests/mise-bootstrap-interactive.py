@@ -247,8 +247,15 @@ esac
     ), calls
     assert any(line.endswith(f"install zoxide@{pins['zoxide']}") for line in calls), calls
     assert any(line.endswith(f"install neovim@{pins['neovim']}") for line in calls), calls
-    assert all(line.startswith(str(ROOT / "scripts/setup/mise.toml") + "|-C /")
+    # The optional desktop manifest is the only exception to the base config.
+    expected_machine_configs = (
+        str(ROOT / "scripts/setup/mise.toml"),
+        str(ROOT / "scripts/setup/ghostty.toml"),
+    )
+    assert all(any(line.startswith(manifest + "|-C /") for manifest in expected_machine_configs)
                for line in calls if "bootstrap repos" not in line), calls
+    assert all(line.startswith(str(ROOT / "scripts/setup/ghostty.toml") + "|-C /")
+               for line in calls if "bootstrap packages status --missing" in line), calls
     optional_repo_manifests = (
         str(ROOT / "scripts/setup/prompt.toml"),
         str(ROOT / "scripts/setup/autosuggestions.toml"),
