@@ -21,7 +21,7 @@ main() {
 
     usage() {
         printf '%s\n' 'Usage: ,bootstrap [--no-update|--help]' \
-            'Offer approved update, then install missing mise, zsh and pinned tools.' \
+            'Offer approved update, then provision Zsh, pinned tools and optional plugins.' \
             '--no-update: provision checked-out version without fetching (stage-zero handoff).' \
             'Every missing component requires its own interactive approval.'
     }
@@ -296,8 +296,10 @@ main() {
     if [[ "$zsh_config_status" == 'already applied' || "$zsh_config_status" == applied* ]]; then
         bash "$ROOT/scripts/setup/setup-prompt.sh" --apply ||
             die "Optional prompt setup failed; check the preceding error."
+        bash "$ROOT/scripts/setup/setup-autosuggestions.sh" --apply ||
+            die "Optional autosuggestions setup failed; check the preceding error."
     else
-        log 'Skipping optional prompt installation: reviewed Zsh startup is not active.'
+        log 'Skipping optional Zsh plugins: reviewed Zsh startup is not active.'
     fi
 
     # Desktop keyboard preferences are independent of mise-managed dotfiles.
