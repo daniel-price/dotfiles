@@ -64,8 +64,8 @@ def profile_manifest(path, profile=False):
             "LD_PRELOAD", "LD_LIBRARY_PATH", "DYLD_INSERT_LIBRARIES",
         } or key.startswith(("MISE_", "GIT_", "SSH_", "XDG_")):
             refuse(f"{path}: reserved or invalid environment variable: {key}")
-        if not isinstance(value, str) or "\x00" in value or "\n" in value or "\r" in value:
-            refuse(f"{path}: environment values must be single-line strings")
+        if not isinstance(value, str) or any(marker in value for marker in ("\x00", "\n", "\r", "{{")):
+            refuse(f"{path}: environment values must be literal, single-line strings (no template expressions)")
     return entries, variables
 
 

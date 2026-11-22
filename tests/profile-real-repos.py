@@ -183,6 +183,36 @@ exit 0
     assert not (home / ".config/profile-poc/conflict.toml").exists()
     assert "conflict" not in registry.read_text()
 
+    # Two private repos cannot silently override the same environment variable.
+    env_conflict = create_remote(
+        tmp, "envconflict", "node", "22.14.0", settings="env-conflict.toml",
+        variables={"EDITOR": "emacs"},
+    )
+    env_result = run_cli(
+        ["--name", "envconflict", "--repo", str(env_conflict), "--apply"], env, "y\n"
+    )
+    assert code(env_result) != 0 and "Conflicting environment variable" in stdout(env_result)
+    assert "envconflict" not in registry.read_text()
+    assert not (home / ".config/profile-poc/env-conflict.toml").exists()
+
+    # Runtime-critical variables and templated expressions are refused.
+    reserved_env = create_remote(
+        tmp, "reserved", "node", "22.14.0", settings="reserved.toml",
+        variables={"PATH": "/untrusted/bin"},
+    )
+    reserved_result = run_cli(
+        ["--name", "reserved", "--repo", str(reserved_env), "--apply"], env, "y\n"
+    )
+    assert code(reserved_result) != 0 and "reserved or invalid environment" in stdout(reserved_result)
+    template_env = create_remote(
+        tmp, "templated", "node", "22.14.0", settings="templated.toml",
+        variables={"CUSTOM_VALUE": '{{exec(command="whoami")}}'},
+    )
+    template_result = run_cli(
+        ["--name", "templated", "--repo", str(template_env), "--apply"], env, "y\n"
+    )
+    assert code(template_result) != 0 and "literal, single-line" in stdout(template_result)
+
     # A pre-existing real application config must not be overwritten.
     (home / ".config/profile-poc/foreign.toml").write_text("keep=true\n")
     foreign = create_remote(tmp, "foreign", "node", "22.14.0", settings="foreign.toml")
