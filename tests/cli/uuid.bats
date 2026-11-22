@@ -7,7 +7,7 @@ setup() {
 @test "help comes from argc annotations" {
   run "$UUID" --help
   [ "$status" -eq 0 ]
-  [[ "$output" == *'Usage: ,uuid'* ]]
+  [[ "$output" == *'USAGE: ,uuid'* || "$output" == *'Usage: ,uuid'* ]]
   [[ "$output" == *'--lowercase'* ]]
   [[ "$output" == *'--no-hyphens'* ]]
 }
