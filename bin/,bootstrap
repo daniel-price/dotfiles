@@ -180,18 +180,22 @@ main() {
     tool_specs=$(machine_tool_specs "$mise" "$MISE_GLOBAL_CONFIG_FILE") ||
         die 'Could not read the reviewed machine tool declarations.'
 
-    if command -v zsh >/dev/null 2>&1 && zsh --version >/dev/null 2>&1; then
-        log 'zsh is available; no package installation needed.'
+    # Package provisioning is a single reviewed mise operation. On Pop!_OS
+    # it includes Ghostty's unofficial mkasberg PPA, so always show the preview
+    # and require approval before changing packages or APT sources.
+    if "$mise" -C / bootstrap packages status --missing >/dev/null 2>&1; then
+        log 'Reviewed OS packages are already installed.'
     else
-        "$mise" -C / bootstrap --only packages --dry-run ||
-            die 'Could not preview the zsh package install.'
-        if confirm 'Install missing zsh using the native package manager via mise?'; then
-            "$mise" -C / bootstrap --only packages || die 'mise could not install zsh.'
+        "$mise" -C / bootstrap packages apply --dry-run ||
+            die 'Could not preview OS package installation.'
+        if confirm 'Install missing OS packages (Zsh and Ghostty; on Linux, Ghostty uses the unofficial mkasberg PPA for future updates)?'; then
+            "$mise" -C / bootstrap packages apply --yes ||
+                die 'mise could not install the reviewed OS packages.'
             if ! command -v zsh >/dev/null 2>&1 || ! zsh --version >/dev/null 2>&1; then
-                die 'Mise package installation finished but zsh is still unavailable.'
+                die 'OS package installation finished but zsh is still unavailable.'
             fi
         else
-            log 'Skipped zsh package installation.'
+            log 'Skipped OS package installation.'
         fi
     fi
 
@@ -302,25 +306,6 @@ main() {
             die "Optional autosuggestions setup failed; check the preceding error."
     else
         log 'Skipping optional Zsh plugins and font: reviewed Zsh startup is not active.'
-    fi
-
-    # Keep third-party desktop sources out of the base machine manifest.
-    # mise owns the package and PPA declarations; bootstrap only offers consent.
-    ghostty_manifest="$ROOT/scripts/setup/ghostty.toml"
-    if [[ ! -f "$ghostty_manifest" ]]; then
-        die 'Missing reviewed optional Ghostty manifest.'
-    fi
-    if MISE_GLOBAL_CONFIG_FILE="$ghostty_manifest" "$mise" -C / bootstrap packages status --missing >/dev/null 2>&1; then
-        log 'Ghostty package is already installed; skipped installation and upgrade.'
-    else
-        MISE_GLOBAL_CONFIG_FILE="$ghostty_manifest" "$mise" -C / bootstrap packages apply --dry-run ||
-            die 'Could not preview optional Ghostty package installation.'
-        if confirm 'Install Ghostty via mise (on Linux this adds the unofficial mkasberg PPA and trusts its future updates)?'; then
-            MISE_GLOBAL_CONFIG_FILE="$ghostty_manifest" "$mise" -C / bootstrap packages apply --yes ||
-                die 'mise could not install optional Ghostty.'
-        else
-            log 'Skipped optional Ghostty package.'
-        fi
     fi
 
     # Desktop keyboard preferences are independent of mise-managed dotfiles.
