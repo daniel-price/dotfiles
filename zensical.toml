@@ -23,7 +23,6 @@ nav = [
     { "Manage a dotfile" = "guides/manage-dotfile.md" },
     { "Manage a secret" = "guides/manage-secret.md" },
     { "Profiles (POC)" = "guides/profiles.md" },
-    { "Legacy directory link" = "guides/directory-link.md" },
   ] },
   { "Roadmap" = "roadmap.md" },
   { "Reference & history (detailed)" = "reference/index.md" },

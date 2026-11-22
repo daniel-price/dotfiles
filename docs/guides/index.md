@@ -8,7 +8,7 @@
 - [Caps Lock as Ctrl](keyboard.md)
 - [Develop the repo and use Git hooks](development.md)
 - [Command reference](cli.md) · [argc-powered command reference](argc.md)
-- [Profiles](profiles.md) · [Legacy directory-link helper](directory-link.md)
+- [Profiles](profiles.md)
 - [OpenCode sandbox](opencode.md) · [Podman prerequisite](podman.md)
 - [Encrypted environment values (experimental POC)](age-env-poc.md) · [Secrets management (planned)](manage-secret.md)
 

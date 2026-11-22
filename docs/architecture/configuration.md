@@ -21,4 +21,4 @@ Profile updates, automatic discovery, general-purpose configuration merges, and 
 
 **Local** would mean per-device configuration, such as monitor layout, hostnames or mount paths, not reusable across computers. There is **no managed Local layer today**; configure these manually until the need justifies another mechanism. See the [roadmap](../roadmap.md).
 
-The previous [one-directory linking utility](../guides/directory-link.md) is a separate, legacy feature; it is not part of Base/Profile composition. [Secrets](secrets.md) and encrypted tracked-file history are also separate concerns.
+[Secrets](secrets.md) and encrypted tracked-file history are separate from Base/Profile composition.

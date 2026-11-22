@@ -80,4 +80,4 @@ To reactivate the retained checkout, use the original `--name personal --repo "$
 - No credentials or private keys should go into Git. Work-specific code must remain in an employer-approved source and must not be uploaded to a personal GitHub account.
 - Python 3.11+ is a current POC prerequisite, not an accepted permanent machine-bootstrap dependency.
 
-See [legacy directory-link helper](directory-link.md), [configuration architecture](../architecture/configuration.md) and [roadmap](../roadmap.md).
+See [configuration architecture](../architecture/configuration.md) and [roadmap](../roadmap.md).
