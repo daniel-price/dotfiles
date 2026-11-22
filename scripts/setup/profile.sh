@@ -10,10 +10,11 @@ source "$ROOT/scripts/lib/common.sh"
 source "$ROOT/scripts/lib/mise.sh"
 
 main() {
-    local name='' repo='' apply=false checkout profiles_root origin tmp mise spec status specs
+    local name='' repo='' apply=false deactivate=false checkout profiles_root origin tmp mise spec status specs
 
     usage() {
         printf '%s\n' 'Usage: bash scripts/setup/profile.sh --name NAME --repo URL [--apply]' \
+            '       bash scripts/setup/profile.sh --name NAME --deactivate [--apply]' \
             'Default: preview only. --apply asks before clone, configuration and each tool install.' \
             'Supports explicitly selected private GitHub HTTPS/SSH URLs or local Git paths for tests.' \
             'Never fetches, pulls, discovers repositories, or installs tools without approval.'
@@ -35,6 +36,10 @@ main() {
             apply=true
             shift
             ;;
+        --deactivate)
+            deactivate=true
+            shift
+            ;;
         -h | --help)
             usage
             return
@@ -43,16 +48,21 @@ main() {
         esac
     done
     [[ "$name" =~ ^[a-z][a-z0-9-]*$ ]] || die 'Invalid profile name.'
-    [[ -n "$repo" ]] || die '--repo is required.'
-    case "$repo" in
-    https://github.com/* | git@github.com:* | /*) ;;
-    *) die 'Only github.com HTTPS/SSH URLs or explicit absolute local Git paths are supported.' ;;
-    esac
-    case "$repo" in
-    *$'\n'* | *$'\r'* | *$'\t'* | *' '*)
-        die 'Repository argument contains whitespace or control characters.'
-        ;;
-    esac
+    if [[ "$deactivate" == true ]]; then
+        [[ -z "$repo" ]] || die '--deactivate does not accept --repo.'
+    else
+        [[ -n "$repo" ]] || die '--repo is required.'
+        case "$repo" in
+        https://github.com/* | git@github.com:* | /*) ;;
+        *) die 'Only github.com HTTPS/SSH URLs or explicit absolute local Git paths are supported.' ;;
+        esac
+        case "$repo" in
+        *$'\n'* | *$'\r'* | *$'\t'* | *' '*)
+            die 'Repository argument contains whitespace or control characters.'
+            ;;
+        esac
+    fi
+
     [[ -n "${HOME:-}" && -d "$HOME" && "$HOME" == /* && "$HOME" != / ]] ||
         die 'An existing absolute HOME is required.'
     command -v git >/dev/null 2>&1 || die 'Git is required.'
@@ -66,6 +76,23 @@ main() {
     fi
     if [[ -L "$checkout" || (-e "$checkout" && ! -d "$checkout") ]]; then
         die "Profile destination is not a normal directory: $checkout"
+    fi
+
+    if [[ "$deactivate" == true ]]; then
+        python3 "$ROOT/scripts/setup/profile-config.py" plan-deactivate \
+            "$ROOT" "$HOME" "$profiles_root" "$name" ||
+            die 'Profile deactivation preview refused; no changes made.'
+        if [[ "$apply" == false ]]; then
+            return
+        fi
+        if ! confirm "Deactivate $name, remove only its owned config links, and recompute remaining profiles?"; then
+            log 'Profile deactivation declined; no changes made.'
+            return
+        fi
+        python3 "$ROOT/scripts/setup/profile-config.py" deactivate \
+            "$ROOT" "$HOME" "$profiles_root" "$name" ||
+            die 'Profile deactivation failed; review active profiles before retrying.'
+        return
     fi
 
     if [[ -d "$checkout" ]]; then

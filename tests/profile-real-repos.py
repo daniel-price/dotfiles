@@ -3,6 +3,7 @@
 
 All remotes are temporary local Git repositories. Mise is mocked; nothing is installed.
 """
+import json
 import os
 from pathlib import Path
 import pty
@@ -21,14 +22,19 @@ def git(directory, *args):
                           capture_output=True, text=True).stdout.strip()
 
 
-def create_remote(base, label, tool, version, settings="settings.toml"):
+def create_remote(base, label, tool, version, settings="settings.toml", variables=None):
     source = base / f"{label}-source"
     source.mkdir()
     git(source, "init", "-q")
     (source / "bin").mkdir()
     (source / "zsh/functions").mkdir(parents=True)
     (source / "config/profile-poc").mkdir(parents=True)
-    (source / "mise.toml").write_text(f'[tools]\n{tool} = "{version}"\n')
+    config = f'[tools]\n{tool} = "{version}"\n'
+    if variables:
+        config += "\n[env]\n" + "".join(
+            f"{name} = {json.dumps(value)}\n" for name, value in variables.items()
+        )
+    (source / "mise.toml").write_text(config)
     cmd = source / "bin" / f",{label}-hello"
     cmd.write_text("#!/usr/bin/env bash\nprintf 'profile works\\n'\n")
     cmd.chmod(0o755)
@@ -98,7 +104,10 @@ exit 0
         "MOCK_MISE_LOG": str(log),
     }
 
-    personal = create_remote(tmp, "personal", "opencode", "2.3.0")
+    personal = create_remote(
+        tmp, "personal", "opencode", "2.3.0",
+        variables={"EDITOR": "nvim", "DOTFILES_PROFILE_EXAMPLE": "personal-profile-active"},
+    )
     args = ["--name", "personal", "--repo", str(personal)]
     for bad in (["--name", "../unsafe", "--repo", str(personal)],
                 ["--name", "personal", "--repo", "https://other.invalid/repo"]):
@@ -127,6 +136,8 @@ exit 0
     assert data["tools"]["opencode"] == "2.3.0"
     assert data["tools"]["ripgrep"] == "15.2.0"
     assert data["settings"]["auto_install"] is False
+    assert data["env"]["EDITOR"] == "nvim"
+    assert data["env"]["DOTFILES_PROFILE_EXAMPLE"] == "personal-profile-active"
     assert (home / ".config/profile-poc/settings.toml").is_symlink()
     assert (home / ".config/profile-poc/settings.toml").resolve() == (
         checkout / "config/profile-poc/settings.toml"
@@ -146,7 +157,10 @@ exit 0
     assert "install opencode@2.3.0" in log.read_text(), (stdout(reapply), log.read_text())
 
     # Independent second repo, distinct config target, activates both profiles.
-    server = create_remote(tmp, "server", "fd", "10.5.2", settings="server.toml")
+    server = create_remote(
+        tmp, "server", "fd", "10.5.2", settings="server.toml",
+        variables={"SERVER_PROFILE_FLAG": "enabled"},
+    )
     serverargs = ["--name", "server", "--repo", str(server)]
     second = run_cli([*serverargs, "--apply"], env, "y\ny\n")
     assert code(second) == 0, stdout(second)
@@ -154,6 +168,12 @@ exit 0
     assert registry.read_text().splitlines()[-2:] == ["personal", "server"]
     assert (home / ".config/profile-poc/server.toml").is_symlink()
     assert len(list((home / ".dotfiles-profiles").iterdir())) == 2
+    combined = tomllib.loads(manifest.read_text())
+    assert combined["env"] == {
+        "EDITOR": "nvim",
+        "DOTFILES_PROFILE_EXAMPLE": "personal-profile-active",
+        "SERVER_PROFILE_FLAG": "enabled",
+    }
 
     # Conflict from a third repo: a different OpenCode pin must fail *before* writes.
     conflict = create_remote(tmp, "conflict", "opencode", "1.19.0", settings="conflict.toml")
@@ -192,4 +212,50 @@ exit 0
         assert ",personal-hello" in out.stdout
         assert str(manifest) in out.stdout
 
-    print("PASS: real profile clone, consent, pinned tools, Zsh, app links, isolation and conflicts")
+    # Deactivation previews changes, requests approval and never deletes Git repos.
+    personal_deactivate = ["--name", "personal", "--deactivate"]
+    preview_deactivate = run_cli(personal_deactivate, env)
+    assert code(preview_deactivate) == 0, stdout(preview_deactivate)
+    assert "Remove owned config symlink" in stdout(preview_deactivate)
+    assert "personal" in registry.read_text()
+    refused_deactivate = run_cli([*personal_deactivate, "--apply"], env, "n\n")
+    assert code(refused_deactivate) == 0, stdout(refused_deactivate)
+    assert "personal" in registry.read_text()
+
+    # A replaced symlink belongs to someone else: do not remove it.
+    personal_link = home / ".config/profile-poc/settings.toml"
+    personal_link.unlink()
+    personal_link.symlink_to(home / ".config/profile-poc/server.toml")
+    foreign_link = run_cli([*personal_deactivate, "--apply"], env, "y\n")
+    assert code(foreign_link) != 0
+    assert "Foreign symlink" in stdout(foreign_link) or "altered symlink" in stdout(foreign_link)
+    assert personal_link.is_symlink()
+    assert "personal" in registry.read_text()
+    personal_link.unlink()
+    personal_link.symlink_to(checkout / "config/profile-poc/settings.toml")
+
+    applied_deactivate = run_cli([*personal_deactivate, "--apply"], env, "y\n")
+    assert code(applied_deactivate) == 0, stdout(applied_deactivate)
+    assert not personal_link.exists() and not personal_link.is_symlink()
+    assert (home / ".config/profile-poc/server.toml").is_symlink()
+    assert (checkout / ".git").is_dir(), "Deactivation must retain cloned repo"
+    assert registry.read_text().splitlines()[-1] == "server"
+    after_deactivate = tomllib.loads(manifest.read_text())
+    assert "opencode" not in after_deactivate["tools"]
+    assert after_deactivate["env"] == {"SERVER_PROFILE_FLAG": "enabled"}
+    assert "install opencode" in log.read_text(), "Deactivation should not uninstall existing tools"
+
+    # Repeated deactivation is a clean no-op, never removing other profiles.
+    no_op = run_cli([*personal_deactivate, "--apply"], env, "y\n")
+    assert code(no_op) == 0 and "not active" in stdout(no_op)
+    assert "server" in registry.read_text()
+
+    # Last profile: restore public mise fallback by removing only managed files.
+    last = run_cli(["--name", "server", "--deactivate", "--apply"], env, "y\n")
+    assert code(last) == 0, stdout(last)
+    assert not manifest.exists() and not registry.exists()
+    assert not (home / ".config/profile-poc/server.toml").exists()
+    assert (home / ".dotfiles-profiles/server/.git").is_dir()
+    assert sentinel.read_text() == "untouched"
+
+    print("PASS: real profile clone, env, consent, deactivation, Zsh, app links and conflicts")

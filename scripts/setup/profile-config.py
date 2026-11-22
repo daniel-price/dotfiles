@@ -43,18 +43,34 @@ def parents_safe(path, home):
     safe_directory(home)
 
 
-def tools_file(path, profile=False):
+def profile_manifest(path, profile=False):
+    """Parse literal tools and non-secret env strings; never evaluate TOML tasks."""
     safe_file(path)
     data = tomllib.loads(path.read_text(encoding="utf-8"))
-    if profile and set(data) != {"tools"}:
-        refuse(f"{path}: profile mise.toml must contain only [tools]")
+    if profile and not set(data).issubset({"tools", "env"}):
+        refuse(f"{path}: profile mise.toml accepts only [tools] and [env]")
     entries = data.get("tools")
     if not isinstance(entries, dict):
         refuse(f"{path}: missing [tools] table")
     for key, value in entries.items():
         if not VALID_TOOL.fullmatch(key) or not isinstance(value, str) or not VALID_PIN.fullmatch(value):
             refuse(f"{path}: tool pins must be exact numeric versions")
-    return entries
+    variables = data.get("env", {}) if profile else {}
+    if not isinstance(variables, dict):
+        refuse(f"{path}: [env] must be a table")
+    for key, value in variables.items():
+        if not re.fullmatch(r"[A-Z][A-Z0-9_]*", key) or key in {
+            "HOME", "PATH", "SHELL", "ZDOTDIR", "ENV", "BASH_ENV", "IFS",
+            "LD_PRELOAD", "LD_LIBRARY_PATH", "DYLD_INSERT_LIBRARIES",
+        } or key.startswith(("MISE_", "GIT_", "SSH_", "XDG_")):
+            refuse(f"{path}: reserved or invalid environment variable: {key}")
+        if not isinstance(value, str) or "\x00" in value or "\n" in value or "\r" in value:
+            refuse(f"{path}: environment values must be single-line strings")
+    return entries, variables
+
+
+def tools_file(path, profile=False):
+    return profile_manifest(path, profile=profile)[0]
 
 
 def checked_repo(repo):
@@ -115,15 +131,19 @@ def check_managed(path):
         refuse(f"Refusing to overwrite unmanaged file: {path}")
 
 
-def render_tools(items):
+def render_tools(items, variables=None):
+    variables = variables or {}
     return (
         MANAGED + "[tools]\n"
         + "".join(f"{tool} = {json.dumps(version)}\n" for tool, version in sorted(items.items()))
+        + ("\n[env]\n" + "".join(
+            f"{name} = {json.dumps(value)}\n" for name, value in sorted(variables.items())
+        ) if variables else "")
         + "\n[settings]\nauto_install = false\n"
     )
 
 
-def build(root, home, checkout_root, name):
+def build(root, home, checkout_root, name, selected_profiles=None):
     safe_directory(home)
     safe_directory(root)
     if not VALID_NAME.fullmatch(name):
@@ -138,9 +158,12 @@ def build(root, home, checkout_root, name):
         check_managed(target)
 
     active = read_active(registry)
-    names = active if name in active else [*active, name]
+    names = selected_profiles if selected_profiles is not None else (
+        active if name in active else [*active, name]
+    )
     public_tools = tools_file(root / "scripts/setup/mise.toml")
     merged = dict(public_tools)
+    environment = {}
     mappings = {}
     bins = set()
     functions = set()
@@ -149,10 +172,15 @@ def build(root, home, checkout_root, name):
         repo = checkout_root / selected
         checked_repo(repo)
         profile_sources[selected] = repo
-        for tool, version in tools_file(repo / "mise.toml", profile=True).items():
+        profile_tools, profile_env = profile_manifest(repo / "mise.toml", profile=True)
+        for tool, version in profile_tools.items():
             if tool in merged and merged[tool] != version:
                 refuse(f"Conflicting tool pin for {tool}: {merged[tool]} vs {version}")
             merged[tool] = version
+        for variable, value in profile_env.items():
+            if variable in environment and environment[variable] != value:
+                refuse(f"Conflicting environment variable: {variable}")
+            environment[variable] = value
         for command in contained_files(repo / "bin"):
             if command.parent != repo / "bin":
                 refuse(f"Nested bin command is unsupported: {command}")
@@ -187,7 +215,7 @@ def build(root, home, checkout_root, name):
         elif target.exists():
             refuse(f"Existing non-profile file at config target: {target}")
 
-    return names, merged, mappings, registry, manifest, profile_sources, public_tools
+    return names, merged, environment, mappings, registry, manifest, profile_sources, public_tools
 
 
 def atomic_write(path, text):
@@ -205,16 +233,87 @@ def atomic_write(path, text):
             os.unlink(temporary)
 
 
+
+def deactivate_profile(root, home, checkout_root, name, applying=False):
+    """Remove a selected active profile; keep its clone and installed tools."""
+    registry = home / ".config/dotfiles/active-profiles"
+    manifest = home / ".config/mise/dotfiles-profiles.toml"
+    for target in (registry, manifest):
+        parents_safe(target, home)
+        check_managed(target)
+    current = read_active(registry)
+    if name not in current:
+        print(f"Profile {name} is not active; nothing to change.")
+        return
+    if not manifest.exists():
+        refuse("Active profile manifest is missing; refusing deactivation")
+
+    _, _, _, old_links, _, _, _, _ = build(
+        root, home, checkout_root, name, selected_profiles=current
+    )
+    remaining = [selected for selected in current if selected != name]
+    _, tools, variables, remaining_links, _, _, _, _ = build(
+        root, home, checkout_root, name, selected_profiles=remaining
+    )
+    owned = {}
+    for target, source in old_links.items():
+        if target not in remaining_links:
+            if not target.is_symlink() or target.readlink() != source:
+                refuse(f"Refusing to remove a non-owned or altered symlink: {target}")
+            owned[target] = source
+
+    print(f"Deactivate: {name}; remaining profiles: {', '.join(remaining) or '(none)'}")
+    for target in owned:
+        print(f"Remove owned config symlink: {target}")
+    if remaining:
+        print(f"Update managed active profiles and tool/environment manifest: {manifest}")
+    else:
+        print("Remove managed registry and mise manifest; fall back to public tools.")
+    print("Profile Git checkout and installed tools remain untouched.")
+    if not applying:
+        print("Preview only; no changes made.")
+        return
+
+    # Capture state for recovery if a write/unlink fails after preflight.
+    old_registry = registry.read_text(encoding="utf-8")
+    old_manifest = manifest.read_text(encoding="utf-8")
+    removed = []
+    try:
+        for target, source in owned.items():
+            target.unlink()
+            removed.append((target, source))
+        if remaining:
+            atomic_write(manifest, render_tools(tools, variables))
+            atomic_write(registry, MANAGED + "".join(f"{p}\n" for p in remaining))
+        else:
+            manifest.unlink()
+            registry.unlink()
+    except OSError:
+        # Never overwrite a foreign object during recovery.
+        for target, source in reversed(removed):
+            if not target.exists() and not target.is_symlink():
+                target.symlink_to(source)
+        atomic_write(manifest, old_manifest)
+        atomic_write(registry, old_registry)
+        raise
+    print(f"Deactivated {name}. Open a new Zsh session; installed tools were not removed.")
+
+
 def main():
     if len(sys.argv) != 6:
-        sys.exit("Usage: profile-config.py plan|apply|tools ROOT HOME PROFILE_ROOT NAME")
+        sys.exit("Usage: profile-config.py plan|apply|tools|plan-deactivate|deactivate ROOT HOME PROFILE_ROOT NAME")
     action, root_arg, home_arg, checkout_arg, name = sys.argv[1:]
-    if action not in ("plan", "apply", "tools"):
+    if action not in ("plan", "apply", "tools", "plan-deactivate", "deactivate"):
         refuse(f"Unknown action: {action}")
     root, home, checkout_root = [Path(p).absolute() for p in (root_arg, home_arg, checkout_arg)]
     if home == Path("/") or checkout_root == home or checkout_root == root:
         refuse("Unsafe profile location")
-    names, tools, mappings, registry, manifest, profiles, public = build(
+    if not VALID_NAME.fullmatch(name):
+        refuse("Invalid profile name")
+    if action in ("plan-deactivate", "deactivate"):
+        deactivate_profile(root, home, checkout_root, name, applying=action == "deactivate")
+        return
+    names, tools, variables, mappings, registry, manifest, profiles, public = build(
         root, home, checkout_root, name
     )
     if action == "tools":
@@ -226,6 +325,7 @@ def main():
     if action == "plan":
         print(f"Selected profiles (in order): {', '.join(names)}")
         print(f"Effective mise pins: {', '.join(f'{k}@{v}' for k, v in sorted(tools.items()))}")
+        print(f"Profile environment: {', '.join(sorted(variables)) or '(none)'}")
         print(f"Shell will load bin/, zsh/aliases.zsh and zsh/functions/ from each selected repository.")
         for target, source in mappings.items():
             state = "already linked" if target.is_symlink() else "new symlink"
@@ -244,7 +344,7 @@ def main():
             target.parent.mkdir(parents=True, exist_ok=True)
             target.symlink_to(source)
             created.append(target)
-        atomic_write(manifest, render_tools(tools))
+        atomic_write(manifest, render_tools(tools, variables))
         atomic_write(registry, MANAGED + "".join(f"{profile}\n" for profile in names))
     except Exception:
         for target in reversed(created):

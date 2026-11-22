@@ -10,17 +10,17 @@
   personal/                           # Independently cloned private Git repository
   home-server/                        # Optional second independent repository
 ~/.config/dotfiles/active-profiles     # Managed, ordered list of activated profile names
-~/.config/mise/dotfiles-profiles.toml  # Managed effective public + profile tool pins
+~/.config/mise/dotfiles-profiles.toml  # Managed tool pins and non-secret profile environment
 ```
 
 Each private repository may contain:
-- `mise.toml` — exact `[tools]` pins, e.g. `opencode = "2.3.0"`. No executable mise hooks, arbitrary environment values or settings are accepted by this first implementation.
+- `mise.toml` — exact `[tools]` pins, e.g. `opencode = "2.3.0"`, plus optional literal non-secret `[env]` string values such as `EDITOR = "nvim"`. Conflicting variables and reserved runtime variables (including `PATH`, `HOME` and `MISE_*`) are rejected. No executable mise hooks or arbitrary settings are accepted.
 - `bin/` — executable Bash commands; added to your Zsh `PATH` from the separate checkout.
 - `zsh/aliases.zsh` — aliases loaded **after** public aliases.
 - `zsh/functions/` — Zsh autoload functions.
 - `config/` — any nested application configuration files, mapped to corresponding `~/.config/` paths using symlinks. `config/mise` and `config/dotfiles` are reserved and rejected.
 
-The public bootstrap remains standalone and keeps its original machine manifest. Once an approved profile is activated, **new Zsh sessions** load the generated manifest containing pinned public and selected-profile tools, plus selected bins, aliases and functions. No tool is automatically installed: the generated manifest sets `auto_install = false`.
+The public bootstrap remains standalone and keeps its original machine manifest. Once an approved profile is activated, **new Zsh sessions** load the generated manifest containing pinned public and selected-profile tools and declared environment variables, plus selected bins, aliases and functions. No tool is automatically installed: the generated manifest sets `auto_install = false`.
 
 ## Try it with the personal profile fixture
 
@@ -44,29 +44,36 @@ bash scripts/setup/profile.sh --name personal --repo "$REPO_URL" --apply
    cat ~/.config/profile-poc/settings.toml
    cat ~/.config/mise/dotfiles-profiles.toml
    echo "$MISE_GLOBAL_CONFIG_FILE"
+   echo "$DOTFILES_PROFILE_EXAMPLE"  # personal-profile-active
+   echo "$EDITOR"                    # nvim
    opencode --version  # Only if its tool installation was approved
    ```
-   The command, alias and function should print fixture greetings. The app config should contain synthetic demo settings and be a symlink to the private checkout. The generated TOML should contain both public pins and `opencode = "2.3.0"`; the environment variable should point to it.
+   The command, alias and function should print fixture greetings. The app config should contain synthetic demo settings and be a symlink to the private checkout. The generated TOML should contain both public pins and `opencode = "2.3.0"`, alongside `[env]` values such as `EDITOR = "nvim"`. `MISE_GLOBAL_CONFIG_FILE` should point to it.
 6. **Repeat safely:** Re-running `--apply` with the same URL must not fetch, overwrite your existing app config or duplicate activation. It may re-offer declined tools. An entirely different URL for the same name must be refused.
 7. **Try another profile:** Clone/apply a second independently authorised repository with `--name home-server --repo "$SERVER_URL"`. Its bins, aliases and config should join the personal profile in order. Conflicting tool pins, command names, functions or application targets are rejected.
 8. **Automated:** Run `python3 tests/profile-real-repos.py`. Tests use disposable local Git remotes, a fake mise, PTY approvals and synthetic HOME. They do **not** access GitHub or install software.
 
-### Rollback after a manual test
+### Preview, deactivate and recover
 
-The profile command does **not** remove any settings automatically. To deactivate the **single personal profile** when you have no other activated profiles, inspect the following *exact* managed paths before removing them:
+Deactivation is a supported POC operation. It does **not** delete cloned repositories or uninstall tools:
 
-- `~/.config/profile-poc/settings.toml` (only if it is a symlink into the selected profile checkout)
-- `~/.config/dotfiles/active-profiles` (only if its only active entry is `personal`)
-- `~/.config/mise/dotfiles-profiles.toml` (only if it starts with the managed marker)
+```sh
+bash scripts/setup/profile.sh --name personal --deactivate          # Preview only
+bash scripts/setup/profile.sh --name personal --deactivate --apply  # Confirm
+```
 
-Then open a new Zsh session. The `~/.dotfiles-profiles/personal` checkout can be removed separately if you no longer want it; do not delete other private checkouts. **Installing OpenCode is not reversed by removing the profile**: mise-installed tools may be shared, so remove them separately only after checking for other dependants.
+After approval, only verified symlinks owned by `personal` are removed, and the effective tool/environment manifest and active-profile list are recomputed for any remaining profiles. If this was the **last active profile**, the two generated managed files are removed, and a new Zsh session falls back to the public machine manifest. The cloned repository and installed OpenCode are left untouched. Repeating deactivation is a no-op.
+
+If a config path has been replaced by a different symlink or a real file, deactivation **refuses** to remove it. For recovery, inspect the conflicting path and restore the original profile-owned symlink before re-running. It does not blindly remove or overwrite anything.
+
+To reactivate the retained checkout, use the original `--name personal --repo "$REPO_URL" --apply` command and review the prompts; no automatic fetch/pull is performed. General Git profile updates and automated version rollback remain follow-up work.
 
 ## Safety and limitations
 
 - No private repository is discovered, implicitly cloned, fetched, pulled or pushed. Existing checkouts must have exactly the selected `origin` URL and be clean.
-- Each clone, activation and missing-tool install requires independent interactive consent. Unmanaged destination files and foreign symlinks are never overwritten; profiles cannot shadow public commands or autoload functions.
+- Each clone, activation, deactivation and missing-tool install requires independent interactive consent. Unmanaged destination files and foreign symlinks are never overwritten; profiles cannot shadow public commands or autoload functions.
 - The generated files are marked as managed; the composer rejects unexpected existing files instead of silently replacing them. Shell startup sources approved profile aliases and functions from the checked-out repository, so **review their code before approving** and whenever you explicitly update the repo.
-- This POC handles *file-level* conflicts, exact tool-pin conflicts and command/function-name conflicts. It does not fully analyse semantic alias collisions or merge arbitrary app settings inside an existing file.
+- This POC handles *file-level* conflicts, exact tool-pin and environment conflicts, and command/function-name conflicts. It does not fully analyse semantic alias collisions or merge arbitrary app settings inside an existing file.
 - No credentials or private keys should go into Git. Work-specific code must remain in an employer-approved source and must not be uploaded to a personal GitHub account.
 - Python 3.11+ is a current POC prerequisite, not an accepted permanent machine-bootstrap dependency.
 

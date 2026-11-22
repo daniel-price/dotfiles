@@ -49,6 +49,13 @@ if [[ -f "$_dotfiles_registry" && ! -L "$_dotfiles_registry" ]]; then
 fi
 unset _dotfiles_registry _dotfiles_profile_name _dotfiles_profile_dir
 
+# Drop the old managed profile manifest after deactivation of the last
+# profile, including when a nested shell inherited that environment variable.
+if [[ "${MISE_GLOBAL_CONFIG_FILE:-}" == "$HOME/.config/mise/dotfiles-profiles.toml" &&
+      ! -f "$HOME/.config/dotfiles/active-profiles" ]]; then
+  unset MISE_GLOBAL_CONFIG_FILE
+fi
+
 # Load the reviewed machine tools from this checkout, even when ~/.zshrc
 # is symlinked or the shell starts outside the repository. The bootstrap's
 # MISE_GLOBAL_CONFIG_FILE setting applies only to its child process.

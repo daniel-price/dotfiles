@@ -11,7 +11,7 @@ Two tracks: **capabilities** prove reusable mechanisms; **tools/apps** adopt the
 | Dotfile deployment | Zsh and Zellij implemented with mise | Add reviewed configs as needed |
 | Optional pinned Git dependencies | Powerlevel10k and zsh-autosuggestions implemented | Reuse as needed |
 | Guarded Git update and selective cleanup | Implemented | Explicit upgrades, drift and rollback |
-| Private configuration layers | Single directory overlay implemented; [real opt-in profile-repository POC](guides/private-profiles-poc.md) supports clone, app symlinks, shell functions/aliases, pinned tools and separate install consent | Manual end-to-end test with authorised private fixture; implement safe update/deactivation and rollback before production rollout |
+| Private configuration layers | Single directory overlay implemented; [real opt-in profile-repository POC](guides/private-profiles-poc.md) supports clone, app symlinks, shell functions/aliases, pinned tools, literal env values, separate install consent and safe deactivation | Manually validate authorised private fixture; implement reviewed update/rollback before production rollout |
 | Encrypted environment values | POC ready for manual validation | [**POC 1A:** age + mise, fake token and second-machine restore](guides/age-env-poc.md) |
 | Encrypted files/history | POC ready for manual validation | [**POC 1B:** synthetic encrypted file, Git history inspection and restore](guides/age-file-poc.md) |
 | Machine-local identities | Planned | New SSH identity and age recovery POC |
@@ -29,8 +29,9 @@ Keep **profiles** (reusable sets of settings) separate from **machines** (indivi
 
 | Priority | Capability | Planned POC / acceptance criteria |
 | --- | --- | --- |
-| **Before production** | Profile lifecycle: update, deactivate, remove and rollback | Preview Git changes and effective configuration before explicit, authenticated fast-forward; refuse dirty/diverged repositories, foreign paths and changed trust boundaries. Deactivate one selected profile without affecting others, safely remove only owned symlinks/managed settings, show tool-dependency impact and restore after failure; test reruns on macOS and Pop!_OS. |
-| **Next** | Profile environment variables and PATH | Declarative, non-secret variables such as `EDITOR`, `JAVA_HOME` and extra search paths; validate names, order/precedence, conflicts and shell quoting. Never source arbitrary environment snippets just to set values; no secrets in Git. |
+| **Before production** | Profile lifecycle: update, deactivate, remove and rollback | **Deactivation in this PR:** previews, confirms, removes only verified owned symlinks, recomposes remaining profiles and preserves clones/installed tools. **Still needed:** safe authenticated fast-forward previews, refusal of dirty/diverged repos, explicit removal/rollback and recovery tests on real macOS and Pop!_OS machines. |
+| **POC in this PR** | Literal non-secret environment variables | An optional `[env]` table in profile `mise.toml`, with string-only values, reserved-name checks and cross-profile conflict refusal. Effective variables are declared through the managed mise manifest; no arbitrary environment scripts or secrets in Git. |
+| **Next** | PATH composition and environment precedence | Declarative extra search paths, order, portability, inheritance and local overrides; refuse unsafe paths and clashes. No automatic execution of profile snippets. |
 | **Next** | Profile OS packages | Declare additional packages per OS (`apt` on Pop!_OS, Homebrew on macOS). Preview the exact package/OS operations, ask before each install/upgrade and prevent unreviewed removals; reuse existing declarative mise integration where suitable. |
 | **Next** | Git identity and configuration | Per-profile Git user/email, signing preference, aliases and `includeIf` scoped to authorised directories or repositories. Avoid changing global identity for unrelated work; never store signing private keys in Git. |
 | **Later** | GUI applications and settings | Optional per-platform apps (e.g. browser, Ghostty, VS Code), with tested installers, paths, permissions and explicit approval; treat app installation separately from file configuration. |
@@ -39,7 +40,7 @@ Keep **profiles** (reusable sets of settings) separate from **machines** (indivi
 | **Later** | Secrets references | Profiles name required secrets or encrypted files but **never** contain credentials or private keys in plaintext. Use independently secured identities, recovery and per-machine access controls. |
 | **Later** | Host-local overrides | Hostnames, mount/disk paths, monitor layouts and device-specific values stored outside shared profile Git. Define and test explicit public → profile(s) → local precedence, validation and conflicts. |
 
-Start with real-profile manual validation and lifecycle safety. Implement the three **Next** capabilities as separate, narrowly scoped POCs rather than expanding the current integration PR. Add GUI, OS settings, services, secrets references and host-local overrides only with their own security and rollback tests. Work-owned material must remain in employer-approved storage.
+Start with real-profile manual validation and safe Git update/rollback. Environment values and profile deactivation are part of the current POC; implement the remaining **Next** capabilities (PATH, OS packages and Git identity) as separate, narrowly scoped POCs. Add GUI, OS settings, services, secrets references and host-local overrides only with their own security and rollback tests. Work-owned material must remain in employer-approved storage.
 
 ## Tools, apps and services
 
