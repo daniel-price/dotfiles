@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Test optional font installation without network or changes to the real HOME."""
 import os
+import platform
 import pty
 import subprocess
 import tempfile
@@ -54,7 +55,7 @@ fi
 
     env = dict(os.environ, HOME=str(home),
                PATH=str(mock_bin) + ":/usr/bin:/bin",
-               MOCK_DOWNLOADS=str(calls))
+               MOCK_DOWNLOADS=str(calls), MOCK_KERNEL=platform.system())
 
     def run(*args, answer=None, **extra):
         command = ["bash", str(SCRIPT), *args]
@@ -81,7 +82,7 @@ fi
             if slave != -1:
                 os.close(slave)
 
-    linux_fonts = home / ".local/share/fonts"
+    font_dir = home / ("Library/Fonts" if platform.system() == "Darwin" else ".local/share/fonts")
     names = [
         "MesloLGS NF Regular.ttf",
         "MesloLGS NF Bold.ttf",
@@ -92,39 +93,39 @@ fi
     assert run("--bad").returncode != 0
     preview = run()
     assert preview.returncode == 0 and "Preview only" in preview.stdout
-    assert not linux_fonts.exists() and not calls.read_text()
+    assert not font_dir.exists() and not calls.read_text()
     denied = run("--apply", answer="n\n")
     assert denied.returncode == 0 and "declined" in denied.stdout.lower()
-    assert not linux_fonts.exists() and not calls.read_text()
+    assert not font_dir.exists() and not calls.read_text()
     unattended = run("--apply")
-    assert unattended.returncode == 0 and not linux_fonts.exists()
+    assert unattended.returncode == 0 and not font_dir.exists()
 
     broken = run("--apply", answer="y\n", MOCK_FAIL_FONT="Italic")
     assert broken.returncode != 0, broken.stdout
-    assert not linux_fonts.exists(), broken.stdout
+    assert not font_dir.exists(), broken.stdout
 
     calls.write_text("")
     invalid = run("--apply", answer="y\n", MOCK_BAD_FONT="1")
-    assert invalid.returncode != 0 and not linux_fonts.exists(), invalid.stdout
+    assert invalid.returncode != 0 and not font_dir.exists(), invalid.stdout
 
     calls.write_text("")
     accepted = run("--apply", answer="y\n")
     assert accepted.returncode == 0, accepted.stdout
-    assert all((linux_fonts / name).is_file() for name in names)
+    assert all((font_dir / name).is_file() for name in names)
     assert len(calls.read_text().splitlines()) == 4
     repeated = run("--apply")
     assert repeated.returncode == 0 and "already present" in repeated.stdout
     assert len(calls.read_text().splitlines()) == 4
 
-    (linux_fonts / names[0]).unlink()
+    (font_dir / names[0]).unlink()
     foreign = base / "unrelated"
     foreign.write_text("leave me\n")
-    (linux_fonts / names[0]).symlink_to(foreign)
+    (font_dir / names[0]).symlink_to(foreign)
     conflict = run("--apply", answer="y\n")
     assert conflict.returncode != 0 and "Conflicting font path" in conflict.stdout
     assert foreign.read_text() == "leave me\n"
-    (linux_fonts / names[0]).unlink()
-    (linux_fonts / names[0]).write_bytes(b"existing")
+    (font_dir / names[0]).unlink()
+    (font_dir / names[0]).write_bytes(b"existing")
 
     mac = run("--apply", answer="y\n", MOCK_KERNEL="Darwin")
     assert mac.returncode == 0, mac.stdout
