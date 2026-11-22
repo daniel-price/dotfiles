@@ -130,7 +130,7 @@ exit 0
     assert (home / ".config/profile-poc/settings.toml").is_symlink()
     assert (home / ".config/profile-poc/settings.toml").resolve() == (
         checkout / "config/profile-poc/settings.toml"
-    )
+    ).resolve()
     assert (checkout / "bin/,personal-hello").is_file()
     assert (checkout / "zsh/aliases.zsh").is_file()
     assert (checkout / "zsh/functions/personal-greet").is_file()
