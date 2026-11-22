@@ -82,7 +82,8 @@ main() {
     command -v curl >/dev/null 2>&1 || die 'curl is required to download the fonts.'
     scratch=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-fonts.XXXXXX") ||
         die 'Could not create temporary font download directory.'
-    trap 'rm -rf -- "$scratch"' EXIT
+    # Capture the path now: the local variable disappears before the EXIT trap.
+    trap "rm -rf -- $(printf '%q' "$scratch")" EXIT
 
     # Stage and inspect every download before making changes to the font directory.
     for font in "${missing[@]}"; do
