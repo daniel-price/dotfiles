@@ -57,7 +57,7 @@ main() {
     missing=()
     for font in "${fonts[@]}"; do
         file="$target/$font"
-        if [[ -L "$file" || ( -e "$file" && ! -f "$file" ) ]]; then
+        if [[ -L "$file" || (-e "$file" && ! -f "$file") ]]; then
             die "Conflicting font path; refusing to replace it: $file"
         fi
         [[ -f "$file" ]] || missing+=("$font")
