@@ -8,8 +8,8 @@ Machine configuration belongs in [`scripts/setup/mise.toml`](../../scripts/setup
 
 | Component | Linux | macOS |
 | --- | --- | --- |
-| Git (if absent) | apt, after approval | Apple Command Line Tools |
-| curl | Required before bootstrap | Usually included |
+| Git (prerequisite) | Install separately before cloning | Install separately (e.g. Apple Command Line Tools) before cloning |
+| curl | Required for mise installation; normally available | Required for mise installation; normally included |
 | mise | Verified pinned installer, after approval | Same |
 | Zsh (if absent) | apt via mise | Homebrew via mise when necessary |
 | Machine CLI tools | Pinned `[tools]` via mise | Same |

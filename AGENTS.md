@@ -33,11 +33,23 @@ and are **not** evidence that a feature already exists.
 - **CI:** workflow run steps call versioned scripts, with tool commands and
   flags owned by those scripts. Reuse the same scripts from local commands and
   Git hooks. Actions may handle runtime setup, caches, artifacts and deployment.
+- **Tests:** verify meaningful behaviour and real regression risks. Avoid
+  redundant assertions or checks tied only to historical implementation details.
+- **Bash entrypoints:** start executable Bash scripts with `#!/usr/bin/env bash`,
+  `set -euo pipefail`, and the same script-based Git checkout root discovery:
+  `ROOT=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)`.
+  Source dependencies by `$ROOT` (retain ShellCheck annotations), then declare
+  `main() { ...; }` and invoke `main "$@"`. This deliberately requires Git
+  and a checkout; never infer the root from the caller's current directory.
+  The self-snapshotting updater must instead honour its injected snapshot root.
+  Sourced Bash libraries must not set shell options, discover the checkout,
+  or invoke `main`. Commands such as `,wt` may independently discover a
+  *target project's* Git root when that is their purpose.
 - **Layout:** `scripts/setup/` is for machine setup, `scripts/dev/` is for
   maintaining this checkout, and `scripts/lib/` provides internal shared helpers.
   Put eventual everyday shell commands in `bin/` only when they exist. `.config/`
-  holds intended user dotfiles. Keep the standalone `get-started.sh`, entry
-  documentation and tool-discovered configuration at the root.
+  holds intended user dotfiles. Keep `bin/,bootstrap` as the sole bootstrap
+  implementation and entry documentation/tool configuration at the root.
 - **Cleanup:** default to dry-run; remove only explicitly eligible targets after terminal confirmation. Never use `mise implode`, system package prune, forceful dotfile removal or automatic deletion of private overlays. Tool installations can be shared across projects.
 - **Docs:** user-facing guidance should be accurate, concise and task-oriented.
   Store dense plans and older investigations under `docs/reference/`, label

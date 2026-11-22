@@ -1,0 +1,8 @@
+# Optional Zsh plugin, separate from machine tools.
+# zsh-autosuggestions v0.7.1, pinned to the release commit.
+# No clone occurs without explicit consent.
+[bootstrap.repos]
+"~/.local/share/dotfiles/zsh-autosuggestions" = { url = "https://github.com/zsh-users/zsh-autosuggestions.git", ref = "e52ee8ca55bcc56a17c828767a3f98f22a68d4eb" }
+
+[settings]
+auto_install = false

@@ -35,6 +35,7 @@ printf 'bootstrap ran\\n' >> "$MOCK_BOOTSTRAP_LOG"
     git = bin_dir / "git"
     git.write_text("""#!/usr/bin/env bash
 case "$*" in
+    *"rev-parse --show-toplevel") printf '%s\\n' "$MOCK_CHECKOUT" ;;
     *"symbolic-ref --quiet --short HEAD") printf '%s\\n' "${MOCK_BRANCH:-main}" ;;
     *"rev-parse HEAD") printf '%s\\n' "${MOCK_HEAD:-new}" ;;
     *"rev-parse refs/remotes/origin/main") printf '%s\\n' "${MOCK_REMOTE_HEAD:-new}" ;;

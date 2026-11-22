@@ -6,10 +6,10 @@ Two tracks: **capabilities** prove reusable mechanisms; **tools/apps** adopt the
 
 | Capability | Status | Next step |
 | --- | --- | --- |
-| Initial bootstrap (Git, mise, prerequisites) | Implemented | Extend only as needed |
+| Initial bootstrap (mise, prerequisites; Git required before clone) | Implemented | Extend only as needed |
 | Pinned CLI tools and OS packages | Implemented | GUI application packaging POC |
 | Dotfile deployment | Zsh and Zellij implemented with mise | Add reviewed configs as needed |
-| Optional pinned Git dependencies | Powerlevel10k implemented | Reuse as needed |
+| Optional pinned Git dependencies | Powerlevel10k and zsh-autosuggestions implemented | Reuse as needed |
 | Guarded Git update and selective cleanup | Implemented | Explicit upgrades, drift and rollback |
 | Private configuration layers | Single directory overlay implemented | Test public/private/local precedence and conflicts |
 | Encrypted environment values | POC ready for manual validation | [**POC 1A:** age + mise, fake token and second-machine restore](guides/age-env-poc.md) |
@@ -29,7 +29,7 @@ Each POC must answer one architectural question and include a manual test plan. 
 | --- | --- | --- |
 | Core setup | Git, mise, Zsh | Implemented |
 | CLI tools | Neovim, Zellij, zoxide, ripgrep, fd | Implemented; versions in [machine manifest](../scripts/setup/mise.toml) |
-| Shell config | Zsh aliases and Powerlevel10k | Implemented; theme optional |
+| Shell config | Zsh aliases, bookmarks, Powerlevel10k and autosuggestions | Implemented; optional pinned plugins |
 | Repo tooling | shfmt, ShellCheck, Lefthook | Implemented; opt-in hooks |
 | On-demand isolated app | OpenCode through rootless Podman | Implemented on Linux; approval required |
 | GUI apps/config | Ghostty and Neovim configs | Incremental migration; not a generic GUI installer |

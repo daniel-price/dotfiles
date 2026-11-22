@@ -1,19 +1,25 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ $# -eq 0 ]]; then
-    printf 'Usage: ,until-failure <command> [arguments...]\n' >&2
-    exit 2
-fi
+ROOT=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
 
-count=0
-while true; do
-    if "$@"; then
-        count=$((count + 1))
-        printf 'Succeeded %s time(s)\n' "$count"
-    else
-        status=$?
-        printf 'Failed after %s successful run(s), exit status %s\n' "$count" "$status" >&2
-        exit "$status"
+main() {
+    if [[ $# -eq 0 ]]; then
+        printf 'Usage: ,until-failure <command> [arguments...]\n' >&2
+        exit 2
     fi
-done
+
+    count=0
+    while true; do
+        if "$@"; then
+            count=$((count + 1))
+            printf 'Succeeded %s time(s)\n' "$count"
+        else
+            status=$?
+            printf 'Failed after %s successful run(s), exit status %s\n' "$count" "$status" >&2
+            exit "$status"
+        fi
+    done
+}
+
+main "$@"
