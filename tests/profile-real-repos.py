@@ -232,7 +232,7 @@ exit 0
         zshrc = home / ".zshrc"
         zshrc.symlink_to(ROOT / ".config/zsh/zshrc")
         out = subprocess.run(
-            ["zsh", "-ic", "alias personal-ping; whence -w personal-greet; personal-greet; whence -w ,personal-hello; print -r -- $MISE_GLOBAL_CONFIG_FILE"],
+            ["zsh", "-ic", "alias personal-ping; whence -w personal-greet; personal-greet; whence -w ,personal-hello; print -r -- $MISE_GLOBAL_CONFIG_FILE; print -r -- PROFILE_BIN=$PATH; print -r -- SCRATCH=${+parameters[profiles]}:${+parameters[registry]}:${+functions[_dotfiles_profiles_init]}"],
             env={**env, "MISE_GLOBAL_CONFIG_FILE": ""},
             cwd=tmp, capture_output=True, text=True, timeout=20,
         )
@@ -242,6 +242,8 @@ exit 0
         assert "hello" in out.stdout
         assert ",personal-hello" in out.stdout
         assert str(manifest) in out.stdout
+        assert str(checkout / "bin") in out.stdout
+        assert "SCRATCH=0:0:0" in out.stdout, out.stdout
 
     # Deactivation previews changes, requests approval and never deletes Git repos.
     personal_deactivate = ["--name", "personal", "--deactivate"]
@@ -288,5 +290,15 @@ exit 0
     assert not (home / ".config/profile-poc/server.toml").exists()
     assert (home / ".dotfiles-profiles/server/.git").is_dir()
     assert sentinel.read_text() == "untouched"
+
+    # A nested Zsh with a stale managed override must now fall back to Base.
+    if shutil.which("zsh"):
+        fallback = subprocess.run(
+            ["zsh", "-ic", "print -r -- BASE=$MISE_GLOBAL_CONFIG_FILE"],
+            env={**env, "MISE_GLOBAL_CONFIG_FILE": str(manifest)},
+            cwd=tmp, capture_output=True, text=True, timeout=20,
+        )
+        assert fallback.returncode == 0, fallback.stdout + fallback.stderr
+        assert "BASE=" + str(ROOT / "scripts/setup/mise.toml") in fallback.stdout
 
     print("PASS: real profile clone, env, consent, deactivation, Zsh, app links and conflicts")

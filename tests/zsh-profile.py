@@ -16,10 +16,13 @@ assert "POWERLEVEL9K_CONFIG_FILE" in PROMPT.read_text()
 assert "alias zj='zellij'" in ALIASES.read_text()
 assert 'source "$_dotfiles_zsh_dir/aliases.zsh"' in ZSHRC.read_text()
 assert 'source "$_dotfiles_zsh_dir/profiles.zsh"' in ZSHRC.read_text()
-assert "_dotfiles_profiles_init" in ZSHRC.read_text()
-assert "_dotfiles_profiles_functions" in ZSHRC.read_text()
-assert "_dotfiles_profiles_aliases" in ZSHRC.read_text()
-assert (ROOT / ".config/zsh/profiles.zsh").is_file()
+assert "_dotfiles_profiles_init" not in ZSHRC.read_text()
+assert "_dotfiles_profiles_functions" not in ZSHRC.read_text()
+assert "_dotfiles_profiles_aliases" not in ZSHRC.read_text()
+PROFILES = ROOT / ".config/zsh/profiles.zsh"
+assert PROFILES.is_file()
+assert "() {" in PROFILES.read_text()
+assert "local -a profiles=()" in PROFILES.read_text()
 
 assert 'source "$_dotfiles_zsh_dir/p10k.zsh"' in ZSHRC.read_text()
 assert "git clone" not in ZSHRC.read_text()
@@ -42,6 +45,18 @@ with tempfile.TemporaryDirectory(prefix="dotfiles-zsh-profile-") as temporary:
                               env=dict(env, **(overrides or {})),
                               stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT, text=True, timeout=15)
+
+    # The anonymous setup must not leave temporary arrays or helper functions.
+    scoped = run(
+        'print -r -- "PROFILES=${+parameters[profiles]} "'
+        '"REGISTRY=${+parameters[registry]} "'
+        '"HELPERS=${+functions[_dotfiles_profiles_init]} "'
+        '"MISE=$MISE_GLOBAL_CONFIG_FILE"',
+        interactive=True,
+    )
+    assert scoped.returncode == 0, scoped.stdout
+    assert "PROFILES=0 REGISTRY=0 HELPERS=0" in scoped.stdout, scoped.stdout
+    assert str(ROOT / "scripts/setup/mise.toml") in scoped.stdout, scoped.stdout
 
     aliases = run("alias zj za zar g; print -r -- ZSH_READY")
     assert aliases.returncode == 0, aliases.stdout
