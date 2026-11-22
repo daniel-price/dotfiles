@@ -2,7 +2,8 @@
 set -euo pipefail
 
 ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
-TEST_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-clean.XXXXXX")
+source "$ROOT/tests/lib.sh"
+TEST_ROOT=$(make_temp_dir dotfiles-clean)
 trap 'rm -rf -- "$TEST_ROOT"' EXIT
 
 fail() {
