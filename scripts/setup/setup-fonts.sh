@@ -83,8 +83,7 @@ main() {
     command -v curl >/dev/null 2>&1 || die 'curl is required to download the fonts.'
     scratch=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-fonts.XXXXXX") ||
         die 'Could not create temporary font download directory.'
-    # Capture the path now: the local variable disappears before the EXIT trap.
-    trap "rm -rf -- $(printf '%q' "$scratch")" EXIT
+    trap 'rm -rf -- "$scratch"' EXIT
 
     # Stage and inspect every download before making changes to the font directory.
     for font in "${missing[@]}"; do
@@ -107,6 +106,8 @@ main() {
     if [[ "$platform" == debian ]] && command -v fc-cache >/dev/null 2>&1; then
         fc-cache -f "$target" || log 'Font files installed, but fc-cache failed; restart Ghostty if needed.'
     fi
+    rm -rf -- "$scratch"
+    trap - EXIT
     log 'MesloLGS NF installed. Restart Ghostty (or reload its configuration).'
 }
 
