@@ -296,20 +296,12 @@ main() {
     if [[ "$zsh_config_status" == 'already applied' || "$zsh_config_status" == applied* ]]; then
         bash "$ROOT/scripts/setup/setup-prompt.sh" --apply ||
             die "Optional prompt setup failed; check the preceding error."
+        bash "$ROOT/scripts/setup/setup-fonts.sh" --apply ||
+            die "Optional font setup failed; check the preceding error."
         bash "$ROOT/scripts/setup/setup-autosuggestions.sh" --apply ||
             die "Optional autosuggestions setup failed; check the preceding error."
     else
-        log 'Skipping optional Zsh plugins: reviewed Zsh startup is not active.'
-    fi
-
-    # Font installation is desktop-only and independently approved. Skip on
-    # headless machines or where Ghostty is not installed.
-    if command -v ghostty >/dev/null 2>&1 ||
-        [[ -d /Applications/Ghostty.app || -d "$HOME/Applications/Ghostty.app" ]]; then
-        bash "$ROOT/scripts/setup/setup-fonts.sh" --apply ||
-            die "Optional font setup failed; check the preceding error."
-    else
-        log "Skipping optional MesloLGS font: Ghostty not detected."
+        log 'Skipping optional Zsh plugins and font: reviewed Zsh startup is not active.'
     fi
 
     # Desktop keyboard preferences are independent of mise-managed dotfiles.
