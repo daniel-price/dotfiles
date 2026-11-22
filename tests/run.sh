@@ -160,7 +160,6 @@ if mise=$(mise_command); then
     printf 'PASS: Native mise machine manifest loads without developer tools\n'
 fi
 
-
 assert_equal macos "$(detect_os Darwin "$TEST_ROOT/missing")" 'macOS without Linux metadata'
 
 check_linux() {
