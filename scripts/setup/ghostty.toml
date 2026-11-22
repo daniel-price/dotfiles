@@ -1,0 +1,13 @@
+# Optional Ghostty desktop application, deliberately separate from the base
+# bootstrap manifest so installing Zsh never implicitly adds a third-party PPA.
+# On Pop!_OS/Ubuntu 24.04 the community PPA supplies Ghostty 1.3.1;
+# newer Ghostty releases require newer GTK/libadwaita than 24.04 offers.
+[bootstrap.apt.sources]
+ghostty = { ppa = "mkasberg/ghostty-ubuntu" }
+
+[bootstrap.packages]
+"apt:ghostty" = { os = "linux" }
+"brew-cask:ghostty" = { os = "macos" }
+
+[settings]
+auto_install = false
