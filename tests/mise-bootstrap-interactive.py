@@ -48,7 +48,9 @@ echo 'zsh fake'
     # The general bootstrap fixture starts with Ghostty available. Dedicated
     # Ghostty tests verify the opt-in install path without consuming other PTY answers.
     fake_ghostty = bin_dir / "ghostty"
-    fake_ghostty.write_text("#!/usr/bin/env bash\\necho 'ghostty fake'\\n")
+    fake_ghostty.write_text("""#!/usr/bin/env bash
+echo 'ghostty fake'
+""")
     fake_ghostty.chmod(0o755)
 
     # Simulate an existing unrelated mapping: bootstrap must leave it alone.
@@ -295,7 +297,7 @@ esac
     # Verify bootstrap offers Ghostty independently when the app is actually missing.
     if platform.system() == "Darwin":
         fake_ghostty.unlink()
-        installed_ghostty = run("n\\ny\\n")
+        installed_ghostty = run("n\ny\n")
         assert installed_ghostty.returncode == 0, installed_ghostty.stdout
         assert (home / "Applications/Ghostty.app").is_dir(), installed_ghostty.stdout
         assert any(line.startswith(str(ROOT / "scripts/setup/ghostty.toml") + "|-C / bootstrap packages apply --yes brew-cask:ghostty")
