@@ -35,9 +35,16 @@ and are **not** evidence that a feature already exists.
   Git hooks. Actions may handle runtime setup, caches, artifacts and deployment.
 - **Tests:** verify meaningful behaviour and real regression risks. Avoid
   redundant assertions or checks tied only to historical implementation details.
-- **Shell imports:** source shared Bash libraries together near the top of
-  each script, after resolving its root path and before executable logic.
-  Retain ShellCheck source annotations when paths are dynamic.
+- **Bash entrypoints:** start executable Bash scripts with `#!/usr/bin/env bash`,
+  `set -euo pipefail`, and the same script-based Git checkout root discovery:
+  `ROOT=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)`.
+  Source dependencies by `$ROOT` (retain ShellCheck annotations), then declare
+  `main() { ...; }` and invoke `main "$@"`. This deliberately requires Git
+  and a checkout; never infer the root from the caller's current directory.
+  The self-snapshotting updater must instead honour its injected snapshot root.
+  Sourced Bash libraries must not set shell options, discover the checkout,
+  or invoke `main`. Commands such as `,wt` may independently discover a
+  *target project's* Git root when that is their purpose.
 - **Layout:** `scripts/setup/` is for machine setup, `scripts/dev/` is for
   maintaining this checkout, and `scripts/lib/` provides internal shared helpers.
   Put eventual everyday shell commands in `bin/` only when they exist. `.config/`

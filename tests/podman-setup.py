@@ -19,7 +19,7 @@ with tempfile.TemporaryDirectory(prefix="dotfiles-test-podman-") as tmp:
     bin_dir.mkdir()
     home.mkdir()
     # A synthetic PATH prevents accidentally finding an installed host Podman.
-    for name in ("bash", "dirname", "cp", "chmod"):
+    for name in ("bash", "git", "dirname", "cp", "chmod"):
         target = next((p for p in (Path("/bin") / name, Path("/usr/bin") / name)
                        if p.exists()), None)
         assert target is not None, name
