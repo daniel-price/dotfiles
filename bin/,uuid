@@ -9,6 +9,12 @@ set -euo pipefail
 ROOT=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
 
 main() {
+    # argc forwards non-option arguments to main even when none are declared.
+    if (( $# > 0 )); then
+        printf ',uuid: unexpected argument: %s\n' "$1" >&2
+        return 2
+    fi
+
     local value
     if command -v uuidgen >/dev/null 2>&1; then
         value=$(uuidgen)
