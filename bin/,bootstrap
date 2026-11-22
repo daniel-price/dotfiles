@@ -304,10 +304,24 @@ main() {
         log 'Skipping optional Zsh plugins and font: reviewed Zsh startup is not active.'
     fi
 
-    # Ghostty is an optional desktop application, installed separately from
-    # Zsh/tools to avoid adding a third-party APT source without approval.
-    bash "$ROOT/scripts/setup/setup-ghostty.sh" --apply ||
-        die "Optional Ghostty installation failed; check the preceding error."
+    # Keep third-party desktop sources out of the base machine manifest.
+    # mise owns the package and PPA declarations; bootstrap only offers consent.
+    ghostty_manifest="$ROOT/scripts/setup/ghostty.toml"
+    if [[ ! -f "$ghostty_manifest" ]]; then
+        die 'Missing reviewed optional Ghostty manifest.'
+    fi
+    if MISE_GLOBAL_CONFIG_FILE="$ghostty_manifest" "$mise" -C / bootstrap packages status --missing >/dev/null 2>&1; then
+        log 'Ghostty package is already installed; skipped installation and upgrade.'
+    else
+        MISE_GLOBAL_CONFIG_FILE="$ghostty_manifest" "$mise" -C / bootstrap packages apply --dry-run ||
+            die 'Could not preview optional Ghostty package installation.'
+        if confirm 'Install Ghostty via mise (on Linux this adds the unofficial mkasberg PPA and trusts its future updates)?'; then
+            MISE_GLOBAL_CONFIG_FILE="$ghostty_manifest" "$mise" -C / bootstrap packages apply --yes ||
+                die 'mise could not install optional Ghostty.'
+        else
+            log 'Skipped optional Ghostty package.'
+        fi
+    fi
 
     # Desktop keyboard preferences are independent of mise-managed dotfiles.
     # The helper only offers a mapping for a detected supported Linux desktop.
