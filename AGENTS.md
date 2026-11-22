@@ -39,7 +39,7 @@ and are **not** evidence that a feature already exists.
   `set -euo pipefail`, and the same script-based Git checkout root discovery:
   `ROOT=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)`.
   Source dependencies by `$ROOT` (retain ShellCheck annotations), then declare
-  `main() { ...; }` and invoke `main "$@"`. This deliberately requires Git
+  `main() { ...; }` and invoke `main "$@"` (except argc-based CLIs: argc\x27s `--argc-eval` invokes `main` itself; do not call it twice). This deliberately requires Git
   and a checkout; never infer the root from the caller's current directory.
   The self-snapshotting updater must instead honour its injected snapshot root.
   Sourced Bash libraries must not set shell options, discover the checkout,
