@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
+
+main() {
+    exec bash "$ROOT/scripts/setup/profile.sh" "$@"
+}
+
+main "$@"

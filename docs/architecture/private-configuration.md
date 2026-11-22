@@ -14,7 +14,7 @@ Public setup works without private access. A private Git repository is **not enc
 
 The [private overlay script](../guides/private-profiles.md) can link **one explicitly selected local directory** to one target through mise. It previews the change and refuses conflicting targets or dirty/divergent Git sources. It never discovers, clones or updates private repositories.
 
-Full public → private → local precedence is **planned**, not implemented. When introducing it, test mise's effective config order and file target conflicts rather than assuming that TOML fragments override one another.
+The [real profile-repository POC](../guides/private-profiles-poc.md) can clone an explicitly authorised Git repository into a directory **outside** the public checkout, then stage a reviewed subset of tools, Bash commands, Zsh aliases/functions and application config. It requires separate consent before cloning, activation and each tool install; it never discovers or updates private repositories. The generated Zsh mise manifest combines exact public and selected profile tool versions, refusing incompatible pins. This does **not** imply that arbitrary TOML, application settings or scripts can be safely merged.
 
 Encrypted whole-file history is a separate Git store, **not** the private overlay or this public checkout; see [secrets](secrets.md).
 

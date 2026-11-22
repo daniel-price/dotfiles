@@ -26,7 +26,8 @@ and are **not** evidence that a feature already exists.
   dotfiles or encryption. Consult and verify the selected mise version before
   adding commands; distinguish normal Git source from mise's separate
   Git-backed tracked-file history. An optional private configuration repo is
-  distinct from both of those; its composition/precedence is not implemented.
+  distinct from both of those; the opt-in profile-repository POC implements a
+  narrow, explicit subset with no automatic Git update or bootstrap integration.
 - **PRs:** small changes; list commands actually executed, untested platforms,
   and a numbered, copyable manual test plan with expected results and safe
   cleanup. Update human-facing docs whenever behaviour changes.

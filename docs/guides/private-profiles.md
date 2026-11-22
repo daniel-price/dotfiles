@@ -1,8 +1,10 @@
 # Use an optional private configuration profile
 
-**Status: narrow prototype implemented.** One already-present directory can be
-linked to one explicit target. There is no automatic repository discovery,
-clone, fetch, update, profile selection or configuration precedence merge.
+**Status: narrow single-directory prototype implemented.** This guide covers
+the original helper for symlinking one already-present directory to one target.
+For real independent private Git repositories, approved profile selection,
+tool pins and Bash/Zsh/app configuration, use the
+[profile-repositories POC](private-profiles-poc.md) instead.
 
 The public setup never needs private access. Only run this script on a machine
 and for a source you are explicitly authorised to use. Never put a private

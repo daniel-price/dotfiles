@@ -8,9 +8,9 @@ main() {
     bash "$ROOT/tests/hooks.sh"
     bash "$ROOT/tests/run.sh"
     if command -v python3 >/dev/null 2>&1; then
-        python3 "$ROOT/tests/private-profiles-poc.py"
+        python3 "$ROOT/tests/profile-real-repos.py"
     else
-        printf '%s\n' 'SKIP: private profile POC test (python3 not available)'
+        printf '%s\n' 'SKIP: real profile POC test (python3 not available)'
     fi
 }
 
