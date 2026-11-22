@@ -201,7 +201,7 @@ esac
     answers = ["y", "y"] + [
         "y" if name in approved_tools else "n" for name in pins
     ]
-    approved = run("\n".join(answers + ["n", "n"]) + "\n")
+    approved = run("\n".join(answers + ["n", "n", "n"]) + "\n")
     assert approved.returncode == 0, approved.stdout
     assert (state / "zsh").exists() and (state / f"neovim@{pins['neovim']}").exists() and (state / f"zoxide@{pins['zoxide']}").exists(), (approved.stdout, log.read_text(), list(state.iterdir()), pins)
     assert all(
@@ -251,7 +251,7 @@ esac
         (name, version) for name, version in pins.items()
         if not (state / f"{name}@{version}").exists()
     ]
-    final = run("y\n" * len(remaining) + "n\nn\n")
+    final = run("y\n" * len(remaining) + "n\nn\nn\n")
     assert final.returncode == 0, final.stdout
     assert (state / f"zellij@{pins['zellij']}").exists()
     assert "Bootstrap complete" in final.stdout
@@ -260,15 +260,17 @@ esac
     # Prompt is offered separately, after machine tools, with one approval.
     prompt_target = home / ".local/share/dotfiles/powerlevel10k"
     assert not prompt_target.exists()
-    theme_approved = run("y\nn\n")
+    theme_approved = run("y\nn\nn\n")
     assert theme_approved.returncode == 0, theme_approved.stdout
     assert (prompt_target / "powerlevel10k.zsh-theme").exists()
+    # Font offer is tied to active Zsh prompt config, not a Ghostty executable.
+    assert "Download and install 4 missing font" in theme_approved.stdout, theme_approved.stdout
     assert any(line.startswith(str(ROOT / "scripts/setup/prompt.toml") + "|-C / bootstrap repos apply --yes")
                for line in log.read_text().splitlines()), log.read_text()
     # The second optional plugin has separate consent, and repeated installs are skipped.
     plugin_target = home / ".local/share/dotfiles/zsh-autosuggestions"
     assert not plugin_target.exists()
-    plugin_approved = run("y\n")
+    plugin_approved = run("n\ny\n")
     assert plugin_approved.returncode == 0, plugin_approved.stdout
     assert (plugin_target / "zsh-autosuggestions.zsh").exists()
     assert any(line.startswith(str(ROOT / "scripts/setup/autosuggestions.toml") + "|-C / bootstrap repos apply --yes")
@@ -283,7 +285,7 @@ esac
     zellij_target.unlink()
     zellij_target.write_text("existing default zellij config\n")
     before_backups = list(zellij_target.parent.glob("config.kdl.backup-*"))
-    migrated = run("y\n" + "n\n" * (len(pins) + 1))
+    migrated = run("y\n" + "n\n" * (len(pins) + 2))
     assert migrated.returncode == 0, migrated.stdout
     assert any(line.endswith("dot apply --dry-run --force") for line in log.read_text().splitlines())
     backups = list(zellij_target.parent.glob("config.kdl.backup-*"))
@@ -297,7 +299,7 @@ esac
     zellij_target.unlink()
     zellij_target.write_text("restore me\n")
     (state / "fail-dot-apply").touch()
-    failed = run("y\n" + "n\n" * (len(pins) + 1))
+    failed = run("y\n" + "n\n" * (len(pins) + 2))
     assert failed.returncode == 0, failed.stdout
     assert zellij_target.is_file() and not zellij_target.is_symlink()
     assert zellij_target.read_text() == "restore me\n"
@@ -311,7 +313,7 @@ esac
     foreign_kdl.write_text("custom config\n")
     zellij_target.unlink()
     zellij_target.symlink_to(foreign_kdl)
-    foreign = run("y\n" + "n\n" * (len(pins) + 1))
+    foreign = run("y\n" + "n\n" * (len(pins) + 2))
     assert foreign.returncode == 0, foreign.stdout
     assert zellij_target.is_symlink() and zellij_target.resolve() == foreign_kdl.resolve()
     assert "foreign symlink" in foreign.stdout
