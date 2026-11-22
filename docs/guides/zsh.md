@@ -36,19 +36,18 @@ Fonts are downloaded from an immutable `powerlevel10k-media` commit. Installatio
 
 ## Ghostty application
 
-Ghostty's font configuration is a shared dotfile. **The application is declared in an optional [mise manifest](../../scripts/setup/ghostty.toml)** instead of a custom installer. Bootstrap previews its package plan and asks for approval; it does not require Ghostty to configure Zsh.
+The Ghostty application and configuration are both declared in the regular machine `scripts/setup/mise.toml`. Bootstrap previews the OS package changes and asks for **one explicit approval** to install missing Zsh/Ghostty packages.
 
-- **Pop!_OS 24.04 (Noble):** `apt:ghostty` through the **unofficial** [mkasberg PPA](https://github.com/mkasberg/ghostty-ubuntu), currently supporting Ghostty 1.3.1 on Noble. Approving it adds a persistent source that can supply future APT updates.
-- **macOS:** `brew-cask:ghostty` installs the app using Homebrew.
+- **Pop!_OS 24.04:** `apt:ghostty` uses the **unofficial** [mkasberg Ghostty PPA](https://github.com/mkasberg/ghostty-ubuntu). Approval also enables this persistent APT source, which can supply future updates.
+- **macOS:** `brew-cask:ghostty` uses Homebrew.
 
-To preview or apply this independently, using mise directly:
+Preview the same shared declaration manually:
 
 ```sh
-MISE_GLOBAL_CONFIG_FILE="$HOME/.dotfiles/scripts/setup/ghostty.toml" mise -C / bootstrap packages apply --dry-run
-MISE_GLOBAL_CONFIG_FILE="$HOME/.dotfiles/scripts/setup/ghostty.toml" mise -C / bootstrap packages apply
+MISE_GLOBAL_CONFIG_FILE="$HOME/.dotfiles/scripts/setup/mise.toml" mise -C / bootstrap packages apply --dry-run
 ```
 
-The base `scripts/setup/mise.toml` stays free of third-party APT sources: mise would otherwise attempt to set up the PPA during unrelated package operations such as installing Zsh. Installation is opt-in and does not automatically upgrade already-satisfied `latest` packages. To remove the PPA later, review and manually remove `/etc/apt/sources.list.d/mise-ghostty.sources`.
+Headless machines can decline the OS package offer; noninteractive bootstrap will not approve it. Mise leaves installed packages at their current version, unless explicitly asked to upgrade. If the PPA was added and is no longer wanted, remove `/etc/apt/sources.list.d/mise-ghostty.sources` manually.
 
 ## Manual verification
 
