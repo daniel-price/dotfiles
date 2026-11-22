@@ -8,6 +8,7 @@ from zsh import render as render_zsh
 from zellij import render as render_zellij
 from tools import render as render_tools
 from cli import render as render_cli
+from argc_docs import render as render_argc
 
 ROOT = Path(__file__).resolve().parents[2]
 OUTPUTS = {
@@ -15,6 +16,7 @@ OUTPUTS = {
     "zellij.md": render_zellij,
     "tools.md": render_tools,
     "cli.md": render_cli,
+    "argc.md": render_argc,
 }
 
 
