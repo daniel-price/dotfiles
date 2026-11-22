@@ -11,10 +11,18 @@ fd = "10.5.2"
 gh = "2.105.0"
 argc = "1.24.0"
 
+# The Ghostty package for Pop!_OS 24.04 comes from a community PPA.
+# Bootstrap previews the full package plan and asks for approval before any
+# package or APT source is installed.
+[bootstrap.apt.sources]
+ghostty = { ppa = "mkasberg/ghostty-ubuntu" }
+
 [bootstrap.packages]
 "apt:zsh" = { os = "linux" }
 "apt:wl-clipboard" = { os = "linux" }
 "brew:zsh" = { os = "macos" }
+"apt:ghostty" = { os = "linux" }
+"brew-cask:ghostty" = { os = "macos" }
 
 [dotfiles]
 "~/.zshrc" = { source = "../../.config/zsh/zshrc", mode = "symlink" }

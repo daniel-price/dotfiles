@@ -180,13 +180,17 @@ main() {
     tool_specs=$(machine_tool_specs "$mise" "$MISE_GLOBAL_CONFIG_FILE") ||
         die 'Could not read the reviewed machine tool declarations.'
 
-    # Apply package declarations independently so an approval never installs
-    # unrelated packages (or silently skips clipboard support on repeat runs).
+    # Approve OS packages independently: accepting clipboard or Zsh must
+    # never implicitly add Ghostty's community PPA.
+    local zsh_package ghostty_package ghostty_installed=false ghostty_prompt
     if [[ "$platform" == debian ]]; then
         zsh_package='apt:zsh'
+        ghostty_package='apt:ghostty'
     else
         zsh_package='brew:zsh'
+        ghostty_package='brew-cask:ghostty'
     fi
+
     if command -v zsh >/dev/null 2>&1 && zsh --version >/dev/null 2>&1; then
         log 'zsh is available; no package installation needed.'
     else
@@ -203,7 +207,30 @@ main() {
         fi
     fi
 
-    # macOS has pbcopy/pbpaste; Debian-based Linux needs Wayland clipboard tools.
+    if command -v ghostty >/dev/null 2>&1 && ghostty --version >/dev/null 2>&1; then
+        ghostty_installed=true
+    elif [[ "$platform" == macos && -d /Applications/Ghostty.app ]]; then
+        ghostty_installed=true
+    fi
+    if [[ "$ghostty_installed" == true ]]; then
+        log 'Ghostty is available; no package installation needed.'
+    else
+        "$mise" -C / bootstrap packages apply --dry-run "$ghostty_package" ||
+            die 'Could not preview the Ghostty package install.'
+        if [[ "$platform" == debian ]]; then
+            ghostty_prompt='Install Ghostty using the unofficial mkasberg PPA (added to APT sources for future updates)?'
+        else
+            ghostty_prompt='Install Ghostty using Homebrew Cask?'
+        fi
+        if confirm "$ghostty_prompt"; then
+            "$mise" -C / bootstrap packages apply --yes "$ghostty_package" ||
+                die 'mise could not install Ghostty.'
+        else
+            log 'Skipped Ghostty package installation.'
+        fi
+    fi
+
+    # macOS has pbcopy/pbpaste; Pop!_OS COSMIC uses Wayland.
     if [[ "$platform" == debian ]]; then
         if command -v wl-copy >/dev/null 2>&1 && wl-copy --version >/dev/null 2>&1 &&
             command -v wl-paste >/dev/null 2>&1 && wl-paste --version >/dev/null 2>&1; then

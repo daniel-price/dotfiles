@@ -45,7 +45,13 @@ echo 'zsh fake'
 """)
     fake_zsh.chmod(0o755)
 
-    # Test clipboard availability without relying on the host's packages.
+    fake_ghostty = bin_dir / "ghostty"
+    fake_ghostty.write_text("""#!/usr/bin/env bash
+[[ -e "$MOCK_STATE/ghostty" ]] || exit 1
+echo 'ghostty fake'
+""")
+    fake_ghostty.chmod(0o755)
+
     for command in ("wl-copy", "wl-paste"):
         executable = bin_dir / command
         executable.write_text("""#!/usr/bin/env bash
@@ -74,9 +80,13 @@ shift 2
 case "$*" in
   "bootstrap packages apply --dry-run apt:zsh" | \
   "bootstrap packages apply --dry-run brew:zsh" | \
+  "bootstrap packages apply --dry-run apt:ghostty" | \
+  "bootstrap packages apply --dry-run brew-cask:ghostty" | \
   "bootstrap packages apply --dry-run apt:wl-clipboard") exit 0 ;;
   "bootstrap packages apply --yes apt:zsh" | \
   "bootstrap packages apply --yes brew:zsh") touch "$MOCK_STATE/zsh"; exit 0 ;;
+  "bootstrap packages apply --yes apt:ghostty" | \
+  "bootstrap packages apply --yes brew-cask:ghostty") touch "$MOCK_STATE/ghostty"; exit 0 ;;
   "bootstrap packages apply --yes apt:wl-clipboard") touch "$MOCK_STATE/wl-clipboard"; exit 0 ;;
   "bootstrap repos apply --dry-run") exit 0 ;;
   "bootstrap repos apply --yes")
@@ -200,22 +210,29 @@ esac
     target = home / ".zshrc"
 
     # Each component requires its own approval. Declines are safe.
-    package_approvals = 2 + (platform.system() == "Linux")
+    package_approvals = 3 + (platform.system() == "Linux")  # Zsh, Ghostty, clipboard, dotfiles
     declined = run("n\n" * (package_approvals + len(pins)))
     assert declined.returncode == 0, declined.stdout
     assert not list(state.iterdir()), declined.stdout
-    assert "Skipped zsh" in declined.stdout and "Skipped neovim" in declined.stdout
+    assert "Skipped zsh" in declined.stdout and "Skipped Ghostty" in declined.stdout
+    assert "Skipped neovim" in declined.stdout
     if platform.system() == "Linux":
-        assert "Skipped wl-clipboard" in declined.stdout, declined.stdout
-        # Clipboard approval is independent: declining Zsh must not block it.
-        clipboard_only = run("n\ny\n" + "n\n" * (len(pins) + 3))
+        assert "Skipped wl-clipboard" in declined.stdout
+        clipboard_only = run("n\nn\ny\n" + "n\n" * (len(pins) + 4))
         assert clipboard_only.returncode == 0, clipboard_only.stdout
-        assert (state / "wl-clipboard").exists() and not (state / "zsh").exists()
+        assert (state / "wl-clipboard").exists()
+        assert not (state / "zsh").exists() and not (state / "ghostty").exists()
         (state / "wl-clipboard").unlink()
+    ghostty_only = run("n\ny\n" + "n\n" * (len(pins) + 4))
+    assert ghostty_only.returncode == 0, ghostty_only.stdout
+    assert (state / "ghostty").exists() and not (state / "zsh").exists()
+    assert not (state / "wl-clipboard").exists()
+    (state / "ghostty").unlink()
     assert "Zsh configuration: skipped (zsh unavailable)" in declined.stdout
     assert not any("dot apply --yes" in line for line in log.read_text().splitlines())
+    assert not any("bootstrap packages apply --yes" in line for line in log.read_text().splitlines()), "Declining package consent must never install Ghostty or its PPA"
 
-    # Approve Zsh, optional Linux clipboard, then mise-managed dotfiles.
+    # Each native package and the dotfiles have independent approval.
     # Generate tool approvals from the manifest so adding a tool doesn't
     # silently approve it or hang an interactive test waiting for input.
     approved_tools = {"neovim", "zoxide"}
@@ -224,11 +241,11 @@ esac
     ]
     approved = run("\n".join(answers + ["n", "n", "n"]) + "\n")
     assert approved.returncode == 0, approved.stdout
-    assert (state / "zsh").exists() and (state / f"neovim@{pins['neovim']}").exists() and (state / f"zoxide@{pins['zoxide']}").exists(), (approved.stdout, log.read_text(), list(state.iterdir()), pins)
+    assert (state / "zsh").exists() and (state / "ghostty").exists() and (state / f"neovim@{pins['neovim']}").exists() and (state / f"zoxide@{pins['zoxide']}").exists(), (approved.stdout, log.read_text(), list(state.iterdir()), pins)
     if platform.system() == "Linux":
-        assert (state / "wl-clipboard").exists(), (approved.stdout, log.read_text())
+        assert (state / "wl-clipboard").exists(), approved.stdout
         assert any(line.endswith("bootstrap packages apply --yes apt:wl-clipboard")
-                   for line in log.read_text().splitlines()), log.read_text()
+                   for line in log.read_text().splitlines())
     assert all(
         not (state / f"{name}@{version}").exists()
         for name, version in pins.items() if name not in approved_tools
@@ -238,6 +255,7 @@ esac
     assert zellij_target.is_symlink() and zellij_target.resolve() == (ROOT / ".config/zellij/config.kdl").resolve()
     ghostty_target = home / ".config/ghostty/config"
     assert ghostty_target.is_symlink() and ghostty_target.resolve() == (ROOT / ".config/ghostty/config").resolve()
+    assert any("bootstrap packages apply --yes apt:ghostty" in line or "bootstrap packages apply --yes brew-cask:ghostty" in line for line in log.read_text().splitlines()), log.read_text()
     assert "Zsh configuration: applied" in approved.stdout
     calls = log.read_text().splitlines()
     assert any("dot apply --dry-run" in line for line in calls)
@@ -261,15 +279,13 @@ esac
     assert not any("scripts/dev" in line for line in calls), calls
 
     dot_before_repeat = sum("dot apply --yes" in line for line in log.read_text().splitlines())
-    clipboard_before_repeat = sum("bootstrap packages apply --yes apt:wl-clipboard" in line
-                                  for line in log.read_text().splitlines())
+    packages_before_repeat = sum("bootstrap packages apply --yes" in line for line in log.read_text().splitlines())
     zoxide_before_repeat = sum(line.endswith(f"install zoxide@{pins['zoxide']}") for line in calls)
     repeated = run()
     assert repeated.returncode == 0, repeated.stdout
     assert "Zsh configuration: applied" in repeated.stdout
     assert sum("dot apply --yes" in line for line in log.read_text().splitlines()) == dot_before_repeat
-    assert sum("bootstrap packages apply --yes apt:wl-clipboard" in line
-               for line in log.read_text().splitlines()) == clipboard_before_repeat
+    assert sum("bootstrap packages apply --yes" in line for line in log.read_text().splitlines()) == packages_before_repeat
     assert sum(line.endswith(f"install zoxide@{pins['zoxide']}") for line in log.read_text().splitlines()) == zoxide_before_repeat
     assert not (state / f"zellij@{pins['zellij']}").exists(), repeated.stdout
     for name, version in pins.items():
