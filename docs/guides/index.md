@@ -7,7 +7,7 @@
 - [Zellij keybindings and yank helpers](zellij.md)
 - [Caps Lock as Ctrl](keyboard.md)
 - [Develop the repo and use Git hooks](development.md)
-- [Command reference](cli.md)
+- [Command reference](cli.md) · [argc-powered command reference](argc.md)
 - [Private configuration](private-profiles.md)
 - [OpenCode sandbox](opencode.md) · [Podman prerequisite](podman.md)
 - [Encrypted environment values (experimental POC)](age-env-poc.md) · [Secrets management (planned)](manage-secret.md)

@@ -11,6 +11,7 @@ import zsh  # noqa: E402
 import zellij  # noqa: E402
 import tools  # noqa: E402
 import cli  # noqa: E402
+import argc_docs  # noqa: E402
 
 zsh_page = zsh.render()
 assert "# Zsh" in zsh_page
@@ -91,5 +92,37 @@ if [[ "$1" == --help ]]; then touch "$HOME/mutated"; printf 'Usage: demo.sh\n'; 
         assert "temporary HOME" in str(error)
     else:
         raise AssertionError("Side-effecting help command was accepted")
+
+
+# Structured argc exports are the only source for its Markdown reference.
+sample = {
+    "name": ",sample",
+    "describe": "Example command",
+    "flag_options": [{
+        "short_name": "-n",
+        "long_name": "--number",
+        "notations": ["COUNT"],
+        "describe": "Choose a count",
+        "required": True,
+        "flag": False,
+        "default": {"type": "Value", "value": "2"},
+        "choice": {"type": "Values", "data": ["1", "2"]},
+    }],
+    "positionals": [{"notation": "INPUT", "describe": "Some text", "required": True}],
+    "subcommands": [{"name": "child", "describe": "Nested command"}],
+}
+rendered = argc_docs.render_export(sample)
+assert "# `,sample`" in rendered
+assert "`-n, --number <COUNT>`" in rendered
+assert "| yes | 2 | 1, 2 |" in rendered
+assert "`INPUT`" in rendered
+assert "## Subcommands" in rendered
+assert "## `,sample child`" in rendered
+try:
+    argc_docs.render_export({"not_a_command": True})
+except ValueError as error:
+    assert "command object" in str(error)
+else:
+    raise AssertionError("Invalid argc export accepted")
 
 print("PASS: Generated Zsh/Zellij/tool/CLI references track configuration and reject invalid sources")

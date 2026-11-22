@@ -1,35 +1,42 @@
 #!/usr/bin/env bash
+# @describe Generate a UUID, optionally in lowercase or without hyphens.
+# @flag -l --lowercase   Output lowercase hexadecimal letters
+# @flag -n --no-hyphens Remove hyphens from the UUID
+
 set -euo pipefail
 
+# shellcheck disable=SC2034
 ROOT=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
 
 main() {
-    # doc: command ,uuid | Generate a UUID, optionally lowercase and/or without hyphens.
-    lower=0
-    compact=0
-    while (( $# )); do
-        case "$1" in
-        -l | --lowercase) lower=1 ;;
-        -n | --no-hyphens) compact=1 ;;
-        -h | --help)
-            printf 'Usage: ,uuid [-l|--lowercase] [-n|--no-hyphens]\n'
-            exit 0
-            ;;
-        *) printf ',uuid: unknown option: %s\n' "$1" >&2; exit 2 ;;
-        esac
-        shift
-    done
+    # argc forwards non-option arguments to main even when none are declared.
+    if (( $# > 0 )); then
+        printf ',uuid: unexpected argument: %s\n' "$1" >&2
+        return 2
+    fi
+
+    local value
     if command -v uuidgen >/dev/null 2>&1; then
         value=$(uuidgen)
     elif command -v python3 >/dev/null 2>&1; then
         value=$(python3 -c 'import uuid; print(uuid.uuid4())')
     else
         printf ',uuid: requires uuidgen or python3\n' >&2
-        exit 127
+        return 127
     fi
-    if (( lower )); then value=$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]'); fi
-    if (( compact )); then value=${value//-/}; fi
+
+    if [[ "${argc_lowercase:-0}" == 1 ]]; then
+        value=$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')
+    fi
+    if [[ "${argc_no_hyphens:-0}" == 1 ]]; then
+        value=${value//-/}
+    fi
     printf '%s\n' "$value"
 }
 
-main "$@"
+# The argc dispatcher runs main automatically; calling it directly would run twice.
+if ! command -v argc >/dev/null 2>&1; then
+    printf ',uuid: argc is required; install the pinned tool through ,bootstrap.\n' >&2
+    exit 127
+fi
+eval "$(argc --argc-eval "$0" "$@")"

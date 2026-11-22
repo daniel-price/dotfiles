@@ -12,6 +12,12 @@ compdef _dotfiles_repeat ,repeat
 compdef _dotfiles_until_failure ,until-failure
 compdef _dotfiles_wt ,wt
 
+# Generate completions from the same argc annotations used by the command.
+# On a fresh machine argc is optional during shell startup; bootstrap never needs it.
+if (( $+commands[argc] )); then
+  source <(argc --argc-completions zsh ,uuid)
+fi
+
 # Offer exact bookmark names while retaining Zoxide's native completion.
 _dotfiles_z() {
   if (( CURRENT == 2 && ${+functions[__zoxide_z_complete]} )); then

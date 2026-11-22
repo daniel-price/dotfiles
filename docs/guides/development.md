@@ -31,16 +31,25 @@ Bats is pinned in the checkout-only `mise.toml`, not the machine bootstrap manif
 
 The hook uses Lefthook to format and re-stage the staged version of a file before linting. Test partially staged changes carefully: formatting can affect other staged lines, and conflicting unstaged edits can interrupt restoration. CI calls the same scripts and tests on Linux/macOS.
 
+## Argc-based commands
+
+Small, standalone Bash CLIs can declare arguments using inline `# @flag`, `# @option` and `# @arg` comments. Argc 1.24.0 is pinned in both the development and machine mise manifests; machine bootstrap offers its installation with the usual explicit consent. Bootstrap itself does not depend on argc. The first converted command is `,uuid`; other commands retain their existing parsers.
+
+On a machine with argc installed, run `,uuid --help` or type `,uuid --` and press Tab in interactive Zsh. Completions load only when argc is available. Edit the Bash annotations directly; there is **no per-edit compilation or generated-file commit**.
+
+Markdown is generated from `argc --argc-export` as part of `bash scripts/dev/build-docs.sh` (the docs build requires the checkout's pinned argc). See the [generated argc command reference](argc.md) and [ADR-0005](../decisions/0005-argc-cli.md). Native argc man pages remain available for optional generation.
+
 For additional command options, see the [generated CLI reference](cli.md).
 
 ## Build documentation locally
 
-Use Python 3.13 in a virtual environment:
+Use Python 3.13 in a virtual environment, and install the pinned development tools first:
 
 ```sh
 python3 -m venv .venv-docs
 . .venv-docs/bin/activate
 bash scripts/dev/install-docs-deps.sh
+bash scripts/dev/run-mise.sh install argc
 bash scripts/dev/build-docs.sh
 ```
 
