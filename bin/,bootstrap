@@ -304,6 +304,11 @@ main() {
         log 'Skipping optional Zsh plugins and font: reviewed Zsh startup is not active.'
     fi
 
+    # Ghostty is an optional desktop application, installed separately from
+    # Zsh/tools to avoid adding a third-party APT source without approval.
+    bash "$ROOT/scripts/setup/setup-ghostty.sh" --apply ||
+        die "Optional Ghostty installation failed; check the preceding error."
+
     # Desktop keyboard preferences are independent of mise-managed dotfiles.
     # The helper only offers a mapping for a detected supported Linux desktop.
     bash "$ROOT/scripts/setup/keyboard.sh" --apply ||
