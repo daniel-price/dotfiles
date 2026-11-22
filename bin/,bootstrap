@@ -302,6 +302,16 @@ main() {
         log 'Skipping optional Zsh plugins: reviewed Zsh startup is not active.'
     fi
 
+    # Font installation is desktop-only and independently approved. Skip on
+    # headless machines or where Ghostty is not installed.
+    if command -v ghostty >/dev/null 2>&1 ||
+        [[ -d /Applications/Ghostty.app || -d "$HOME/Applications/Ghostty.app" ]]; then
+        bash "$ROOT/scripts/setup/setup-fonts.sh" --apply ||
+            die "Optional font setup failed; check the preceding error."
+    else
+        log "Skipping optional MesloLGS font: Ghostty not detected."
+    fi
+
     # Desktop keyboard preferences are independent of mise-managed dotfiles.
     # The helper only offers a mapping for a detected supported Linux desktop.
     bash "$ROOT/scripts/setup/keyboard.sh" --apply ||
