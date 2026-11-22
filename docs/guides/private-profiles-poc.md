@@ -1,43 +1,58 @@
-# POC: machine-specific profiles from an optional private Git repository
+# POC: independent Git repositories for machine profiles
 
-**Status:** Experimental; local synthetic Git fixture only. Not integrated into bootstrap, not an actual private GitHub repository, and no packages or scripts are installed or executed.
+**Status:** Experimental, synthetic local repositories only. No private GitHub repositories, actual HOME directories, tool installations, or real employer-owned configuration are used. Nothing is integrated into production bootstrap.
 
-Question: can a shared dotfiles baseline be combined with exactly one optional profile (laptop or home-server), spanning pinned tools, Bash commands, Zsh aliases and application settings, without leaking the other profile or changing a real HOME?
+Question: can **one separate private repository per machine profile** combine with the public dotfiles baseline, including when multiple profiles apply to the same machine, without leaking unselected settings or silently resolving conflicts?
+
+## Layout being tested
+
+The POC creates **three independently committed local Git repositories** in a disposable workspace. They have different `.git` directories and no remotes. For real use, the proposed checkout layout is separate from the public dotfiles repo:
+
+```text
+~/.dotfiles/                         # Public dotfiles Git repository (unchanged)
+~/.dotfiles-profiles/
+  personal-profile/                 # One optional private Git repository
+  home-server-profile/              # Another optional private Git repository
+  work-mac-profile/                 # Another optional, approved source
+```
+
+Each profile repository has its own `mise.toml`, `bin/`, `zsh/aliases.zsh`, and `config/demo/` files. The work-mac fixture contains **synthetic examples only**, not employer-owned files. A real work profile would have to remain local or use an employer-approved source.
+
+The public defaults are staged first, followed by selected profiles in the order supplied. Example: `personal,work-mac` yields shared ripgrep plus personal `gh` plus work-mac `node`, with matching aliases, commands and demo config. An unselected home-server profile remains a separate repository but is **not** staged.
 
 ## Run
 
-From a checkout, review the script, then:
+Review the script, then run from the public dotfiles checkout:
 
 ```sh
 bash scripts/poc/private-profiles.sh
-bash scripts/poc/private-profiles.sh --apply laptop
-# Or, independently:
+bash scripts/poc/private-profiles.sh --apply personal
+# Or a single server profile:
 bash scripts/poc/private-profiles.sh --apply home-server
+# Or more than one profile on a machine:
+bash scripts/poc/private-profiles.sh --apply personal,work-mac
 ```
 
-The default **previews only**. Applying requires terminal confirmation; declining creates nothing. The approved experiment creates a disposable workspace under `${TMPDIR:-/tmp}` containing a newly initialised, committed **local Git repository** (`private-fixture/`) with two synthetic profiles. It creates a small synthetic shared baseline separately. The selected profile is staged into a disposable `staged-home/`; the other profile remains in the fixture repo but is not staged. No private repositories, credentials, actual HOME paths, installation commands, automatic shell loading or remote GitHub services are touched. The fake Git repository has **no remote**; it is not access-controlled storage.
+The default only previews. `--apply` requires an interactive terminal and explicit `y` confirmation. Declining creates nothing. Approving creates a disposable workspace under `${TMPDIR:-/tmp}` with `profile-repos/`, a synthetic `public-fixture/` and a `staged-home/` directory. The `staged-home/` contains only hidden `.config/` and `.local/` directories, so use `ls -la` or `find . -type f` to see it.
 
-Each profile demonstrates:
+- **Tools:** `scripts/poc/private-profile-tools.py` merges only exact `[tools]` version pins, refuses conflicting versions or overwriting a pre-existing manifest, and sets `auto_install = false`. This is *not* real mise layering, installation or trust handling. Do not run `mise trust` for this POC.
+- **Commands:** Synthetic Bash executables are copied, never executed. Duplicate output paths are rejected.
+- **Aliases:** The shared aliases and selected profile aliases are concatenated as **inert text**, never sourced. Semantic alias conflicts still need a production design.
+- **App config:** Demo files are copied, refusing duplicate destination names. General application-specific merges are out of scope.
 
-- `mise.toml`: exact version pins for additional tools; `scripts/poc/private-profile-tools.py` combines only `[tools]` entries with shared pins, refuses conflicting versions and writes `auto_install = false`. It does not run `mise install` or claim to implement mise's general configuration precedence.
-- `bin/`: extra synthetic Bash commands alongside shared commands, with collisions refused.
-- `zsh/aliases.zsh`: shared aliases followed by the chosen profile's aliases, written as text but **never sourced**.
-- `config/demo/`: example application preferences, with target collisions refused.
+## Manual acceptance and cleanup
 
-The POC deliberately uses conservative, non-overlapping fixture settings. Real application config merges, overriding alias definitions, source validation, mise trust semantics and profile updates still need a design and tests before production integration.
+1. Run without arguments; expect preview, no files created.
+2. Run `--apply personal` and answer `n`; expect no workspace.
+3. Repeat and answer `y`; inspect the printed `staged-home/`: shared `ripgrep`, `gh`, `,personal-demo`, `poc_personal`, and `personal.conf`, but **no** home-server or work-mac entries.
+4. Run `--apply home-server` and approve; expect shared `ripgrep` plus `fd`, `,server-demo`, `poc_server` and `server.conf`, with no personal-only entries.
+5. Run `--apply personal,work-mac` and approve; expect shared plus **both** selected profiles (`gh`, `node`, both commands, both aliases, both config files), and no home-server entries.
+6. Inspect all three local repositories, for example `git -C <workspace>/profile-repos/personal-profile log -1` and `git -C <workspace>/profile-repos/personal-profile remote -v`. Each has its **own commit**; all have **no remotes**. There should be no `.git` in the parent `profile-repos/` directory.
+7. Run `python3 tests/private-profiles-poc.py`. Expect `PASS`; it tests consent, profile selection and layering, separate Git histories, conflicting tool pins, non-overwrite and isolation from a sentinel HOME. Requires Python 3.11+, Git and Bash. Tests also run via the existing shell CI flow.
+8. Remove **only** the disposable workspace paths printed by the script after inspection; never delete your real HOME or actual dotfiles checkout.
 
-## Acceptance and cleanup
+## What this POC does not prove
 
-1. Run without arguments: expect preview, no files.
-2. Run `--apply laptop` and answer `n`: expect no files.
-3. Run `--apply laptop` and answer `y`: note workspace path. Check selected `staged-home/` has shared values, `gh`, `,laptop-demo`, `poc_laptop`, and `laptop.conf`, but no server-only entries.
-4. Repeat with `--apply home-server`: expect shared values, `fd`, `,server-demo`, `poc_server`, and `server.conf`, but no laptop-only entries. New workspace, no overwrite.
-5. In both workspaces inspect `git -C <workspace>/private-fixture log -1` and `git -C <workspace>/private-fixture remote -v`: one synthetic commit and **no remotes**. No real tools installed.
-6. Automated: `python3 tests/private-profiles-poc.py` checks refusals, isolated composition, conflicting pins and non-overwrite. Requires Python 3.11+ and Git; shell validation also runs it in CI.
-7. Remove only the printed disposable workspace directories after review. No cleanup of real machine config is needed.
+It does **not** clone, authenticate to, update or push actual private GitHub repositories, automatically select profiles, install tools, change real shell configurations or integrate into bootstrap. A later PR should ask for explicit authorised repo URLs and profile selection, preview all affected paths, support secure clone/update and deal with alias/app conflicts, precedence, migration and rollback. Never commit secrets or employer-owned code to an unauthorised account.
 
-## Next design step
-
-A future, separately reviewed implementation may accept an **explicit authorised** GitHub repo URL and selected profile, request permission before any clone/update, and preview every tool, PATH entry and dotfile target. The public bootstrap must remain standalone. Never discover private repositories automatically or assume an employer-owned repo can be stored in a personal GitHub account. Keep SSH private keys, age identities and other credentials outside both public and optional private Git; use separately secured backups.
-
-See [configuration layers](../architecture/private-configuration.md), [private overlay prototype](private-profiles.md) and [roadmap](../roadmap.md).
+See [private configuration](private-profiles.md), [architecture](../architecture/private-configuration.md), and [roadmap](../roadmap.md).

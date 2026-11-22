@@ -26,21 +26,21 @@ def tools_from(path: Path) -> dict[str, str]:
 
 
 def main() -> None:
-    if len(sys.argv) != 4:
-        sys.exit("Usage: private-profile-tools.py PUBLIC_TOML PROFILE_TOML OUTPUT_TOML")
-    public, profile, output = map(Path, sys.argv[1:])
-    base = tools_from(public)
-    overlay = tools_from(profile)
-    for name, version in overlay.items():
-        if name in base and base[name] != version:
-            raise ValueError(f"Conflicting tool pin for {name}; refusing silent override")
-        base[name] = version
+    if len(sys.argv) < 4:
+        sys.exit("Usage: private-profile-tools.py PUBLIC_TOML PROFILE_TOML... OUTPUT_TOML")
+    *inputs, output = map(Path, sys.argv[1:])
+    merged: dict[str, str] = {}
+    for path in inputs:
+        for name, version in tools_from(path).items():
+            if name in merged and merged[name] != version:
+                raise ValueError(f"Conflicting tool pin for {name}; refusing silent override")
+            merged[name] = version
     if output.exists() or output.is_symlink():
         raise ValueError("Refusing to overwrite an existing tools manifest")
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(
         "# Synthetic effective tools; no software is installed.\n[tools]\n"
-        + "".join(f"{name} = {json.dumps(value)}\n" for name, value in sorted(base.items()))
+        + "".join(f"{name} = {json.dumps(value)}\n" for name, value in sorted(merged.items()))
         + "\n[settings]\nauto_install = false\n",
         encoding="utf-8",
     )
