@@ -33,6 +33,8 @@ and are **not** evidence that a feature already exists.
 - **CI:** workflow run steps call versioned scripts, with tool commands and
   flags owned by those scripts. Reuse the same scripts from local commands and
   Git hooks. Actions may handle runtime setup, caches, artifacts and deployment.
+- **Tests:** verify meaningful behaviour and real regression risks. Avoid
+  redundant assertions or checks tied only to historical implementation details.
 - **Layout:** `scripts/setup/` is for machine setup, `scripts/dev/` is for
   maintaining this checkout, and `scripts/lib/` provides internal shared helpers.
   Put eventual everyday shell commands in `bin/` only when they exist. `.config/`
