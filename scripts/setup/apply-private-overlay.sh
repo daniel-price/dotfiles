@@ -9,8 +9,6 @@ source "$ROOT/scripts/lib/common.sh"
 source "$ROOT/scripts/lib/mise.sh"
 
 main() {
-    trap 'report_error "$?" "$LINENO"' ERR
-
     usage() {
         printf '%s\n' \
             'Usage: bash scripts/setup/apply-private-overlay.sh --source DIR --target DIR' \
@@ -113,7 +111,7 @@ main() {
 
     printf '[dotfiles."%s"]\nsource = "%s"\nmode = "symlink"\n' \
         "$(toml_escape "$target_dir")" "$(toml_escape "$source_dir")" \
-        >"$work/mise.toml"
+        >"$work/mise.toml" || die "Could not write the temporary overlay manifest."
 
     trust_mise_config_dir "$work"
     "$mise" -C "$work" dot diff || die 'mise dot diff failed; nothing changed.'

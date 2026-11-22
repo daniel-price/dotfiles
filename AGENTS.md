@@ -45,6 +45,11 @@ and are **not** evidence that a feature already exists.
   Sourced Bash libraries must not set shell options, discover the checkout,
   or invoke `main`. Commands such as `,wt` may independently discover a
   *target project's* Git root when that is their purpose.
+- **Bash errors:** use `set -euo pipefail` for unhandled failures; do not
+  install generic `ERR` traps or use a shared line-number-based reporter.
+  Add contextual `|| die "Action failed ..."` messages for important operations,
+  particularly writes and user-approved changes. Preserve failure exit status
+  where callers depend on it, and avoid masking failures during cleanup.
 - **Layout:** `scripts/setup/` is for machine setup, `scripts/dev/` is for
   maintaining this checkout, and `scripts/lib/` provides internal shared helpers.
   Put eventual everyday shell commands in `bin/` only when they exist. `.config/`
