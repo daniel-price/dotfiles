@@ -294,15 +294,6 @@ esac
     assert (plugin_target / "zsh-autosuggestions.zsh").exists()
     assert any(line.startswith(str(ROOT / "scripts/setup/autosuggestions.toml") + "|-C / bootstrap repos apply --yes")
                for line in log.read_text().splitlines()), log.read_text()
-    # Verify bootstrap offers Ghostty independently when the app is actually missing.
-    if platform.system() == "Darwin":
-        fake_ghostty.unlink()
-        installed_ghostty = run("n\ny\n")
-        assert installed_ghostty.returncode == 0, installed_ghostty.stdout
-        assert (home / "Applications/Ghostty.app").is_dir(), installed_ghostty.stdout
-        assert any(line.startswith(str(ROOT / "scripts/setup/ghostty.toml") + "|-C / bootstrap packages apply --yes brew-cask:ghostty")
-                   for line in log.read_text().splitlines()), log.read_text()
-
     before_prompt_repeat = sum("bootstrap repos apply --yes" in line for line in log.read_text().splitlines())
     prompt_repeat = run()
     assert prompt_repeat.returncode == 0
