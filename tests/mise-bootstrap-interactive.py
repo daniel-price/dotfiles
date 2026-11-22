@@ -65,6 +65,16 @@ shift 2
 case "$*" in
   "bootstrap --only packages --dry-run") exit 0 ;;
   "bootstrap --only packages") touch "$MOCK_STATE/zsh"; exit 0 ;;
+  "bootstrap packages apply --dry-run brew-cask:ghostty") exit 0 ;;
+  "bootstrap packages apply --yes brew-cask:ghostty")
+    mkdir -p "$HOME/Applications/Ghostty.app"
+    exit 0
+    ;;
+  "bootstrap packages apply --dry-run apt:ghostty") exit 0 ;;
+  "bootstrap packages apply --yes apt:ghostty")
+    touch "$MOCK_STATE/ghostty-installed"
+    exit 0
+    ;;
   "bootstrap repos apply --dry-run") exit 0 ;;
   "bootstrap repos apply --yes")
     case "$MISE_GLOBAL_CONFIG_FILE" in
@@ -213,6 +223,7 @@ esac
     assert zellij_target.is_symlink() and zellij_target.resolve() == (ROOT / ".config/zellij/config.kdl").resolve()
     ghostty_target = home / ".config/ghostty/config"
     assert ghostty_target.is_symlink() and ghostty_target.resolve() == (ROOT / ".config/ghostty/config").resolve()
+    assert not (home / "Applications/Ghostty.app").exists(), "Ghostty must not be installed by Zsh approval"
     assert "Zsh configuration: applied" in approved.stdout
     calls = log.read_text().splitlines()
     assert any("dot apply --dry-run" in line for line in calls)
