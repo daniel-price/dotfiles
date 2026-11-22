@@ -34,6 +34,22 @@ bash ~/.dotfiles/scripts/setup/setup-fonts.sh --apply
 
 Fonts are downloaded from an immutable `powerlevel10k-media` commit. Installation is user-local (`~/.local/share/fonts` on Linux, `~/Library/Fonts` on macOS), without elevated privileges. Restart Ghostty or reload its configuration after installation. On macOS, Ghostty's application-specific config may override the shared config. If another terminal renders the prompt, select `MesloLGS NF` in that terminal too.
 
+## Ghostty application
+
+Ghostty's font/configuration and its **application installation** are separate. Bootstrap now offers the application using [its own mise manifest](../../scripts/setup/ghostty.toml), so the base Zsh package install can never implicitly add a third-party repository.
+
+- **Pop!_OS 24.04 (Noble):** `apt:ghostty` via the **unofficial** [mkasberg/ghostty-ubuntu PPA](https://github.com/mkasberg/ghostty-ubuntu) (currently Ghostty 1.3.1, the newest version compatible with Noble). This adds a persistent APT source that can supply future updates; review the trust implications before approving.
+- **macOS:** `brew-cask:ghostty` installs the official app via Homebrew.
+
+Preview or approve independently of bootstrap:
+
+```sh
+bash ~/.dotfiles/scripts/setup/setup-ghostty.sh
+bash ~/.dotfiles/scripts/setup/setup-ghostty.sh --apply
+```
+
+An existing Ghostty executable/app is left untouched; no automatic upgrade is performed. The PPA is intentionally not declared in the base mise manifest. If you later want to remove it, inspect and remove the `mise-ghostty.sources` file under `/etc/apt/sources.list.d/` manually; cleanup never removes APT repositories automatically.
+
 ## Manual verification
 
 1. Open interactive Zsh, type `z n`, and verify the remainder of `nvim-plugins` is dimmed (when its target exists).
