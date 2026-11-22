@@ -198,6 +198,7 @@ esac
     assert "Skipped OS package installation" in declined.stdout and "Skipped neovim" in declined.stdout
     assert "Zsh configuration: skipped (zsh unavailable)" in declined.stdout
     assert not any("dot apply --yes" in line for line in log.read_text().splitlines())
+    assert not any("bootstrap packages apply --yes" in line for line in log.read_text().splitlines()), "Declining package consent must never install Ghostty or its PPA"
 
     # The two initial approvals are for the OS packages and mise-managed dotfiles.
     # Generate tool approvals from the manifest so adding a tool doesn't
