@@ -216,6 +216,7 @@ esac
     assert not list(state.iterdir()), declined.stdout
     assert "Skipped zsh" in declined.stdout and "Skipped Ghostty" in declined.stdout
     assert "Skipped neovim" in declined.stdout
+    assert not any("bootstrap packages apply --yes" in line for line in log.read_text().splitlines()), "Declining package consent must never install Ghostty or its PPA"
     if platform.system() == "Linux":
         assert "Skipped wl-clipboard" in declined.stdout
         clipboard_only = run("n\nn\ny\n" + "n\n" * (len(pins) + 4))
@@ -230,7 +231,6 @@ esac
     (state / "ghostty").unlink()
     assert "Zsh configuration: skipped (zsh unavailable)" in declined.stdout
     assert not any("dot apply --yes" in line for line in log.read_text().splitlines())
-    assert not any("bootstrap packages apply --yes" in line for line in log.read_text().splitlines()), "Declining package consent must never install Ghostty or its PPA"
 
     # Each native package and the dotfiles have independent approval.
     # Generate tool approvals from the manifest so adding a tool doesn't
