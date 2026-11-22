@@ -126,7 +126,10 @@ main() {
     fi
 
     [[ ! -e "$ROOT/scripts/setup/bootstrap.sh" ]] || fail "obsolete bootstrap script should not remain"
-    for moved in apply-private-overlay cleanup update; do
+    [[ ! -e "$ROOT/scripts/setup/apply-private-overlay.sh" &&
+        ! -e "$ROOT/tests/tool-overlay-interactive.py" ]] ||
+        fail 'obsolete directory-link POC must not remain'
+    for moved in cleanup update; do
         [[ ! -e "$ROOT/scripts/$moved.sh" ]] || fail "obsolete setup path remains: $moved"
         [[ -x "$ROOT/scripts/setup/$moved.sh" ]] || fail "setup script is not executable: $moved"
     done
@@ -259,8 +262,8 @@ MISE
         python3 "$ROOT/tests/update-interactive.py"
         python3 "$ROOT/tests/bootstrap-command.py"
         python3 "$ROOT/tests/bootstrap-interactive.py"
-        python3 "$ROOT/tests/tool-overlay-interactive.py"
         python3 "$ROOT/tests/zsh-profile.py"
+        python3 "$ROOT/tests/profile-real-repos.py"
         python3 "$ROOT/tests/mise-bootstrap-interactive.py"
         python3 "$ROOT/tests/login-shell.py"
         python3 "$ROOT/tests/cleanup-interactive.py"

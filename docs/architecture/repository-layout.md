@@ -14,4 +14,4 @@
 | `tests/` | Synthetic/no-host-change verification |
 | `docs/` | Handbook, decisions and history |
 
-Only deploy **reviewed** configs; do not link placeholder directories. Separate optional/private sources and age identities remain outside this public repo. See [architecture](index.md) and [roadmap](../roadmap.md).
+Only deploy **reviewed** configs; do not link placeholder directories. Optional Profile checkouts and age identities stay outside Base. See [architecture](index.md) and [roadmap](../roadmap.md).

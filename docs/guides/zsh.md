@@ -1,6 +1,6 @@
 # Zsh aliases, navigation, prompt and autosuggestions
 
-The [Zsh profile](../../.config/zsh/zshrc) activates mise, loads reviewed aliases and configures zoxide.
+The [Zsh profile](../../.config/zsh/zshrc) activates mise, loads reviewed aliases and configures zoxide. Optional [Profiles](profiles.md) are loaded via `.config/zsh/profiles.zsh` after explicit activation.
 
 ## Zoxide bookmarks
 

@@ -9,9 +9,10 @@ and are **not** evidence that a feature already exists.
 - **Scope:** operate only on this personal dotfiles repository and other
   resources explicitly authorised for the task. Do not inspect or interact
   with unrelated repositories, organisations or employer resources.
-- **Private/work boundaries:** the public setup must remain standalone. A
-  private configuration repository is an optional, separately authorised
-  source; do not discover, read, clone or modify it without explicit permission.
+- **Base / Profiles:** Base is this standalone public checkout. Profiles are
+  optional reusable Git repositories selected explicitly; visibility (private
+  or public) is not part of their type. Do not discover, read, clone or modify
+  a Profile without explicit authorisation. Local is deferred.
   Work material must remain in an employer-approved location, never in this
   public repository, its documentation, CI logs or generated Pages output.
 - **Safety:** this repository is public. Never commit plaintext secrets,
@@ -25,8 +26,8 @@ and are **not** evidence that a feature already exists.
 - **Tools:** mise + age is the planned approach, **not yet implemented** for
   dotfiles or encryption. Consult and verify the selected mise version before
   adding commands; distinguish normal Git source from mise's separate
-  Git-backed tracked-file history. An optional private configuration repo is
-  distinct from both of those; its composition/precedence is not implemented.
+  Git-backed tracked-file history. Profiles are distinct from both; the opt-in Profile feature implements a
+  narrow, explicit subset with no automatic Git update or bootstrap integration.
 - **PRs:** small changes; list commands actually executed, untested platforms,
   and a numbered, copyable manual test plan with expected results and safe
   cleanup. Update human-facing docs whenever behaviour changes.
@@ -57,7 +58,7 @@ and are **not** evidence that a feature already exists.
   Put eventual everyday shell commands in `bin/` only when they exist. `.config/`
   holds intended user dotfiles. Keep `bin/,bootstrap` as the sole bootstrap
   implementation and entry documentation/tool configuration at the root.
-- **Cleanup:** default to dry-run; remove only explicitly eligible targets after terminal confirmation. Never use `mise implode`, system package prune, forceful dotfile removal or automatic deletion of private overlays. Tool installations can be shared across projects.
+- **Cleanup:** default to dry-run; remove only explicitly eligible targets after terminal confirmation. Never use `mise implode`, system package prune, forceful dotfile removal or automatic deletion of selected Profile configurations. Tool installations can be shared across projects.
 - **Docs:** user-facing guidance should be accurate, concise and task-oriented.
   Store dense plans and older investigations under `docs/reference/`, label
   historical material, and link to it instead of duplicating it.

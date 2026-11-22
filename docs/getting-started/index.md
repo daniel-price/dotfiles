@@ -41,7 +41,7 @@ The updater refuses dirty, divergent or unexpected repositories and never resets
 | Preview cleanup | `bash ~/.dotfiles/scripts/setup/cleanup.sh` |
 | Approve selective cleanup | `bash ~/.dotfiles/scripts/setup/cleanup.sh --apply` |
 | Develop the repository | [Development and hooks](../guides/development.md) |
-| Apply private configuration | [Private profiles](../guides/private-profiles.md) |
+| Preview or activate a Profile | [Profiles](../guides/profiles.md) |
 | Manage a tool or dotfile | [Tools](../guides/add-tool.md) · [Dotfiles](../guides/manage-dotfile.md) |
 
-Commands are also documented via `--help` where supported. For the current inventory and unfinished capabilities, see the [roadmap](../roadmap.md). **Encrypted secrets and full private profile composition are not yet implemented.**
+Commands are also documented via `--help` where supported. For the current inventory and unfinished capabilities, see the [roadmap](../roadmap.md). **Profile selection and deactivation are available as opt-in commands**; profile Git updates and encrypted secrets management remain future work.

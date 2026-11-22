@@ -5,10 +5,10 @@ them**. Implementation decisions belong in [Architecture](architecture/index.md)
 
 | Requirement | Meaning |
 | --- | --- |
-| Cross-platform | A shared baseline on Pop!_OS and macOS; platform-specific behaviour only where necessary. |
+| Cross-platform | A shared Base on Pop!_OS and macOS; platform-specific behaviour only where necessary. |
 | Public by default | Source and documentation can be viewed publicly; never expose plaintext secrets or decryption identities. |
-| Distinct trust boundaries | Public defaults, optional approved private configuration and local-only state remain separate. |
-| No private dependency | Public bootstrap must work without a private checkout or private Git authentication. |
+| Base + Profiles | Base works independently; selected reusable Profiles are optional, authorised and checked for conflicts. |
+| Standalone Base | Bootstrap must work without any Profile checkout or credentials. |
 | Work isolation | Use employer-approved storage and devices for work-related files, never assume personal private Git is authorised. |
 | Safe and explicit | Inspect first; explain and ask before **each** modifying operation; refusal is safe and defaults to no. |
 | Idempotent | Repeating setup should skip already-correct state, not create drift. |
@@ -30,13 +30,13 @@ A separate, access-controlled Git repo can store authorised non-public
 configuration **only after explicit opt-in**. Work-related files require
 employer-approved storage: a private repo under a personal account is not
 sufficient. Private Git is not itself secret encryption. See
-[configuration layers](architecture/private-configuration.md).
+[Base and Profiles](architecture/configuration.md).
 
-Machine-specific SSH authentication keys should be generated locally.
-Machine-specific non-secret overrides may eventually live in a versioned
-platform/profile configuration; local private overrides belong outside version
-control (for now `local/`, `*.local` and mise's `config.local.toml` are
-ignored, but are not yet loaded by the scripts).
+SSH authentication keys should be generated and stored securely on each device.
+A managed **Local** configuration layer is deferred. Individual device settings
+can remain manually configured until that capability is justified. Existing
+ignored patterns (`local/`, `*.local`, and mise's `config.local.toml`) are **not**
+loaded by the Profile mechanism.
 
 ## Operational rule
 
