@@ -1,10 +1,10 @@
-# Profiles: opt-in Git repositories (POC)
+# Profiles: optional reusable configuration
 
-**Status:** The command runs against an explicitly selected profile Git repository and the actual dotfiles Zsh/mise setup. It is deliberately opt-in and not part of unattended bootstrap. Always review the repository before activating it.
+**Status:** Profiles are implemented as an opt-in feature, separate from unattended Base bootstrap. Preview and confirm changes before activation. Manual testing against the authorised example repository is recommended before adopting it on your devices.
 
 ## Layout
 
-Profiles are **reusable configuration bundles**, not a synonym for private files or one specific machine. One device can enable multiple profiles (such as `personal` and `work`); one profile can be used on several devices. The **Base** is the public `dotfiles` checkout and always works independently. Repo visibility and credentials are separate security concerns. **Local** per-device configuration is deferred; nothing in this POC loads a Local layer.
+Profiles are **reusable configuration bundles**, not a synonym for private files or one specific machine. One device can enable multiple profiles (such as `personal` and `work`); one profile can be used on several devices. The **Base** is the public `dotfiles` checkout and always works independently. Repo visibility and credentials are separate security concerns. **Local** per-device configuration is deferred; nothing in the current implementation loads a Local layer.
 
 
 ```text
@@ -27,7 +27,7 @@ The Base bootstrap remains standalone and keeps its original tool manifest. Once
 
 ## Try it with the personal profile fixture
 
-Requires Git, Bash, Python **3.11+**, a checked-out `.dotfiles` PR branch and existing mise if you want to test installing tools. Set `REPO_URL` to the exact HTTPS/SSH clone URL of the approved private fixture repo (don't commit it into public files).
+Requires Git, Bash, Python **3.11+**, an up-to-date `.dotfiles` checkout and existing mise if you want to test installing tools. Set `REPO_URL` to the exact HTTPS/SSH clone URL of the approved private fixture repo (don't commit it into public files).
 
 ```sh
 REPO_URL='git@github.com:OWNER/PROFILE_REPO.git'    # Replace locally
@@ -38,13 +38,13 @@ bash scripts/setup/profile.sh --name personal --repo "$REPO_URL" --apply
 1. **Preview:** The first command must make **no network calls or changes**. It prints the intended checkout path.
 2. **Clone approval:** The second command asks to clone, then prints the real profile's tools, shell directories and proposed app symlinks. Answer `n` here to keep the public checkout and HOME untouched.
 3. **Activation approval:** After cloning, the command asks separately before creating the managed registry, effective tool manifest and symlinks. Decline here to retain just the inactive checkout.
-4. **Tools:** Mise checks each private tool and asks separately before installing a missing pinned version. This fixture declares **OpenCode 2.3.0**. Its *host* install is not sandboxed, unlike the Base `opencode-sandbox` command, so only approve the install if you actually want it.
+4. **Tools:** Mise checks each private tool and asks separately before installing a missing pinned version. The example Profile declares **OpenCode 2.3.0**. Its *host* install is not sandboxed, unlike the Base `opencode-sandbox` command, so only approve the install if you actually want it.
 5. **Check from a new Zsh session** (not an already-open shell):
    ```sh
    ,personal-hello
    personal-ping
    personal-greet world
-   cat ~/.config/profile-poc/settings.toml
+   cat ~/.config/profile-example/settings.toml
    cat ~/.config/mise/dotfiles-profiles.toml
    echo "$MISE_GLOBAL_CONFIG_FILE"
    echo "$DOTFILES_PROFILE_EXAMPLE"  # personal-profile-active
@@ -58,7 +58,7 @@ bash scripts/setup/profile.sh --name personal --repo "$REPO_URL" --apply
 
 ### Preview, deactivate and recover
 
-Deactivation is a supported POC operation. It does **not** delete cloned repositories or uninstall tools:
+Deactivation is supported. It does **not** delete cloned repositories or uninstall tools:
 
 ```sh
 bash scripts/setup/profile.sh --name personal --deactivate          # Preview only
@@ -76,8 +76,8 @@ To reactivate the retained checkout, use the original `--name personal --repo "$
 - No profile repository is discovered, implicitly cloned, fetched, pulled or pushed. Existing checkouts must have exactly the selected `origin` URL and be clean.
 - Each clone, activation, deactivation and missing-tool install requires independent interactive consent. Unmanaged destination files and foreign symlinks are never overwritten; profiles cannot shadow public commands or autoload functions.
 - The generated files are marked as managed; the composer rejects unexpected existing files instead of silently replacing them. Shell startup sources approved profile aliases and functions from the checked-out repository, so **review their code before approving** and whenever you explicitly update the repo.
-- This POC handles *file-level* conflicts, exact tool-pin and environment conflicts, and command/function-name conflicts. It does not fully analyse semantic alias collisions or merge arbitrary app settings inside an existing file.
+- The Profile feature handles *file-level* conflicts, exact tool-pin and environment conflicts, and command/function-name conflicts. It does not fully analyse semantic alias collisions or merge arbitrary app settings inside an existing file.
 - No credentials or private keys should go into Git. Work-specific code must remain in an employer-approved source and must not be uploaded to a personal GitHub account.
-- Python 3.11+ is a current POC prerequisite, not an accepted permanent machine-bootstrap dependency.
+- Python 3.11+ is currently required by the opt-in Profile command, not by Base bootstrap.
 
 See [configuration architecture](../architecture/configuration.md) and [roadmap](../roadmap.md).

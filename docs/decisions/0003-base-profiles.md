@@ -13,7 +13,7 @@ The public dotfiles repository must work across macOS and Pop!_OS without exposi
 - **Profiles** are reusable optional Git repositories, selected explicitly, with no automatic discovery. A device may select several; a Profile may serve many devices.
 - Git repository **visibility** is a security concern, not a configuration type. Profiles can be public or private, but employer-owned material must remain in authorised storage.
 - Secrets and identity keys remain outside public Git; private Git does not provide encryption.
-- **Local** (per-device configuration) is **deferred**. No third configuration layer is implemented or required for the current POC.
+- **Local** (per-device configuration) is **deferred**. No third configuration layer is implemented or required for the current feature.
 
 The current tested composition is **Base → selected Profiles**. Detect conflicts and refuse silent replacement. Preview and ask before cloning, activating, installing tools or deactivating; never make Base depend on Profile credentials.
 
@@ -26,6 +26,6 @@ The current tested composition is **Base → selected Profiles**. Detect conflic
 
 ## Consequences and follow-up
 
-The [Profiles POC](../guides/profiles.md) implements explicit selection and a constrained subset of tool, environment, shell and app configuration. Finish safe Git updates and rollback before production rollout. Introduce Local only if actual device-specific needs justify it, as tracked in the [roadmap](../roadmap.md).
+The [Profiles feature](../guides/profiles.md) implements explicit selection and a constrained subset of tool, environment, shell and app configuration. Finish safe Git updates and rollback before production rollout. Introduce Local only if actual device-specific needs justify it, as tracked in the [roadmap](../roadmap.md).
 
 The original design referred to “public/private/local” layers; these were deployment/security properties, not the current user-facing model. [Base and Profiles architecture](../architecture/configuration.md).

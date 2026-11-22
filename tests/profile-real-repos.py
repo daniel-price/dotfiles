@@ -28,7 +28,7 @@ def create_remote(base, label, tool, version, settings="settings.toml", variable
     git(source, "init", "-q")
     (source / "bin").mkdir()
     (source / "zsh/functions").mkdir(parents=True)
-    (source / "config/profile-poc").mkdir(parents=True)
+    (source / "config/profile-example").mkdir(parents=True)
     config = f'[tools]\n{tool} = "{version}"\n'
     if variables:
         config += "\n[env]\n" + "".join(
@@ -40,7 +40,7 @@ def create_remote(base, label, tool, version, settings="settings.toml", variable
     cmd.chmod(0o755)
     (source / "zsh/aliases.zsh").write_text(f"alias {label}-ping='printf ping'\n")
     (source / "zsh/functions" / f"{label}-greet").write_text("print -r -- hello\n")
-    (source / "config/profile-poc" / settings).write_text("test=true\n")
+    (source / "config/profile-example" / settings).write_text("test=true\n")
     git(source, "add", ".")
     git(source, "-c", "user.name=Profile Test", "-c",
         "user.email=test@example.invalid", "commit", "-qm", "Profile fixture")
@@ -138,9 +138,9 @@ exit 0
     assert data["settings"]["auto_install"] is False
     assert data["env"]["EDITOR"] == "nvim"
     assert data["env"]["DOTFILES_PROFILE_EXAMPLE"] == "personal-profile-active"
-    assert (home / ".config/profile-poc/settings.toml").is_symlink()
-    assert (home / ".config/profile-poc/settings.toml").resolve() == (
-        checkout / "config/profile-poc/settings.toml"
+    assert (home / ".config/profile-example/settings.toml").is_symlink()
+    assert (home / ".config/profile-example/settings.toml").resolve() == (
+        checkout / "config/profile-example/settings.toml"
     ).resolve()
     assert (checkout / "bin/,personal-hello").is_file()
     assert (checkout / "zsh/aliases.zsh").is_file()
@@ -166,7 +166,7 @@ exit 0
     assert code(second) == 0, stdout(second)
     assert (home / ".dotfiles-profiles/server/.git").is_dir()
     assert registry.read_text().splitlines()[-2:] == ["personal", "server"]
-    assert (home / ".config/profile-poc/server.toml").is_symlink()
+    assert (home / ".config/profile-example/server.toml").is_symlink()
     assert len(list((home / ".dotfiles-profiles").iterdir())) == 2
     combined = tomllib.loads(manifest.read_text())
     assert combined["env"] == {
@@ -180,7 +180,7 @@ exit 0
     conflictargs = ["--name", "conflict", "--repo", str(conflict)]
     failed = run_cli([*conflictargs, "--apply"], env, "y\n")
     assert code(failed) != 0 and "Conflicting tool pin" in stdout(failed), stdout(failed)
-    assert not (home / ".config/profile-poc/conflict.toml").exists()
+    assert not (home / ".config/profile-example/conflict.toml").exists()
     assert "conflict" not in registry.read_text()
 
     # Two private repos cannot silently override the same environment variable.
@@ -193,7 +193,7 @@ exit 0
     )
     assert code(env_result) != 0 and "Conflicting environment variable" in stdout(env_result)
     assert "envconflict" not in registry.read_text()
-    assert not (home / ".config/profile-poc/env-conflict.toml").exists()
+    assert not (home / ".config/profile-example/env-conflict.toml").exists()
 
     # Runtime-critical variables and templated expressions are refused.
     reserved_env = create_remote(
@@ -214,12 +214,12 @@ exit 0
     assert code(template_result) != 0 and "literal, single-line" in stdout(template_result)
 
     # A pre-existing real application config must not be overwritten.
-    (home / ".config/profile-poc/foreign.toml").write_text("keep=true\n")
+    (home / ".config/profile-example/foreign.toml").write_text("keep=true\n")
     foreign = create_remote(tmp, "foreign", "node", "22.14.0", settings="foreign.toml")
     foreignargs = ["--name", "foreign", "--repo", str(foreign)]
     refused = run_cli([*foreignargs, "--apply"], env, "y\n")
     assert code(refused) != 0 and "Existing non-profile file" in stdout(refused), stdout(refused)
-    assert (home / ".config/profile-poc/foreign.toml").read_text() == "keep=true\n"
+    assert (home / ".config/profile-example/foreign.toml").read_text() == "keep=true\n"
 
     # A different remote cannot replace the approved profile checkout.
     mismatch = run_cli(["--name", "personal", "--repo", str(server), "--apply"], env, "y\n")
@@ -256,21 +256,21 @@ exit 0
     assert "personal" in registry.read_text()
 
     # A replaced symlink belongs to someone else: do not remove it.
-    personal_link = home / ".config/profile-poc/settings.toml"
+    personal_link = home / ".config/profile-example/settings.toml"
     personal_link.unlink()
-    personal_link.symlink_to(home / ".config/profile-poc/server.toml")
+    personal_link.symlink_to(home / ".config/profile-example/server.toml")
     foreign_link = run_cli([*personal_deactivate, "--apply"], env, "y\n")
     assert code(foreign_link) != 0
     assert "Foreign symlink" in stdout(foreign_link) or "altered symlink" in stdout(foreign_link)
     assert personal_link.is_symlink()
     assert "personal" in registry.read_text()
     personal_link.unlink()
-    personal_link.symlink_to(checkout / "config/profile-poc/settings.toml")
+    personal_link.symlink_to(checkout / "config/profile-example/settings.toml")
 
     applied_deactivate = run_cli([*personal_deactivate, "--apply"], env, "y\n")
     assert code(applied_deactivate) == 0, stdout(applied_deactivate)
     assert not personal_link.exists() and not personal_link.is_symlink()
-    assert (home / ".config/profile-poc/server.toml").is_symlink()
+    assert (home / ".config/profile-example/server.toml").is_symlink()
     assert (checkout / ".git").is_dir(), "Deactivation must retain cloned repo"
     assert registry.read_text().splitlines()[-1] == "server"
     after_deactivate = tomllib.loads(manifest.read_text())
@@ -287,7 +287,7 @@ exit 0
     last = run_cli(["--name", "server", "--deactivate", "--apply"], env, "y\n")
     assert code(last) == 0, stdout(last)
     assert not manifest.exists() and not registry.exists()
-    assert not (home / ".config/profile-poc/server.toml").exists()
+    assert not (home / ".config/profile-example/server.toml").exists()
     assert (home / ".dotfiles-profiles/server/.git").is_dir()
     assert sentinel.read_text() == "untouched"
 

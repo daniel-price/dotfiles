@@ -22,7 +22,7 @@ nav = [
     { "Add a tool" = "guides/add-tool.md" },
     { "Manage a dotfile" = "guides/manage-dotfile.md" },
     { "Manage a secret" = "guides/manage-secret.md" },
-    { "Profiles (POC)" = "guides/profiles.md" },
+    { "Profiles" = "guides/profiles.md" },
   ] },
   { "Roadmap" = "roadmap.md" },
   { "Reference & history (detailed)" = "reference/index.md" },

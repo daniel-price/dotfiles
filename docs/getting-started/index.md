@@ -44,4 +44,4 @@ The updater refuses dirty, divergent or unexpected repositories and never resets
 | Preview or activate a Profile | [Profiles](../guides/profiles.md) |
 | Manage a tool or dotfile | [Tools](../guides/add-tool.md) · [Dotfiles](../guides/manage-dotfile.md) |
 
-Commands are also documented via `--help` where supported. For the current inventory and unfinished capabilities, see the [roadmap](../roadmap.md). **Profile selection is an opt-in POC**; profile Git updates, and encrypted secrets management remain future work.
+Commands are also documented via `--help` where supported. For the current inventory and unfinished capabilities, see the [roadmap](../roadmap.md). **Profile selection and deactivation are available as opt-in commands**; profile Git updates and encrypted secrets management remain future work.

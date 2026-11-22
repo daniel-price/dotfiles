@@ -26,7 +26,7 @@ and are **not** evidence that a feature already exists.
 - **Tools:** mise + age is the planned approach, **not yet implemented** for
   dotfiles or encryption. Consult and verify the selected mise version before
   adding commands; distinguish normal Git source from mise's separate
-  Git-backed tracked-file history. Profiles are distinct from both; the opt-in Profile POC implements a
+  Git-backed tracked-file history. Profiles are distinct from both; the opt-in Profile feature implements a
   narrow, explicit subset with no automatic Git update or bootstrap integration.
 - **PRs:** small changes; list commands actually executed, untested platforms,
   and a numbered, copyable manual test plan with expected results and safe

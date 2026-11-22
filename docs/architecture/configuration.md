@@ -13,7 +13,7 @@ A device can enable multiple profiles; a profile can be reused across devices. T
 
 ## Current support
 
-The [profile POC](../guides/profiles.md) clones explicitly selected repositories into `~/.dotfiles-profiles/` (outside Base), previews their effective tool and non-secret environment configuration, and asks before activation and each missing-tool installation. New Zsh sessions use the selected profiles' executables, aliases and functions. Application configuration files are linked only to non-conflicting targets. Deactivation is previewable and keeps Git checkouts and installed tools intact.
+The [Profile feature](../guides/profiles.md) clones explicitly selected repositories into `~/.dotfiles-profiles/` (outside Base), previews their effective tool and non-secret environment configuration, and asks before activation and each missing-tool installation. New Zsh sessions use the selected profiles' executables, aliases and functions. Application configuration files are linked only to non-conflicting targets. Deactivation is previewable and keeps Git checkouts and installed tools intact.
 
 Profile updates, automatic discovery, general-purpose configuration merges, and rollback of installed software are **not implemented**. Do not assume arbitrary TOML, app settings or shell scripts can be merged.
 
