@@ -73,15 +73,20 @@ shift 2
 case "$*" in
   "bootstrap --only packages --dry-run") exit 0 ;;
   "bootstrap --only packages") touch "$MOCK_STATE/zsh"; exit 0 ;;
-  "bootstrap packages apply --dry-run brew-cask:ghostty") exit 0 ;;
-  "bootstrap packages apply --yes brew-cask:ghostty")
-    mkdir -p "$HOME/Applications/Ghostty.app"
-    exit 0
+  "bootstrap packages status --missing")
+    [[ "$MISE_GLOBAL_CONFIG_FILE" == */ghostty.toml ]] || exit 21
+    [[ -x "$MOCK_GHOSTTY" || -d "$HOME/Applications/Ghostty.app" || -f "$MOCK_STATE/ghostty-installed" ]]
     ;;
-  "bootstrap packages apply --dry-run apt:ghostty") exit 0 ;;
-  "bootstrap packages apply --yes apt:ghostty")
-    touch "$MOCK_STATE/ghostty-installed"
-    exit 0
+  "bootstrap packages apply --dry-run")
+    [[ "$MISE_GLOBAL_CONFIG_FILE" == */ghostty.toml ]]
+    ;;
+  "bootstrap packages apply --yes")
+    [[ "$MISE_GLOBAL_CONFIG_FILE" == */ghostty.toml ]] || exit 21
+    if [[ "${MOCK_KERNEL:-Linux}" == Darwin ]]; then
+      mkdir -p "$HOME/Applications/Ghostty.app"
+    else
+      touch "$MOCK_STATE/ghostty-installed"
+    fi
     ;;
   "bootstrap repos apply --dry-run") exit 0 ;;
   "bootstrap repos apply --yes")
@@ -180,6 +185,7 @@ esac
                MOCK_DOT_SOURCE=str(ROOT / ".config" / "zsh" / "zshrc"),
                MOCK_ZELLIJ_SOURCE=str(ROOT / ".config" / "zellij" / "config.kdl"),
                MOCK_GHOSTTY_SOURCE=str(ROOT / ".config" / "ghostty" / "config"),
+               MOCK_GHOSTTY=str(fake_ghostty), MOCK_KERNEL=platform.system(),
                MOCK_TOOL_ROWS=tool_rows, MOCK_TOOL_PINS=tool_pins)
 
     def run(answers=None):
@@ -300,7 +306,7 @@ esac
         installed_ghostty = run("n\ny\n")
         assert installed_ghostty.returncode == 0, installed_ghostty.stdout
         assert (home / "Applications/Ghostty.app").is_dir(), installed_ghostty.stdout
-        assert any(line.startswith(str(ROOT / "scripts/setup/ghostty.toml") + "|-C / bootstrap packages apply --yes brew-cask:ghostty")
+        assert any(line.startswith(str(ROOT / "scripts/setup/ghostty.toml") + "|-C / bootstrap packages apply --yes")
                    for line in log.read_text().splitlines()), log.read_text()
 
     before_prompt_repeat = sum("bootstrap repos apply --yes" in line for line in log.read_text().splitlines())
