@@ -232,13 +232,14 @@ exit 0
         zshrc = home / ".zshrc"
         zshrc.symlink_to(ROOT / ".config/zsh/zshrc")
         out = subprocess.run(
-            ["zsh", "-ic", "alias personal-ping; whence -w personal-greet; whence -w ,personal-hello; print -r -- $MISE_GLOBAL_CONFIG_FILE"],
+            ["zsh", "-ic", "alias personal-ping; whence -w personal-greet; personal-greet; whence -w ,personal-hello; print -r -- $MISE_GLOBAL_CONFIG_FILE"],
             env={**env, "MISE_GLOBAL_CONFIG_FILE": ""},
             cwd=tmp, capture_output=True, text=True, timeout=20,
         )
         assert out.returncode == 0, out.stdout + out.stderr
         assert "personal-ping" in out.stdout
         assert "personal-greet" in out.stdout
+        assert "hello" in out.stdout
         assert ",personal-hello" in out.stdout
         assert str(manifest) in out.stdout
 

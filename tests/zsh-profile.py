@@ -15,6 +15,12 @@ assert ZSHRC.is_file() and ALIASES.is_file() and PROMPT.is_file()
 assert "POWERLEVEL9K_CONFIG_FILE" in PROMPT.read_text()
 assert "alias zj='zellij'" in ALIASES.read_text()
 assert 'source "$_dotfiles_zsh_dir/aliases.zsh"' in ZSHRC.read_text()
+assert 'source "$_dotfiles_zsh_dir/private-profiles.zsh"' in ZSHRC.read_text()
+assert "_dotfiles_profiles_init" in ZSHRC.read_text()
+assert "_dotfiles_profiles_functions" in ZSHRC.read_text()
+assert "_dotfiles_profiles_aliases" in ZSHRC.read_text()
+assert (ROOT / ".config/zsh/private-profiles.zsh").is_file()
+
 assert 'source "$_dotfiles_zsh_dir/p10k.zsh"' in ZSHRC.read_text()
 assert "git clone" not in ZSHRC.read_text()
 

@@ -28,52 +28,10 @@ if [[ -d "$_dotfiles_bin" && ":$PATH:" != *":$_dotfiles_bin:"* ]]; then
 fi
 unset _dotfiles_bin
 
-# Explicitly activated private profiles live outside this Git checkout.
-# The registry is created only after an approved, conflict-checked profile setup.
-typeset -a _dotfiles_profiles
-_dotfiles_profiles=()
-_dotfiles_registry="$HOME/.config/dotfiles/active-profiles"
-if [[ -f "$_dotfiles_registry" && ! -L "$_dotfiles_registry" ]]; then
-  while IFS= read -r _dotfiles_profile_name || [[ -n "$_dotfiles_profile_name" ]]; do
-    case "$_dotfiles_profile_name" in
-      '' | \#* | *[!a-z0-9-]* | [!a-z]*) continue ;;
-    esac
-    _dotfiles_profile_dir="$HOME/.dotfiles-profiles/$_dotfiles_profile_name"
-    if [[ -d "$_dotfiles_profile_dir" && ! -L "$_dotfiles_profile_dir" ]]; then
-      _dotfiles_profiles+=("$_dotfiles_profile_dir")
-      if [[ -d "$_dotfiles_profile_dir/bin" && ":$PATH:" != *":$_dotfiles_profile_dir/bin:"* ]]; then
-        export PATH="$_dotfiles_profile_dir/bin:$PATH"
-      fi
-    fi
-  done < "$_dotfiles_registry"
-fi
-unset _dotfiles_registry _dotfiles_profile_name _dotfiles_profile_dir
-
-# Drop the old managed profile manifest after deactivation of the last
-# profile, including when a nested shell inherited that environment variable.
-if [[ "${MISE_GLOBAL_CONFIG_FILE:-}" == "$HOME/.config/mise/dotfiles-profiles.toml" &&
-      ! -f "$HOME/.config/dotfiles/active-profiles" ]]; then
-  unset MISE_GLOBAL_CONFIG_FILE
-fi
-
-# Load the reviewed machine tools from this checkout, even when ~/.zshrc
-# is symlinked or the shell starts outside the repository. The bootstrap's
-# MISE_GLOBAL_CONFIG_FILE setting applies only to its child process.
-# Respect a pre-existing override rather than replacing the user's choice.
-if [[ -z "${MISE_GLOBAL_CONFIG_FILE:-}" ]]; then
-  _dotfiles_source=${${(%):-%x}:A}
-  _dotfiles_machine_manifest="${_dotfiles_source:h:h:h}/scripts/setup/mise.toml"
-  # The managed manifest contains public pins plus explicitly selected
-  # profile pins. Without profiles, the original public machine config wins.
-  if [[ -f "$HOME/.config/dotfiles/active-profiles" &&
-        -f "$HOME/.config/mise/dotfiles-profiles.toml" ]]; then
-    _dotfiles_machine_manifest="$HOME/.config/mise/dotfiles-profiles.toml"
-  fi
-  if [[ -f "$_dotfiles_machine_manifest" ]]; then
-    export MISE_GLOBAL_CONFIG_FILE="$_dotfiles_machine_manifest"
-  fi
-  unset _dotfiles_source _dotfiles_machine_manifest
-fi
+# Load approved profile directories and the effective mise config before activation.
+_dotfiles_zsh_dir=${${(%):-%x}:A:h}
+source "$_dotfiles_zsh_dir/private-profiles.zsh"
+_dotfiles_profiles_init "${_dotfiles_zsh_dir:h:h}"
 
 if (( $+commands[mise] )); then
   eval "$(mise activate zsh)"
@@ -104,18 +62,7 @@ if [[ -o interactive ]]; then
     unset _dotfiles_function
   fi
   unset _dotfiles_function_dir
-  # Each active profile may add Zsh autoload functions without copying them.
-  for _dotfiles_profile_dir in "${_dotfiles_profiles[@]}"; do
-    _dotfiles_function_dir="$_dotfiles_profile_dir/zsh/functions"
-    if [[ -d "$_dotfiles_function_dir" ]]; then
-      fpath=("$_dotfiles_function_dir" $fpath)
-      for _dotfiles_function in "$_dotfiles_function_dir"/*(N-.); do
-        autoload -Uz "${_dotfiles_function:t}"
-      done
-      unset _dotfiles_function
-    fi
-  done
-  unset _dotfiles_function_dir _dotfiles_profile_dir
+  _dotfiles_profiles_functions
 fi
 
 # Enable completion only for interactive shells, with no external dependencies.
@@ -130,19 +77,14 @@ if [[ -o interactive ]]; then
 fi
 
 # Restore only the reviewed, cross-platform aliases from the old .cfg profile.
-_dotfiles_zsh_dir=${${(%):-%x}:A:h}
 if [[ -r "$_dotfiles_zsh_dir/aliases.zsh" ]]; then
   source "$_dotfiles_zsh_dir/aliases.zsh"
 fi
-# Only explicitly activated profile aliases are sourced. Inspect a private
-# repo before approving it; sourcing aliases executes its Zsh code.
-for _dotfiles_profile_dir in "${_dotfiles_profiles[@]}"; do
-  if [[ -f "$_dotfiles_profile_dir/zsh/aliases.zsh" &&
-        ! -L "$_dotfiles_profile_dir/zsh/aliases.zsh" ]]; then
-    source "$_dotfiles_profile_dir/zsh/aliases.zsh"
-  fi
-done
-unset _dotfiles_profile_dir _dotfiles_profiles
+# Apply selected profile aliases after public aliases.
+_dotfiles_profiles_aliases
+unfunction _dotfiles_profiles_init _dotfiles_profiles_functions _dotfiles_profiles_aliases
+unset _dotfiles_profiles
+
 
 # doc: prompt theme | Powerlevel10k is loaded for interactive Zsh outside VS Code when installed; otherwise the default prompt remains.
 # doc: prompt font | Use a Nerd Font in your terminal to display prompt glyphs correctly.
