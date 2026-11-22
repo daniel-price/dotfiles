@@ -124,7 +124,7 @@ main() {
     setup_nvim() {
         local config="$HOME/.config/nvim"
         local remote='https://github.com/daniel-price/lazyvim.git'
-        local actual status lock_before verify
+        local actual lock_before verify
 
         if ! "$mise" -C / exec -- nvim --version >/dev/null 2>&1; then
             log 'Neovim is not installed; skipping its configuration.'
@@ -142,7 +142,7 @@ main() {
         fi
 
         if [[ -L "$config" || ! -d "$config" ]] ||
-            [[ "$(git -C "$config" rev-parse --show-toplevel 2>/dev/null || :)" != "$config" ]]; then
+            [[ "$(git -C "$config" rev-parse --show-toplevel 2>/dev/null || :)" != "$(cd "$config" && pwd -P)" ]]; then
             log "Neovim configuration conflict at $config; refusing to overwrite it."
             return 1
         fi

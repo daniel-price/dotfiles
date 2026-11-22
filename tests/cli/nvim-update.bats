@@ -3,8 +3,9 @@
 setup() {
   UPDATE="$BATS_TEST_DIRNAME/../../bin/,nvim-update"
   export HOME="$BATS_TEST_TMPDIR/home"
+  mkdir -p "$HOME/.config/nvim" "$BATS_TEST_TMPDIR/bin"
+  export HOME="$(cd "$HOME" && pwd -P)"
   config="$HOME/.config/nvim"
-  mkdir -p "$config" "$BATS_TEST_TMPDIR/bin"
   git -C "$config" init -q -b main
   git -C "$config" config user.name Test
   git -C "$config" config user.email test@example.invalid

@@ -23,7 +23,7 @@ main() {
 
     [[ ! -L "$config" && -d "$config" ]] ||
         die "Expected an ordinary LazyVim checkout at $config."
-    [[ "$(git -C "$config" rev-parse --show-toplevel 2>/dev/null || :)" == "$config" ]] ||
+    [[ "$(git -C "$config" rev-parse --show-toplevel 2>/dev/null || :)" == "$(cd "$config" && pwd -P)" ]] ||
         die 'Neovim config is not the expected Git checkout.'
     origin=$(git -C "$config" remote get-url origin 2>/dev/null) ||
         die 'Neovim config has no origin remote.'
