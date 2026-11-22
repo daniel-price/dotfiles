@@ -18,13 +18,6 @@ die() {
     exit 1
 }
 
-report_error() {
-    local status=$1
-    local line=$2
-    printf '[error] %s failed at line %s (exit %s).\n' \
-        "${0##*/}" "$line" "$status" >&2
-    exit "$status"
-}
 
 # Use inside `if confirm 'Describe the exact action'; then ...; fi`.
 # Return 0 only for an explicit yes from terminal stdin; never perform an action.

@@ -11,8 +11,6 @@ source "$ROOT/scripts/lib/common.sh"
 source "$ROOT/scripts/lib/mise.sh"
 
 main() {
-    trap 'report_error "$?" "$LINENO"' ERR
-
     usage() {
         printf '%s\n' \
             'Usage: bash scripts/setup/setup-prompt.sh [--apply|--help]' \

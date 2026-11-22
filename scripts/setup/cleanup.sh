@@ -13,8 +13,6 @@ source "$ROOT/scripts/lib/mise.sh"
 source "$ROOT/scripts/lib/machine-tools.sh"
 
 main() {
-    trap 'report_error "$?" "$LINENO"' ERR
-
     usage() {
         printf '%s\n' \
             'Usage: bash scripts/setup/cleanup.sh [--apply|--help]' \

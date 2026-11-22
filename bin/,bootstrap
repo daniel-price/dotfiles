@@ -15,8 +15,6 @@ source "$ROOT/scripts/lib/machine-tools.sh"
 source "$ROOT/scripts/lib/login-shell.sh"
 
 main() {
-    trap 'report_error "$?" "$LINENO"' ERR
-
     MISE_VERSION='v2026.11.9'
     MISE_INSTALLER_URL="https://github.com/jdx/mise/releases/download/$MISE_VERSION/install.sh"
     MISE_INSTALLER_SHA256='60adf5460b19a791b964c414a2fff9d46990c9f2b1dfc0e4ba8c2b865f882a2b'
@@ -296,14 +294,16 @@ main() {
     # The prompt is an optional Git checkout, not a native installed executable.
     # Only offer it when our reviewed Zsh startup file is actually active.
     if [[ "$zsh_config_status" == 'already applied' || "$zsh_config_status" == applied* ]]; then
-        bash "$ROOT/scripts/setup/setup-prompt.sh" --apply
+        bash "$ROOT/scripts/setup/setup-prompt.sh" --apply ||
+            die "Optional prompt setup failed; check the preceding error."
     else
         log 'Skipping optional prompt installation: reviewed Zsh startup is not active.'
     fi
 
     # Desktop keyboard preferences are independent of mise-managed dotfiles.
     # The helper only offers a mapping for a detected supported Linux desktop.
-    bash "$ROOT/scripts/setup/keyboard.sh" --apply
+    bash "$ROOT/scripts/setup/keyboard.sh" --apply ||
+        die "Keyboard setup failed; check the preceding error."
 
     # Changing the login shell is independent of package and dotfile setup.
     # Run this last so any earlier approval answers cannot apply to chsh.
