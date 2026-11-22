@@ -6,8 +6,9 @@ set -euo pipefail
 exec </dev/null
 
 ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
-source "$ROOT/tests/lib.sh"
-TEST_ROOT=$(make_temp_dir dotfiles-test)
+# shellcheck source=scripts/lib/common.sh
+source "$ROOT/scripts/lib/common.sh"
+TEST_ROOT=$(make_temp_dir_physical dotfiles-test)
 trap 'rm -rf -- "$TEST_ROOT"' EXIT
 
 fail() {
@@ -157,7 +158,6 @@ if mise=$(mise_command); then
 fi
 
 source "$ROOT/scripts/lib/os.sh"
-source "$ROOT/scripts/lib/common.sh"
 
 assert_equal macos "$(detect_os Darwin "$TEST_ROOT/missing")" 'macOS without Linux metadata'
 
