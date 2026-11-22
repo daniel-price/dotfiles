@@ -39,12 +39,19 @@ and are **not** evidence that a feature already exists.
   `set -euo pipefail`, and the same script-based Git checkout root discovery:
   `ROOT=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)`.
   Source dependencies by `$ROOT` (retain ShellCheck annotations), then declare
-  `main() { ...; }` and invoke `main "$@"` (except argc-based CLIs: argc\x27s `--argc-eval` invokes `main` itself; do not call it twice). This deliberately requires Git
+  `main() { ...; }` and invoke `main "$@"` for ordinary scripts. For
+  argc-based CLIs, `argc --argc-eval` invokes `main` itself: do not call it twice.
+  This deliberately requires Git
   and a checkout; never infer the root from the caller's current directory.
   The self-snapshotting updater must instead honour its injected snapshot root.
   Sourced Bash libraries must not set shell options, discover the checkout,
   or invoke `main`. Commands such as `,wt` may independently discover a
   *target project's* Git root when that is their purpose.
+- **Bash errors:** use `set -euo pipefail` for unhandled failures; do not
+  install generic `ERR` traps or use a shared line-number-based reporter.
+  Add contextual `|| die "Action failed ..."` messages for important operations,
+  particularly writes and user-approved changes. Preserve failure exit status
+  where callers depend on it, and avoid masking failures during cleanup.
 - **Layout:** `scripts/setup/` is for machine setup, `scripts/dev/` is for
   maintaining this checkout, and `scripts/lib/` provides internal shared helpers.
   Put eventual everyday shell commands in `bin/` only when they exist. `.config/`
