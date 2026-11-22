@@ -121,9 +121,11 @@ esac
     assert repeated.returncode == 0 and "already exists" in repeated.stdout, repeated.stdout
     assert not log.read_text(), "already installed app must not trigger package management"
 
-    unsupported = run("--apply", MOCK_KERNEL="Linux")
-    assert unsupported.returncode == 0
-    assert "skipping" in unsupported.stdout.lower() or "Ghostty PPA" in unsupported.stdout
-    assert not log.read_text()
+    # Linux hosts can check that unsupported distro releases leave APT alone.
+    if Path("/etc/os-release").is_file():
+        unsupported = run("--apply", MOCK_KERNEL="Linux")
+        assert unsupported.returncode == 0, unsupported.stdout
+        assert "skipping" in unsupported.stdout.lower() or "Ghostty PPA" in unsupported.stdout
+        assert not log.read_text()
 
 print("PASS: optional Ghostty mise preview, approval, platform scope, conflicts and repeat")
