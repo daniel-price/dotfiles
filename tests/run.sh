@@ -52,7 +52,7 @@ main() {
     done
     uuid=$("$ROOT/bin/,uuid" --lowercase --no-hyphens) || fail ',uuid failed'
     [[ "$uuid" =~ ^[0-9a-f]{32}$ ]] || fail ',uuid did not produce a compact lowercase UUID'
-    uuid_help=$("$ROOT/bin/,uuid" --help) || fail ',uuid help failed'
+    uuid_help=$("$ROOT/bin/,uuid" --help 2>&1) || fail ',uuid help failed'
     [[ "$uuid_help" == *--lowercase* && "$uuid_help" == *--no-hyphens* ]] || fail ",uuid help missing expected flags: $uuid_help"
     [[ -f "$ROOT/.config/zsh/functions/cdWorktree" ]] || fail 'missing cdWorktree function'
     for helper in ,mason-plugins ,nvim-plugins ,wt; do
