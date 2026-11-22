@@ -45,14 +45,6 @@ echo 'zsh fake'
 """)
     fake_zsh.chmod(0o755)
 
-    # The general bootstrap fixture starts with Ghostty available. Dedicated
-    # Ghostty tests verify the opt-in install path without consuming other PTY answers.
-    fake_ghostty = bin_dir / "ghostty"
-    fake_ghostty.write_text("""#!/usr/bin/env bash
-echo 'ghostty fake'
-""")
-    fake_ghostty.chmod(0o755)
-
     # Simulate an existing unrelated mapping: bootstrap must leave it alone.
     fake_hidutil = bin_dir / "hidutil"
     fake_hidutil.write_text("""#!/usr/bin/env bash
@@ -71,22 +63,12 @@ printf '%s|%s\\n' "$MISE_GLOBAL_CONFIG_FILE" "$*" >> "$MOCK_LOG"
 [[ "$1" == -C && "$2" == / ]] || exit 20
 shift 2
 case "$*" in
-  "bootstrap --only packages --dry-run") exit 0 ;;
-  "bootstrap --only packages") touch "$MOCK_STATE/zsh"; exit 0 ;;
   "bootstrap packages status --missing")
-    [[ "$MISE_GLOBAL_CONFIG_FILE" == */ghostty.toml ]] || exit 21
-    [[ -x "$MOCK_GHOSTTY" || -d "$HOME/Applications/Ghostty.app" || -f "$MOCK_STATE/ghostty-installed" ]]
+    [[ -e "$MOCK_STATE/zsh" && -e "$MOCK_STATE/ghostty" ]]
     ;;
-  "bootstrap packages apply --dry-run")
-    [[ "$MISE_GLOBAL_CONFIG_FILE" == */ghostty.toml ]]
-    ;;
+  "bootstrap packages apply --dry-run") exit 0 ;;
   "bootstrap packages apply --yes")
-    [[ "$MISE_GLOBAL_CONFIG_FILE" == */ghostty.toml ]] || exit 21
-    if [[ "${MOCK_KERNEL:-Linux}" == Darwin ]]; then
-      mkdir -p "$HOME/Applications/Ghostty.app"
-    else
-      touch "$MOCK_STATE/ghostty-installed"
-    fi
+    touch "$MOCK_STATE/zsh" "$MOCK_STATE/ghostty"
     ;;
   "bootstrap repos apply --dry-run") exit 0 ;;
   "bootstrap repos apply --yes")
@@ -185,7 +167,6 @@ esac
                MOCK_DOT_SOURCE=str(ROOT / ".config" / "zsh" / "zshrc"),
                MOCK_ZELLIJ_SOURCE=str(ROOT / ".config" / "zellij" / "config.kdl"),
                MOCK_GHOSTTY_SOURCE=str(ROOT / ".config" / "ghostty" / "config"),
-               MOCK_GHOSTTY=str(fake_ghostty), MOCK_KERNEL=platform.system(),
                MOCK_TOOL_ROWS=tool_rows, MOCK_TOOL_PINS=tool_pins)
 
     def run(answers=None):
@@ -214,11 +195,11 @@ esac
     declined = run("n\n" * (2 + len(pins)))
     assert declined.returncode == 0, declined.stdout
     assert not list(state.iterdir()), declined.stdout
-    assert "Skipped zsh" in declined.stdout and "Skipped neovim" in declined.stdout
+    assert "Skipped OS package installation" in declined.stdout and "Skipped neovim" in declined.stdout
     assert "Zsh configuration: skipped (zsh unavailable)" in declined.stdout
     assert not any("dot apply --yes" in line for line in log.read_text().splitlines())
 
-    # The two initial approvals are for Zsh and both mise-managed dotfiles.
+    # The two initial approvals are for the OS packages and mise-managed dotfiles.
     # Generate tool approvals from the manifest so adding a tool doesn't
     # silently approve it or hang an interactive test waiting for input.
     approved_tools = {"neovim", "zoxide"}
@@ -227,7 +208,7 @@ esac
     ]
     approved = run("\n".join(answers + ["n", "n", "n"]) + "\n")
     assert approved.returncode == 0, approved.stdout
-    assert (state / "zsh").exists() and (state / f"neovim@{pins['neovim']}").exists() and (state / f"zoxide@{pins['zoxide']}").exists(), (approved.stdout, log.read_text(), list(state.iterdir()), pins)
+    assert (state / "zsh").exists() and (state / "ghostty").exists() and (state / f"neovim@{pins['neovim']}").exists() and (state / f"zoxide@{pins['zoxide']}").exists(), (approved.stdout, log.read_text(), list(state.iterdir()), pins)
     assert all(
         not (state / f"{name}@{version}").exists()
         for name, version in pins.items() if name not in approved_tools
@@ -237,7 +218,7 @@ esac
     assert zellij_target.is_symlink() and zellij_target.resolve() == (ROOT / ".config/zellij/config.kdl").resolve()
     ghostty_target = home / ".config/ghostty/config"
     assert ghostty_target.is_symlink() and ghostty_target.resolve() == (ROOT / ".config/ghostty/config").resolve()
-    assert not (home / "Applications/Ghostty.app").exists(), "Ghostty must not be installed by Zsh approval"
+    assert any(line.endswith("bootstrap packages apply --yes") for line in log.read_text().splitlines()), log.read_text()
     assert "Zsh configuration: applied" in approved.stdout
     calls = log.read_text().splitlines()
     assert any("dot apply --dry-run" in line for line in calls)
@@ -247,15 +228,8 @@ esac
     ), calls
     assert any(line.endswith(f"install zoxide@{pins['zoxide']}") for line in calls), calls
     assert any(line.endswith(f"install neovim@{pins['neovim']}") for line in calls), calls
-    # The optional desktop manifest is the only exception to the base config.
-    expected_machine_configs = (
-        str(ROOT / "scripts/setup/mise.toml"),
-        str(ROOT / "scripts/setup/ghostty.toml"),
-    )
-    assert all(any(line.startswith(manifest + "|-C /") for manifest in expected_machine_configs)
+    assert all(line.startswith(str(ROOT / "scripts/setup/mise.toml") + "|-C /")
                for line in calls if "bootstrap repos" not in line), calls
-    assert all(line.startswith(str(ROOT / "scripts/setup/ghostty.toml") + "|-C /")
-               for line in calls if "bootstrap packages status --missing" in line), calls
     optional_repo_manifests = (
         str(ROOT / "scripts/setup/prompt.toml"),
         str(ROOT / "scripts/setup/autosuggestions.toml"),
@@ -307,15 +281,6 @@ esac
     assert (plugin_target / "zsh-autosuggestions.zsh").exists()
     assert any(line.startswith(str(ROOT / "scripts/setup/autosuggestions.toml") + "|-C / bootstrap repos apply --yes")
                for line in log.read_text().splitlines()), log.read_text()
-    # Verify bootstrap offers Ghostty independently when the app is actually missing.
-    if platform.system() == "Darwin":
-        fake_ghostty.unlink()
-        installed_ghostty = run("n\ny\n")
-        assert installed_ghostty.returncode == 0, installed_ghostty.stdout
-        assert (home / "Applications/Ghostty.app").is_dir(), installed_ghostty.stdout
-        assert any(line.startswith(str(ROOT / "scripts/setup/ghostty.toml") + "|-C / bootstrap packages apply --yes")
-                   for line in log.read_text().splitlines()), log.read_text()
-
     before_prompt_repeat = sum("bootstrap repos apply --yes" in line for line in log.read_text().splitlines())
     prompt_repeat = run()
     assert prompt_repeat.returncode == 0
