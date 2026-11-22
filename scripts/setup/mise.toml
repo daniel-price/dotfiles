@@ -21,6 +21,7 @@ argc = "1.24.0"
 "~/.config/atuin/config.toml" = { source = "../../.config/atuin/config.toml", mode = "symlink" }
 "~/.config/stylua.toml" = { source = "../../.config/stylua.toml", mode = "symlink" }
 "~/.config/zellij/config.kdl" = { source = "../../.config/zellij/config.kdl", mode = "symlink" }
+"~/.config/ghostty/config" = { source = "../../.config/ghostty/config", mode = "symlink" }
 
 [settings]
 auto_install = false
