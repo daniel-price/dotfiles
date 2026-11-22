@@ -41,7 +41,7 @@ main() {
     manifest="$ROOT/scripts/setup/autosuggestions.toml"
     [[ -f "$manifest" && ! -L "$manifest" ]] || die 'Reviewed plugin manifest is missing.'
     target="$HOME/.local/share/dotfiles/zsh-autosuggestions"
-    command -v git >/dev/null 2>&1 || die 'Git is required to install the plugin plugin.'
+    command -v git >/dev/null 2>&1 || die 'Git is required to install the plugin.'
     mise=$(mise_command) ||
         die 'mise is required for the pinned plugin checkout; run machine bootstrap first.'
     mise_supports_dot "$mise" ||
@@ -74,7 +74,7 @@ main() {
         log 'Prompt plugin installation declined; no clone attempted.'
         exit 0
     fi
-    # --yes here bypasses mise's second interactive plugin, not this explicit
+    # --yes here bypasses mise's second interactive prompt, not this explicit
     # review-and-consent step. Only the one declared repository can be touched.
     "$mise" -C / bootstrap repos apply --yes ||
         die 'mise could not install the pinned zsh-autosuggestions checkout.'
