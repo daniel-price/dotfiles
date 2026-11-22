@@ -18,6 +18,18 @@ setup() {
   [[ "$output" =~ ^[0-9a-f]{32}$ ]]
 }
 
+@test "short flags preserve compact lowercase output" {
+  run "$UUID" -l -n
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ ^[0-9a-f]{32}$ ]]
+}
+
+@test "default UUID retains its canonical hyphens" {
+  run "$UUID"
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]]
+}
+
 @test "rejects unexpected flags and positional arguments" {
   run "$UUID" --not-real
   [ "$status" -ne 0 ]
