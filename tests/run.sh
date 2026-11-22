@@ -1,12 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
+# shellcheck source=scripts/lib/common.sh
+source "$ROOT/scripts/lib/common.sh"
+# shellcheck source=scripts/lib/mise.sh
+source "$ROOT/scripts/lib/mise.sh"
+# shellcheck source=scripts/lib/machine-tools.sh
+source "$ROOT/scripts/lib/machine-tools.sh"
+# shellcheck source=scripts/lib/os.sh
+source "$ROOT/scripts/lib/os.sh"
+
 # The suite must never consume the caller's terminal input. Tests that need
 # interaction create their own pseudo-terminals and supply input explicitly.
 exec </dev/null
 
-ROOT=$(CDPATH='' cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
-TEST_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-test.XXXXXX")
+TEST_ROOT=$(make_temp_dir_physical dotfiles-test)
 trap 'rm -rf -- "$TEST_ROOT"' EXIT
 
 fail() {
@@ -93,12 +102,17 @@ if command -v zsh >/dev/null 2>&1; then
       export XDG_DATA_HOME="$TEST_ROOT/data"
       __zoxide_z() { [[ "$1" == fallback ]] || return 1; }
       source "$ROOT/.config/zsh/zoxide-bookmarks.zsh" || exit
-      z nvim-plugins || exit
-      [[ "$PWD" == "$TEST_ROOT/data/nvim/lazy" ]] || exit 1
-      z mason-plugins || exit
-      [[ "$PWD" == "$TEST_ROOT/data/nvim/mason/packages" ]] || exit 1
-      z fallback || exit
-      z unknown-bookmark >/dev/null 2>&1 && exit 1
+      z nvim-plugins || { print -u2 "nvim-plugins bookmark failed"; exit 1; }
+      [[ "$(pwd -P)" == "$(cd "$TEST_ROOT/data/nvim/lazy" && pwd -P)" ]] ||
+        { print -u2 "nvim-plugins path mismatch: $PWD"; exit 1; }
+      z mason-plugins || { print -u2 "mason-plugins bookmark failed"; exit 1; }
+      [[ "$(pwd -P)" == "$(cd "$TEST_ROOT/data/nvim/mason/packages" && pwd -P)" ]] ||
+        { print -u2 "mason-plugins path mismatch: $PWD"; exit 1; }
+      z fallback || { print -u2 "zoxide fallback failed"; exit 1; }
+      if z unknown-bookmark >/dev/null 2>&1; then
+        print -u2 "unknown bookmark unexpectedly succeeded"
+        exit 1
+      fi
     ' || fail 'zoxide bookmarks navigation or fallback failed'
     zsh -n "$ROOT/.config/zsh/p10k.zsh" || fail 'reviewed p10k config has invalid syntax'
     printf 'PASS: Reviewed zsh syntax\n'
@@ -118,14 +132,13 @@ done
 [[ ! -e "$ROOT/scripts/update.sh" && ! -e "$ROOT/scripts/setup/provision-tool.sh" &&
     ! -e "$ROOT/scripts/setup/deploy-zsh-config.sh" && ! -e "$ROOT/scripts/setup/deploy-zellij-config.sh" ]] ||
     fail 'obsolete setup placeholders should not remain'
-[[ -f "$ROOT/get-started.sh" && -f "$ROOT/mise.toml" && -f "$ROOT/lefthook.yml" ]] ||
-    fail 'expected root entry points or tool configuration missing'
+[[ ! -e "$ROOT/get-started.sh" ]] || fail "obsolete stage-zero installer should not remain"
+[[ -f "$ROOT/mise.toml" && -f "$ROOT/lefthook.yml" ]] ||
+    fail 'expected checkout tool configuration missing'
 printf 'PASS: Checkout script layout and executable modes\n'
 # Validate the real machine manifest with mise without installing anything.
 # This must not accidentally include the root checkout's developer tools.
 # Resolve mise as setup does: it may be installed outside the current PATH.
-# shellcheck source=scripts/lib/mise.sh
-source "$ROOT/scripts/lib/mise.sh"
 if mise=$(mise_command); then
     machine_config="$ROOT/scripts/setup/mise.toml"
     MISE_GLOBAL_CONFIG_FILE="$machine_config" "$mise" -C / config ls >/dev/null ||
@@ -138,8 +151,6 @@ if mise=$(mise_command); then
         fail 'developer tools leaked into machine setup'
     # Exercise the real mise CLI (rather than just synthetic fixtures) to
     # ensure the shared enumerator handles requested-but-missing versions.
-    # shellcheck source=scripts/lib/machine-tools.sh
-    source "$ROOT/scripts/lib/machine-tools.sh"
     machine_specs=$(MISE_GLOBAL_CONFIG_FILE="$machine_config" \
         machine_tool_specs "$mise" "$machine_config") ||
         fail 'machine tool enumerator could not read the reviewed mise config'
@@ -148,9 +159,6 @@ if mise=$(mise_command); then
         fail 'developer tools leaked into the machine tool inventory'
     printf 'PASS: Native mise machine manifest loads without developer tools\n'
 fi
-
-source "$ROOT/scripts/lib/os.sh"
-source "$ROOT/scripts/lib/common.sh"
 
 assert_equal macos "$(detect_os Darwin "$TEST_ROOT/missing")" 'macOS without Linux metadata'
 
@@ -241,10 +249,8 @@ fi
     fail 'entry point wrote to isolated home or working directory'
 printf 'PASS: Entry-point help, errors and repeatable smoke execution\n'
 bash "$ROOT/tests/check-clean.sh"
-bash "$ROOT/tests/get-started.sh"
 if command -v python3 >/dev/null 2>&1; then
     python3 "$ROOT/tests/docs-generation.py"
-    python3 "$ROOT/tests/get-started-interactive.py"
     python3 "$ROOT/tests/update-interactive.py"
     python3 "$ROOT/tests/bootstrap-command.py"
     python3 "$ROOT/tests/bootstrap-interactive.py"

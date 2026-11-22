@@ -6,7 +6,7 @@ Two tracks: **capabilities** prove reusable mechanisms; **tools/apps** adopt the
 
 | Capability | Status | Next step |
 | --- | --- | --- |
-| Initial bootstrap (Git, mise, prerequisites) | Implemented | Extend only as needed |
+| Initial bootstrap (mise, prerequisites; Git required before clone) | Implemented | Extend only as needed |
 | Pinned CLI tools and OS packages | Implemented | GUI application packaging POC |
 | Dotfile deployment | Zsh and Zellij implemented with mise | Add reviewed configs as needed |
 | Optional pinned Git dependencies | Powerlevel10k implemented | Reuse as needed |

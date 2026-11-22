@@ -33,11 +33,16 @@ and are **not** evidence that a feature already exists.
 - **CI:** workflow run steps call versioned scripts, with tool commands and
   flags owned by those scripts. Reuse the same scripts from local commands and
   Git hooks. Actions may handle runtime setup, caches, artifacts and deployment.
+- **Tests:** verify meaningful behaviour and real regression risks. Avoid
+  redundant assertions or checks tied only to historical implementation details.
+- **Shell imports:** source shared Bash libraries together near the top of
+  each script, after resolving its root path and before executable logic.
+  Retain ShellCheck source annotations when paths are dynamic.
 - **Layout:** `scripts/setup/` is for machine setup, `scripts/dev/` is for
   maintaining this checkout, and `scripts/lib/` provides internal shared helpers.
   Put eventual everyday shell commands in `bin/` only when they exist. `.config/`
-  holds intended user dotfiles. Keep the standalone `get-started.sh`, entry
-  documentation and tool-discovered configuration at the root.
+  holds intended user dotfiles. Keep `bin/,bootstrap` as the sole bootstrap
+  implementation and entry documentation/tool configuration at the root.
 - **Cleanup:** default to dry-run; remove only explicitly eligible targets after terminal confirmation. Never use `mise implode`, system package prune, forceful dotfile removal or automatic deletion of private overlays. Tool installations can be shared across projects.
 - **Docs:** user-facing guidance should be accurate, concise and task-oriented.
   Store dense plans and older investigations under `docs/reference/`, label
