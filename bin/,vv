@@ -1,9 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# doc: command ,vv | Open Neovim's init.lua, if Neovim is installed.
-if ! command -v nvim >/dev/null 2>&1; then
-    printf ',vv: nvim is not installed\n' >&2
-    exit 127
-fi
-exec nvim "${XDG_CONFIG_HOME:-$HOME/.config}/nvim/init.lua"
+ROOT=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
+
+main() {
+    # doc: command ,vv | Open Neovim's init.lua, if Neovim is installed.
+    if ! command -v nvim >/dev/null 2>&1; then
+        printf ',vv: nvim is not installed\n' >&2
+        exit 127
+    fi
+    exec nvim "${XDG_CONFIG_HOME:-$HOME/.config}/nvim/init.lua"
+}
+
+main "$@"
