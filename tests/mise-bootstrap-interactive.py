@@ -67,12 +67,29 @@ case "$*" in
   "bootstrap --only packages") touch "$MOCK_STATE/zsh"; exit 0 ;;
   "bootstrap repos apply --dry-run") exit 0 ;;
   "bootstrap repos apply --yes")
-    mkdir -p "$HOME/.local/share/dotfiles/powerlevel10k/.git"
-    : > "$HOME/.local/share/dotfiles/powerlevel10k/powerlevel10k.zsh-theme"
+    case "$MISE_GLOBAL_CONFIG_FILE" in
+      */autosuggestions.toml)
+        mkdir -p "$HOME/.local/share/dotfiles/zsh-autosuggestions/.git"
+        : > "$HOME/.local/share/dotfiles/zsh-autosuggestions/zsh-autosuggestions.zsh"
+        ;;
+      */prompt.toml)
+        mkdir -p "$HOME/.local/share/dotfiles/powerlevel10k/.git"
+        : > "$HOME/.local/share/dotfiles/powerlevel10k/powerlevel10k.zsh-theme"
+        ;;
+      *) exit 22 ;;
+    esac
     exit 0
     ;;
   "bootstrap repos status --missing")
-    [[ -f "$HOME/.local/share/dotfiles/powerlevel10k/powerlevel10k.zsh-theme" ]]
+    case "$MISE_GLOBAL_CONFIG_FILE" in
+      */autosuggestions.toml)
+        [[ -f "$HOME/.local/share/dotfiles/zsh-autosuggestions/zsh-autosuggestions.zsh" ]]
+        ;;
+      */prompt.toml)
+        [[ -f "$HOME/.local/share/dotfiles/powerlevel10k/powerlevel10k.zsh-theme" ]]
+        ;;
+      *) exit 22 ;;
+    esac
     ;;
   "ls --current --no-header --no-truncate")
     printf '%s\\n' "$MOCK_TOOL_ROWS"
@@ -181,7 +198,7 @@ esac
     answers = ["y", "y"] + [
         "y" if name in approved_tools else "n" for name in pins
     ]
-    approved = run("\n".join(answers + ["n"]) + "\n")
+    approved = run("\n".join(answers + ["n", "n"]) + "\n")
     assert approved.returncode == 0, approved.stdout
     assert (state / "zsh").exists() and (state / f"neovim@{pins['neovim']}").exists() and (state / f"zoxide@{pins['zoxide']}").exists(), (approved.stdout, log.read_text(), list(state.iterdir()), pins)
     assert all(
@@ -202,8 +219,14 @@ esac
     assert any(line.endswith(f"install neovim@{pins['neovim']}") for line in calls), calls
     assert all(line.startswith(str(ROOT / "scripts/setup/mise.toml") + "|-C /")
                for line in calls if "bootstrap repos" not in line), calls
-    assert all(line.startswith(str(ROOT / "scripts/setup/prompt.toml") + "|-C /")
+    optional_repo_manifests = (
+        str(ROOT / "scripts/setup/prompt.toml"),
+        str(ROOT / "scripts/setup/autosuggestions.toml"),
+    )
+    assert all(any(line.startswith(manifest + "|-C /") for manifest in optional_repo_manifests)
                for line in calls if "bootstrap repos" in line), calls
+    assert any(line.startswith(str(ROOT / "scripts/setup/autosuggestions.toml") + "|-C / bootstrap repos apply --dry-run")
+               for line in calls), calls
     assert any(line.endswith("bootstrap repos apply --dry-run") for line in calls), calls
     assert not any("scripts/dev" in line for line in calls), calls
 
@@ -223,7 +246,7 @@ esac
         (name, version) for name, version in pins.items()
         if not (state / f"{name}@{version}").exists()
     ]
-    final = run("y\n" * len(remaining) + "n\n")
+    final = run("y\n" * len(remaining) + "n\nn\n")
     assert final.returncode == 0, final.stdout
     assert (state / f"zellij@{pins['zellij']}").exists()
     assert "Bootstrap complete" in final.stdout
@@ -232,10 +255,18 @@ esac
     # Prompt is offered separately, after machine tools, with one approval.
     prompt_target = home / ".local/share/dotfiles/powerlevel10k"
     assert not prompt_target.exists()
-    theme_approved = run("y\n")
+    theme_approved = run("y\nn\n")
     assert theme_approved.returncode == 0, theme_approved.stdout
     assert (prompt_target / "powerlevel10k.zsh-theme").exists()
     assert any(line.startswith(str(ROOT / "scripts/setup/prompt.toml") + "|-C / bootstrap repos apply --yes")
+               for line in log.read_text().splitlines()), log.read_text()
+    # The second optional plugin has separate consent, and repeated installs are skipped.
+    plugin_target = home / ".local/share/dotfiles/zsh-autosuggestions"
+    assert not plugin_target.exists()
+    plugin_approved = run("y\n")
+    assert plugin_approved.returncode == 0, plugin_approved.stdout
+    assert (plugin_target / "zsh-autosuggestions.zsh").exists()
+    assert any(line.startswith(str(ROOT / "scripts/setup/autosuggestions.toml") + "|-C / bootstrap repos apply --yes")
                for line in log.read_text().splitlines()), log.read_text()
     before_prompt_repeat = sum("bootstrap repos apply --yes" in line for line in log.read_text().splitlines())
     prompt_repeat = run()

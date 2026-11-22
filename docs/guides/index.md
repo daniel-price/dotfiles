@@ -3,7 +3,7 @@
 - [Add or change a tool](add-tool.md)
 - [Pinned tool inventory](tools.md)
 - [Manage a dotfile](manage-dotfile.md)
-- [Zsh aliases and prompt](zsh.md)
+- [Zsh aliases, navigation and suggestions](zsh.md)
 - [Zellij keybindings and yank helpers](zellij.md)
 - [Caps Lock as Ctrl](keyboard.md)
 - [Develop the repo and use Git hooks](development.md)

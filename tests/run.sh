@@ -117,6 +117,8 @@ main() {
       fi
     ' || fail 'zoxide bookmarks navigation or fallback failed'
         zsh -n "$ROOT/.config/zsh/p10k.zsh" || fail 'reviewed p10k config has invalid syntax'
+        zsh -n "$ROOT/.config/zsh/autosuggestions.zsh" || fail 'autosuggestion config has invalid syntax'
+        zsh "$ROOT/tests/zoxide-autosuggestions.zsh" || fail 'bookmark autosuggestions tests failed'
         printf 'PASS: Reviewed zsh syntax\n'
     else
         printf 'SKIP: Reviewed zsh syntax (zsh not found)\n'
@@ -264,6 +266,7 @@ MISE
         python3 "$ROOT/tests/opencode-sandbox.py"
         python3 "$ROOT/tests/podman-setup.py"
         python3 "$ROOT/tests/prompt-setup.py"
+        python3 "$ROOT/tests/autosuggestions-setup.py"
         python3 "$ROOT/tests/dev-setup-interactive.py"
     else
         printf 'SKIP: interactive bootstrap tests (python3 not found)\n'
