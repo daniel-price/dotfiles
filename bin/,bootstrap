@@ -180,73 +180,22 @@ main() {
     tool_specs=$(machine_tool_specs "$mise" "$MISE_GLOBAL_CONFIG_FILE") ||
         die 'Could not read the reviewed machine tool declarations.'
 
-    # Approve OS packages independently: accepting clipboard or Zsh must
-    # never implicitly add Ghostty's community PPA.
-    local zsh_package ghostty_package ghostty_installed=false ghostty_prompt
-    if [[ "$platform" == debian ]]; then
-        zsh_package='apt:zsh'
-        ghostty_package='apt:ghostty'
+    # Package provisioning is a single reviewed mise operation. On Pop!_OS
+    # it includes Ghostty's unofficial mkasberg PPA, so always show the preview
+    # and require approval before changing packages or APT sources.
+    if "$mise" -C / bootstrap packages status --missing >/dev/null 2>&1; then
+        log 'Reviewed OS packages are already installed.'
     else
-        zsh_package='brew:zsh'
-        ghostty_package='brew-cask:ghostty'
-    fi
-
-    if command -v zsh >/dev/null 2>&1 && zsh --version >/dev/null 2>&1; then
-        log 'zsh is available; no package installation needed.'
-    else
-        "$mise" -C / bootstrap packages apply --dry-run "$zsh_package" ||
-            die 'Could not preview the zsh package install.'
-        if confirm 'Install missing zsh using the native package manager via mise?'; then
-            "$mise" -C / bootstrap packages apply --yes "$zsh_package" ||
-                die 'mise could not install zsh.'
+        "$mise" -C / bootstrap packages apply --dry-run ||
+            die 'Could not preview OS package installation.'
+        if confirm 'Install missing OS packages (Zsh and Ghostty; on Linux, Ghostty uses the unofficial mkasberg PPA for future updates)?'; then
+            "$mise" -C / bootstrap packages apply --yes ||
+                die 'mise could not install the reviewed OS packages.'
             if ! command -v zsh >/dev/null 2>&1 || ! zsh --version >/dev/null 2>&1; then
-                die 'Mise package installation finished but zsh is still unavailable.'
+                die 'OS package installation finished but zsh is still unavailable.'
             fi
         else
-            log 'Skipped zsh package installation.'
-        fi
-    fi
-
-    if command -v ghostty >/dev/null 2>&1 && ghostty --version >/dev/null 2>&1; then
-        ghostty_installed=true
-    elif [[ "$platform" == macos && -d /Applications/Ghostty.app ]]; then
-        ghostty_installed=true
-    fi
-    if [[ "$ghostty_installed" == true ]]; then
-        log 'Ghostty is available; no package installation needed.'
-    else
-        "$mise" -C / bootstrap packages apply --dry-run "$ghostty_package" ||
-            die 'Could not preview the Ghostty package install.'
-        if [[ "$platform" == debian ]]; then
-            ghostty_prompt='Install Ghostty using the unofficial mkasberg PPA (added to APT sources for future updates)?'
-        else
-            ghostty_prompt='Install Ghostty using Homebrew Cask?'
-        fi
-        if confirm "$ghostty_prompt"; then
-            "$mise" -C / bootstrap packages apply --yes "$ghostty_package" ||
-                die 'mise could not install Ghostty.'
-        else
-            log 'Skipped Ghostty package installation.'
-        fi
-    fi
-
-    # macOS has pbcopy/pbpaste; Pop!_OS COSMIC uses Wayland.
-    if [[ "$platform" == debian ]]; then
-        if command -v wl-copy >/dev/null 2>&1 && wl-copy --version >/dev/null 2>&1 &&
-            command -v wl-paste >/dev/null 2>&1 && wl-paste --version >/dev/null 2>&1; then
-            log 'Wayland clipboard utilities are already available.'
-        else
-            "$mise" -C / bootstrap packages apply --dry-run apt:wl-clipboard ||
-                die 'Could not preview the wl-clipboard package install.'
-            if confirm 'Install missing wl-clipboard for Neovim and terminal clipboard support?'; then
-                "$mise" -C / bootstrap packages apply --yes apt:wl-clipboard ||
-                    die 'mise could not install wl-clipboard.'
-                if ! command -v wl-copy >/dev/null 2>&1 || ! command -v wl-paste >/dev/null 2>&1; then
-                    die 'Mise package installation finished but wl-clipboard is still unavailable.'
-                fi
-            else
-                log 'Skipped wl-clipboard package installation.'
-            fi
+            log 'Skipped OS package installation.'
         fi
     fi
 

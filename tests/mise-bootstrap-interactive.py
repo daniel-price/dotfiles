@@ -45,21 +45,6 @@ echo 'zsh fake'
 """)
     fake_zsh.chmod(0o755)
 
-    fake_ghostty = bin_dir / "ghostty"
-    fake_ghostty.write_text("""#!/usr/bin/env bash
-[[ -e "$MOCK_STATE/ghostty" ]] || exit 1
-echo 'ghostty fake'
-""")
-    fake_ghostty.chmod(0o755)
-
-    for command in ("wl-copy", "wl-paste"):
-        executable = bin_dir / command
-        executable.write_text("""#!/usr/bin/env bash
-[[ -e "$MOCK_STATE/wl-clipboard" ]] || exit 1
-echo 'wl-clipboard fake'
-""")
-        executable.chmod(0o755)
-
     # Simulate an existing unrelated mapping: bootstrap must leave it alone.
     fake_hidutil = bin_dir / "hidutil"
     fake_hidutil.write_text("""#!/usr/bin/env bash
@@ -78,16 +63,19 @@ printf '%s|%s\\n' "$MISE_GLOBAL_CONFIG_FILE" "$*" >> "$MOCK_LOG"
 [[ "$1" == -C && "$2" == / ]] || exit 20
 shift 2
 case "$*" in
-  "bootstrap packages apply --dry-run apt:zsh" | \
-  "bootstrap packages apply --dry-run brew:zsh" | \
-  "bootstrap packages apply --dry-run apt:ghostty" | \
-  "bootstrap packages apply --dry-run brew-cask:ghostty" | \
-  "bootstrap packages apply --dry-run apt:wl-clipboard") exit 0 ;;
-  "bootstrap packages apply --yes apt:zsh" | \
-  "bootstrap packages apply --yes brew:zsh") touch "$MOCK_STATE/zsh"; exit 0 ;;
-  "bootstrap packages apply --yes apt:ghostty" | \
-  "bootstrap packages apply --yes brew-cask:ghostty") touch "$MOCK_STATE/ghostty"; exit 0 ;;
-  "bootstrap packages apply --yes apt:wl-clipboard") touch "$MOCK_STATE/wl-clipboard"; exit 0 ;;
+  "bootstrap packages status --missing")
+    [[ -e "$MOCK_STATE/zsh" && -e "$MOCK_STATE/ghostty" ]] || exit 1
+    if [[ "$MOCK_LINUX" == 1 ]]; then
+      [[ -e "$MOCK_STATE/wl-clipboard" ]] || exit 1
+    fi
+    ;;
+  "bootstrap packages apply --dry-run") exit 0 ;;
+  "bootstrap packages apply --yes")
+    touch "$MOCK_STATE/zsh" "$MOCK_STATE/ghostty"
+    if [[ "$MOCK_LINUX" == 1 ]]; then
+      touch "$MOCK_STATE/wl-clipboard"
+    fi
+    ;;
   "bootstrap repos apply --dry-run") exit 0 ;;
   "bootstrap repos apply --yes")
     case "$MISE_GLOBAL_CONFIG_FILE" in
@@ -182,6 +170,7 @@ esac
 
     env = dict(os.environ, HOME=str(home), PATH=str(bin_dir) + ":/usr/bin:/bin",
                MOCK_STATE=str(state), MOCK_LOG=str(log),
+               MOCK_LINUX="1" if platform.system() == "Linux" else "0",
                MOCK_DOT_SOURCE=str(ROOT / ".config" / "zsh" / "zshrc"),
                MOCK_ZELLIJ_SOURCE=str(ROOT / ".config" / "zellij" / "config.kdl"),
                MOCK_GHOSTTY_SOURCE=str(ROOT / ".config" / "ghostty" / "config"),
@@ -210,33 +199,19 @@ esac
     target = home / ".zshrc"
 
     # Each component requires its own approval. Declines are safe.
-    package_approvals = 3 + (platform.system() == "Linux")  # Zsh, Ghostty, clipboard, dotfiles
-    declined = run("n\n" * (package_approvals + len(pins)))
+    declined = run("n\n" * (2 + len(pins)))
     assert declined.returncode == 0, declined.stdout
     assert not list(state.iterdir()), declined.stdout
-    assert "Skipped zsh" in declined.stdout and "Skipped Ghostty" in declined.stdout
-    assert "Skipped neovim" in declined.stdout
-    assert not any("bootstrap packages apply --yes" in line for line in log.read_text().splitlines()), "Declining package consent must never install Ghostty or its PPA"
-    if platform.system() == "Linux":
-        assert "Skipped wl-clipboard" in declined.stdout
-        clipboard_only = run("n\nn\ny\n" + "n\n" * (len(pins) + 4))
-        assert clipboard_only.returncode == 0, clipboard_only.stdout
-        assert (state / "wl-clipboard").exists()
-        assert not (state / "zsh").exists() and not (state / "ghostty").exists()
-        (state / "wl-clipboard").unlink()
-    ghostty_only = run("n\ny\n" + "n\n" * (len(pins) + 4))
-    assert ghostty_only.returncode == 0, ghostty_only.stdout
-    assert (state / "ghostty").exists() and not (state / "zsh").exists()
-    assert not (state / "wl-clipboard").exists()
-    (state / "ghostty").unlink()
+    assert "Skipped OS package installation" in declined.stdout and "Skipped neovim" in declined.stdout
     assert "Zsh configuration: skipped (zsh unavailable)" in declined.stdout
     assert not any("dot apply --yes" in line for line in log.read_text().splitlines())
+    assert not any("bootstrap packages apply --yes" in line for line in log.read_text().splitlines()), "Declining package consent must never install Ghostty or its PPA"
 
-    # Each native package and the dotfiles have independent approval.
+    # The two initial approvals are for the OS packages and mise-managed dotfiles.
     # Generate tool approvals from the manifest so adding a tool doesn't
     # silently approve it or hang an interactive test waiting for input.
     approved_tools = {"neovim", "zoxide"}
-    answers = ["y"] * package_approvals + [
+    answers = ["y", "y"] + [
         "y" if name in approved_tools else "n" for name in pins
     ]
     approved = run("\n".join(answers + ["n", "n", "n"]) + "\n")
@@ -244,8 +219,6 @@ esac
     assert (state / "zsh").exists() and (state / "ghostty").exists() and (state / f"neovim@{pins['neovim']}").exists() and (state / f"zoxide@{pins['zoxide']}").exists(), (approved.stdout, log.read_text(), list(state.iterdir()), pins)
     if platform.system() == "Linux":
         assert (state / "wl-clipboard").exists(), approved.stdout
-        assert any(line.endswith("bootstrap packages apply --yes apt:wl-clipboard")
-                   for line in log.read_text().splitlines())
     assert all(
         not (state / f"{name}@{version}").exists()
         for name, version in pins.items() if name not in approved_tools
@@ -255,7 +228,7 @@ esac
     assert zellij_target.is_symlink() and zellij_target.resolve() == (ROOT / ".config/zellij/config.kdl").resolve()
     ghostty_target = home / ".config/ghostty/config"
     assert ghostty_target.is_symlink() and ghostty_target.resolve() == (ROOT / ".config/ghostty/config").resolve()
-    assert any("bootstrap packages apply --yes apt:ghostty" in line or "bootstrap packages apply --yes brew-cask:ghostty" in line for line in log.read_text().splitlines()), log.read_text()
+    assert any(line.endswith("bootstrap packages apply --yes") for line in log.read_text().splitlines()), log.read_text()
     assert "Zsh configuration: applied" in approved.stdout
     calls = log.read_text().splitlines()
     assert any("dot apply --dry-run" in line for line in calls)
