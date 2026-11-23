@@ -21,11 +21,7 @@ if [[ "$3" == dot && "$4" == status && "${5:-}" == --json ]]; then
   printf '{"files":[]}\n'
 elif [[ "$3" == exec && "$4" == -- && "$5" == jq ]]; then
   cat >/dev/null
-  while IFS=$'\t' read -r state target; do
-    case "$state" in
-      missing | differs) printf '%s\n' "$target" ;;
-    esac
-  done <<<"$FAKE_ROWS"
+  printf '%s\n' "$FAKE_ROWS"
 elif [[ "$3" == dot && "$4" == apply ]]; then
   target="${@: -1}"
   if [[ "$5" == --dry-run ]]; then
