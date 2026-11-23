@@ -24,6 +24,10 @@ elif [[ "$3" == exec && "$4" == -- && "$5" == jq ]]; then
 elif [[ "$3" == dot && "$4" == apply ]]; then
   target="${@: -1}"
   if [[ "$5" == --dry-run ]]; then
+    # Mise rejects a foreign symlink unless explicitly forced.
+    if [[ -L "$target" && "${6:-}" != --force ]]; then
+      exit 17
+    fi
     printf 'preview:%s\n' "$target" >>"$ACTION_LOG"
   elif [[ "$5" == --yes ]]; then
     printf 'apply:%s\n' "$target" >>"$ACTION_LOG"
