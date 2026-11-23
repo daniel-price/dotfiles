@@ -150,9 +150,10 @@ main() {
         [[ "$(git -C "$config" hash-object lazy-lock.json)" == "$lock_before" ]] ||
             { log 'Neovim restore unexpectedly changed lazy-lock.json.'; return 1; }
 
-        # LazyVim owns its Mason tools and Tree-sitter parser declarations.
-        "$mise" -C / exec -- nvim --headless \
-            -c 'lua require("lazy").load({plugins={"mason.nvim","mason-lspconfig.nvim","nvim-treesitter"}})' \
+        # Allow LazyVim's asynchronous Mason installations to finish before exiting.
+        DOTFILES_NVIM_MASON_SCRIPT="$ROOT/lib/nvim-mason.lua" \
+            "$mise" -C / exec -- nvim --headless \
+            -c 'lua dofile(vim.env.DOTFILES_NVIM_MASON_SCRIPT)' \
             -c 'qa!' || { log 'Neovim language-tool initialisation failed.'; return 1; }
         log 'Neovim configuration and locked plugins synchronised.'
     }
