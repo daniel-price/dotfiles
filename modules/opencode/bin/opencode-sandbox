@@ -12,10 +12,12 @@ source "$ROOT/lib/common.sh"
 main() {
     usage() {
         printf '%s\n' \
-            'Usage: opencode-sandbox [--project DIR] [--credential-env NAME] [--dry-run|--help]' \
+            'Usage: opencode-sandbox [--project DIR] [--credential-env NAME] [-s ID|-c] [--dry-run|--help]' \
             'Run OpenCode in rootless Podman with a single writable Git checkout.' \
             'Dry-run makes no network requests or Podman changes.' \
             'Normal runs separately confirm image pull, build and agent launch.' \
+            'Session flags: -s/--session ID, -c/--continue (mutually exclusive).' \
+            'Session data and saved provider credentials persist in a per-project Podman volume.' \
             'Credential environment names: ANTHROPIC_API_KEY, OPENAI_API_KEY, OPENROUTER_API_KEY.'
     }
 
@@ -25,6 +27,8 @@ main() {
     image="localhost/dotfiles-opencode-sandbox:$version-r1"
     project=$PWD
     dry_run=false
+    session=''
+    continue_session=false
     credential_names=()
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -48,6 +52,16 @@ main() {
             credential_names+=("$2")
             shift 2
             ;;
+        --session|-s)
+            [[ $# -ge 2 && -n "$2" && "$2" != -* ]] || die '--session requires a session ID.'
+            [[ -z "$session" ]] || die '--session may only be provided once.'
+            session=$2
+            shift 2
+            ;;
+        --continue|-c)
+            continue_session=true
+            shift
+            ;;
         --dry-run)
             dry_run=true
             shift
@@ -55,6 +69,8 @@ main() {
         *) die 'Unknown option. See --help; arbitrary Podman and OpenCode flags are not accepted.' ;;
         esac
     done
+    [[ -z "$session" || "$continue_session" == false ]] ||
+        die '--session and --continue cannot be combined.'
 
     [[ "$(uname -s)" == Linux ]] || die 'This launcher supports Linux rootless Podman only.'
     [[ "$(id -u)" != 0 ]] || die 'Do not launch a coding agent with root or sudo.'
@@ -74,10 +90,15 @@ main() {
         die 'Selected project is not a readable Git working tree.'
     [[ "$repo_root" == "$project" ]] || die 'Select exactly the Git repository root.'
     [[ -f "$ROOT/containers/opencode/Containerfile" ]] || die 'Reviewed Containerfile is missing.'
+    command -v sha256sum >/dev/null 2>&1 || die 'sha256sum is required for project-scoped state.'
+    project_hash=$(printf '%s' "$project" | sha256sum) || die 'Could not hash project path.'
+    project_hash=${project_hash%% *}
+    state_volume="dotfiles-opencode-${project_hash:0:24}"
 
     log "Workspace: $project (read/write inside the container)."
     log "Base image: $base_image; local image: $image."
-    log "Container home: ephemeral /tmp; no host home, SSH, Git credentials or sockets mounted."
+    log "Container home/config/cache: ephemeral /tmp; persistent OpenCode data: Podman volume $state_volume."
+    log 'Saved sessions and provider credentials can persist in this volume; no host home, SSH keys or sockets mounted.'
     log 'Default rootless container network allows outbound traffic; project files can be sent to providers.'
     if [[ -n "${credential_names[*]-}" ]]; then
         log "Explicitly forwarded credential variable names: ${credential_names[*]} (values not printed)."
@@ -117,7 +138,7 @@ main() {
             --tag "$image" "$ROOT/containers/opencode" || die 'OpenCode image build failed.'
     fi
 
-    if ! confirm "Run OpenCode on $project with write access and outbound network?"; then
+    if ! confirm "Run OpenCode on $project with write access, outbound network and persistent state ($state_volume)?"; then
         log 'Declined agent launch.'
         exit 0
     fi
@@ -128,13 +149,20 @@ main() {
         --tmpfs /tmp:rw,nosuid,nodev,size=1g,mode=1777
         --pids-limit=256 --memory=4g
         --env HOME=/tmp --env XDG_CONFIG_HOME=/tmp/.config
-        --env XDG_CACHE_HOME=/tmp/.cache --env XDG_DATA_HOME=/tmp/.local/share
-        --volume "$project:/workspace:rw" --workdir /workspace
+        --env XDG_CACHE_HOME=/tmp/.cache --env XDG_DATA_HOME=/state
+        --volume "$project:/workspace:rw" --volume "$state_volume:/state:rw" --workdir /workspace
     )
     for name in "${credential_names[@]+"${credential_names[@]}"}"; do
         run_args+=(--env "$name")
     done
-    podman "${run_args[@]}" "$image"
+    agent_args=()
+    if [[ -n "$session" ]]; then
+        agent_args+=(--session "$session")
+    elif [[ "$continue_session" == true ]]; then
+        agent_args+=(--continue)
+    fi
+    # Bash 3.2 with nounset treats an empty array as unset.
+    podman "${run_args[@]}" "$image" "${agent_args[@]+"${agent_args[@]}"}"
 }
 
 main "$@"

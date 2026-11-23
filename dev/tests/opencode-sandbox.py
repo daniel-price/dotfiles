@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Isolated rootless Podman launcher tests; synthetic Podman, never pull/build/run."""
+import hashlib
 import os
 import pty
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -55,6 +57,15 @@ if [[ "$1" == -s ]]; then echo "${MOCK_KERNEL:-Linux}"; else /usr/bin/uname "$@"
 case "$1" in -u) echo 1000 ;; -g) echo 1000 ;; *) /usr/bin/id "$@" ;; esac
 ''')
     fake_id.chmod(0o755)
+    # macOS CI has no system sha256sum; use a deterministic synthetic
+    # implementation so both platforms validate the Linux-only launcher.
+    fake_sha = bin_dir / "sha256sum"
+    fake_sha.write_text(f'''#!{sys.executable}
+import hashlib
+import sys
+print(hashlib.sha256(sys.stdin.buffer.read()).hexdigest() + '  -')
+''')
+    fake_sha.chmod(0o755)
 
     env = dict(os.environ)
     env.update({"HOME": str(home), "PATH": str(bin_dir) + os.pathsep + os.environ["PATH"],
@@ -86,6 +97,12 @@ case "$1" in -u) echo 1000 ;; -g) echo 1000 ;; *) /usr/bin/id "$@" ;; esac
 
     assert run(["--help"]).returncode == 0
     assert run(["--untrusted-flag"]).returncode != 0
+    assert run(["-s"]).returncode != 0
+    assert run(["--session", "--dry-run"]).returncode != 0
+    assert run(["--session", "ses_first", "-s", "ses_second"]).returncode != 0
+    assert run(["-s", "ses_first", "-c"]).returncode != 0
+    assert run(["-s", "ses_first", "--dry-run"]).returncode == 0
+    assert run(["--continue", "--dry-run"]).returncode == 0
     preview = run(["--dry-run"])
     assert preview.returncode == 0 and "Read-only preview" in preview.stdout, preview.stdout
     assert not operations(), operations()
@@ -132,10 +149,15 @@ case "$1" in -u) echo 1000 ;; -g) echo 1000 ;; *) /usr/bin/id "$@" ;; esac
     assert sum(line.startswith("pull ") for line in calls) == 1, calls
     assert sum(line.startswith("build ") for line in calls) == 1, calls
     launch = next(line for line in calls if line.startswith("run "))
+    project_volume = "dotfiles-opencode-" + hashlib.sha256(
+        str(project.resolve()).encode()
+    ).hexdigest()[:24]
     for required in ("--userns=keep-id", "--cap-drop=ALL", "--security-opt=no-new-privileges",
                      "--read-only", "--rm", "--pull=never", "--pids-limit=256",
                      "--memory=4g", "--workdir /workspace", "--env HOME=/tmp",
-                     "--env OPENAI_API_KEY", f"--volume {project.resolve()}:/workspace:rw"):
+                     "--env OPENAI_API_KEY", "--env XDG_DATA_HOME=/state",
+                     f"--volume {project.resolve()}:/workspace:rw",
+                     f"--volume {project_volume}:/state:rw"):
         assert required in launch, (required, launch)
     for forbidden in (str(home), str(sibling), ".ssh", "docker.sock", "synth-token-not-real"):
         assert forbidden not in launch, (forbidden, launch)
@@ -146,6 +168,35 @@ case "$1" in -u) echo 1000 ;; -g) echo 1000 ;; *) /usr/bin/id "$@" ;; esac
     assert repeated.returncode == 0 and "AGENT_MOCK_LAUNCHED" in repeated.stdout
     assert not any(line.startswith(("pull ", "build ")) for line in operations())
     assert sum(line.startswith("run ") for line in operations()) == 1
+    assert f"--volume {project_volume}:/state:rw" in operations()[-1]
+
+    # Session flags are passed to OpenCode after the image, not to Podman.
+    log.write_text("")
+    resumed = run(["-s", "ses_df8a0c415ffeQoEsmmWtBWPxrt"], answers="y\n")
+    assert resumed.returncode == 0, resumed.stdout
+    session_launch = next(line for line in operations() if line.startswith("run "))
+    assert session_launch.endswith(
+        "localhost/dotfiles-opencode-sandbox:2.3.0-r1 --session ses_df8a0c415ffeQoEsmmWtBWPxrt"
+    ), session_launch
+    assert f"--volume {project_volume}:/state:rw" in session_launch
+
+    log.write_text("")
+    continued = run(["--continue"], answers="y\n")
+    assert continued.returncode == 0, continued.stdout
+    assert operations()[-1].endswith("localhost/dotfiles-opencode-sandbox:2.3.0-r1 --continue")
+    assert f"--volume {project_volume}:/state:rw" in operations()[-1]
+
+    # A different repository gets an independent persistent volume.
+    subprocess.run(["git", "-C", str(sibling), "init", "-q"], check=True)
+    log.write_text("")
+    other = run(["--project", str(sibling), "-c"], answers="y\n")
+    assert other.returncode == 0, other.stdout
+    other_volume = "dotfiles-opencode-" + hashlib.sha256(
+        str(sibling.resolve()).encode()
+    ).hexdigest()[:24]
+    assert other_volume != project_volume
+    assert f"--volume {other_volume}:/state:rw" in operations()[-1]
+    assert f"--volume {project_volume}:/state:rw" not in operations()[-1]
 
     # Missing runtime is offered through the reusable mise-backed prerequisite,
     # not an inline apt command or a silent Podman installation.
@@ -192,4 +243,4 @@ esac
     assert f"{scoped}|-C / bootstrap --only packages" in operations()
     assert any(line.startswith("run ") for line in operations())
 
-    print("PASS: OpenCode rootless scope, dry-run, consent, explicit credentials and repeatability")
+    print("PASS: OpenCode rootless scope, persistent per-project state, sessions, consent and repeatability")
