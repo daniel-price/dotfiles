@@ -153,7 +153,9 @@ case "$*" in
       else
         state=differs
       fi
-      printf '%s\\t%s\\n' "$state" "$target"
+      if [[ "$state" == missing || "$state" == differs ]]; then
+        printf '%s\\n' "$target"
+      fi
     done
     ;;
   "dot status --missing")
