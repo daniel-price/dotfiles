@@ -70,7 +70,9 @@ if mise:
         private_module = config / "conf.d/radarr"
         private_module.mkdir(parents=True)
         (private_module / "mise.radarr.toml").write_text(
-            '[tools]\\njust = "1.40.0"\\n'.replace("\\\\n", "\\n")
+            """[tools]
+just = "1.40.0"
+"""
         )
         assert "just" not in selected(["personal", "opencode"])
         assert "just" in selected(["home-server", "radarr"])
