@@ -311,10 +311,10 @@ main() {
 
     log "Bootstrap complete. Zsh configuration: $zsh_config_status."
     if [[ "$dotfiles_status" == failed ]]; then
-        printf '[error] Bootstrap completed with unresolved dotfile conflicts or setup failures.\\n' >&2
+        printf '[error] Bootstrap completed with unresolved dotfile conflicts or setup failures.\n' >&2
     fi
     if [[ "$nvim_status" == failed ]]; then
-        printf '[error] Bootstrap completed with Neovim setup failure.\\n' >&2
+        printf '[error] Bootstrap completed with Neovim setup failure.\n' >&2
     fi
     if [[ "$dotfiles_status" == failed || "$nvim_status" == failed ]]; then
         return 1
