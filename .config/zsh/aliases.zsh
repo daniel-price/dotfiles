@@ -19,8 +19,8 @@ fi
 if (( $+commands[pnpm] )); then
   alias p='pnpm'
 fi
-# doc: alias ls | Only when eza is installed.
-# Only replace ls if eza is actually installed; never break stock ls.
+# doc: alias ls | When eza is installed, list one entry per line, directories first, with icons.
+# Preserve .cfg's ls behaviour while keeping stock ls if eza is unavailable.
 if (( $+commands[eza] )); then
-  alias ls='eza'
+  alias ls='eza -1 --group-directories-first --icons=always'
 fi
