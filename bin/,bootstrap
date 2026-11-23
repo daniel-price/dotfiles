@@ -269,20 +269,10 @@ main() {
         dotfiles_status='failed'
     fi
 
-    zsh_config_status='skipped (zsh unavailable)'
-    zsh_target="$HOME/.zshrc"
-    zsh_source="$ROOT/.config/zsh/zshrc"
+    # Optional Zsh components are independent of the ~/.zshrc dotfile deployment.
+    # They are consent-gated individually and can be installed even if a dotfile
+    # conflict was skipped. Only require that Zsh itself is available.
     if command -v zsh >/dev/null 2>&1 && zsh --version >/dev/null 2>&1; then
-        if [[ -L "$zsh_target" && "$zsh_target" -ef "$zsh_source" ]]; then
-            zsh_config_status='applied'
-        else
-            zsh_config_status='not applied'
-        fi
-    fi
-
-    # The prompt is an optional Git checkout, not a native installed executable.
-    # Only offer it when our reviewed Zsh startup file is actually active.
-    if [[ "$zsh_config_status" == 'already applied' || "$zsh_config_status" == applied* ]]; then
         bash "$ROOT/setup/setup-prompt.sh" --apply ||
             die "Optional prompt setup failed; check the preceding error."
         bash "$ROOT/setup/setup-fonts.sh" --apply ||
@@ -290,7 +280,7 @@ main() {
         bash "$ROOT/setup/setup-autosuggestions.sh" --apply ||
             die "Optional autosuggestions setup failed; check the preceding error."
     else
-        log 'Skipping optional Zsh plugins and font: reviewed Zsh startup is not active.'
+        log 'Skipping optional Zsh components: Zsh is unavailable.'
     fi
 
     # Keep Neovim failures visible without blocking unrelated setup.
@@ -309,7 +299,7 @@ main() {
     # chsh changes only this user's login account and may ask for a password.
     offer_default_zsh "$platform" /etc/shells
 
-    log "Bootstrap complete. Zsh configuration: $zsh_config_status."
+    log "Bootstrap complete. Dotfiles: $dotfiles_status."
     if [[ "$dotfiles_status" == failed ]]; then
         printf '[error] Bootstrap completed with unresolved dotfile conflicts or setup failures.\n' >&2
     fi
