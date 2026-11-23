@@ -161,7 +161,7 @@ def build(root, home, checkout_root, name, selected_profiles=None):
     names = selected_profiles if selected_profiles is not None else (
         active if name in active else [*active, name]
     )
-    public_tools = tools_file(root / "scripts/setup/mise.toml")
+    public_tools = tools_file(root / ".config/mise/base-tools.toml")
     merged = dict(public_tools)
     environment = {}
     mappings = {}
