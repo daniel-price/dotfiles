@@ -58,6 +58,21 @@ with tempfile.TemporaryDirectory(prefix="dotfiles-zsh-profile-") as temporary:
     assert "PROFILES=0 REGISTRY=0 HELPERS=0" in scoped.stdout, scoped.stdout
     assert str(ROOT / "scripts/setup/mise.toml") in scoped.stdout, scoped.stdout
 
+    # After global config deployment, native mise environments must be able
+    # to load; neither a fresh nor an inherited Base override may mask them.
+    mise_dir = home / ".config/mise"
+    mise_dir.mkdir(parents=True)
+    (mise_dir / "config.toml").symlink_to(ROOT / ".config/mise/config.toml")
+    (mise_dir / "base-tools.toml").symlink_to(ROOT / ".config/mise/base-tools.toml")
+    (mise_dir / "config.opencode.toml").symlink_to(ROOT / "scripts/setup/config.opencode.toml")
+    (mise_dir / "miserc.local.toml").write_text('env = ["personal", "opencode"]\n')
+    native = run('print -r -- "MISE=${MISE_GLOBAL_CONFIG_FILE:-unset}"')
+    assert native.returncode == 0, native.stdout
+    assert "MISE=unset" in native.stdout, native.stdout
+    inherited = run('print -r -- "MISE=${MISE_GLOBAL_CONFIG_FILE:-unset}"',
+                    overrides={"MISE_GLOBAL_CONFIG_FILE": str(ROOT / "scripts/setup/mise.toml")})
+    assert inherited.returncode == 0 and "MISE=unset" in inherited.stdout, inherited.stdout
+
     aliases = run("alias zj za zar g; print -r -- ZSH_READY")
     assert aliases.returncode == 0, aliases.stdout
     for snippet in ("zj=zellij", "za='zellij action'", "zar='zellij action rename-tab'",

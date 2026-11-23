@@ -1,8 +1,8 @@
 # Add or change a tool
 
-Machine tools are pinned in [`scripts/setup/mise.toml`](../../scripts/setup/mise.toml), separate from the root `mise.toml` used for repository development.
+Base machine tools are pinned in [`.config/mise/base-tools.toml`](../../.config/mise/base-tools.toml), included by both [bootstrap](../../scripts/setup/mise.toml) and [global mise config](../../.config/mise/config.toml). The root `mise.toml` remains for repository development.
 
-1. Add or change an exact version under `[tools]`. Use `[bootstrap.packages]` for OS packages (for example, `apt:wl-clipboard` on Linux).
+1. Add or change a Base version under `[tools]` in `.config/mise/base-tools.toml`; for optional tools create a `config.<env>.toml` module instead. Use `[bootstrap.packages]` in `scripts/setup/mise.toml` for Base OS packages (for example, `apt:wl-clipboard` on Linux).
 2. Review the source/version and run `bash bin/,bootstrap --no-update`. It previews missing components and asks before installing.
 3. Test an already-installed tool, refusal and repeat run before merging.
 

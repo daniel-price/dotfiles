@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPT = ROOT / "scripts" / "setup" / "cleanup.sh"
 SOURCE = ROOT / ".config" / "zsh" / "zshrc"
-MANIFEST = ROOT / "scripts" / "setup" / "mise.toml"
+MANIFEST = ROOT / ".config" / "mise" / "base-tools.toml"
 
 
 def declared_tools():

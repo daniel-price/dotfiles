@@ -1,3 +1,6 @@
-# Intentionally inert until the global configuration is deployed explicitly.
-# Checkout machine setup uses scripts/setup/mise.toml, not this file.
-[tools]
+# Normal global mise config: read after Base deploys its symlink.
+# Machine-managed packages and dotfile paths stay in scripts/setup/mise.toml.
+include = ["./base-tools.toml"]
+
+[settings]
+auto_install = false

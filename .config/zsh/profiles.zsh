@@ -26,15 +26,25 @@
     unset MISE_GLOBAL_CONFIG_FILE
   fi
 
-  # Respect an external mise override, otherwise select Base or the
-  # reviewed manifest combining Base with the active Profiles.
+  # A prior Zsh session may have exported the old Base override. Once the
+  # reviewed global config is deployed, allow mise to discover native modules.
+  if [[ "${MISE_GLOBAL_CONFIG_FILE:-}" == "$root/scripts/setup/mise.toml" &&
+        -L "$HOME/.config/mise/config.toml" &&
+        "$HOME/.config/mise/config.toml" -ef "$root/scripts/setup/mise.toml" ]]; then
+    unset MISE_GLOBAL_CONFIG_FILE
+  fi
+
+  # Legacy profiles remain readable during migration. Otherwise prefer mise's
+  # normal global config and config.<env>.toml lookup to the forced override.
+  # Respect arbitrary external MISE_GLOBAL_CONFIG_FILE selections.
   if [[ -z "${MISE_GLOBAL_CONFIG_FILE:-}" ]]; then
-    candidate="$root/scripts/setup/mise.toml"
     if [[ -f "$registry" && ! -L "$registry" &&
           -f "$manifest" && ! -L "$manifest" ]]; then
-      candidate="$manifest"
+      export MISE_GLOBAL_CONFIG_FILE="$manifest"
+    elif [[ ! -f "$HOME/.config/mise/config.toml" ]]; then
+      candidate="$root/scripts/setup/mise.toml"
+      [[ -f "$candidate" ]] && export MISE_GLOBAL_CONFIG_FILE="$candidate"
     fi
-    [[ -f "$candidate" ]] && export MISE_GLOBAL_CONFIG_FILE="$candidate"
   fi
 
   if (( $+commands[mise] )); then

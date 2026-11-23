@@ -1,5 +1,7 @@
 # Configuration: Base and Profiles
 
+**Migration in progress (2026-11-23):** The preferred model is [mise machine modules](../guides/mise-modules.md): Base plus optional config environments, with device selection in `miserc.local.toml`. This replaces the need for a separate repository per profile. The custom Profile mechanism described below remains available during migration and is not yet removed.
+
 Two configuration concepts are supported:
 
 | Term | Meaning | Source |

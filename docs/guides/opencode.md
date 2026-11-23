@@ -5,8 +5,10 @@ prompts are **not OS isolation**. For personal development on Pop!_OS,
 the reviewed default is **one disposable rootless Podman container per launch**.
 For untrusted or unattended work, prefer a separate disposable VM.
 
-The public bootstrap does **not** install the native OpenCode CLI through
-mise, since that would make running the unsandboxed host agent too easy.
+Base bootstrap does **not** install the native OpenCode CLI through mise.
+Native OpenCode is available only when the optional `opencode` mise environment
+is explicitly selected and installed; this is an **unsandboxed host agent**.
+See [machine modules](mise-modules.md) for opt-in installation.
 The entry point is `bin/opencode-sandbox`; the reviewed Zsh config adds
 the checkout's `bin/` directory to PATH.
 

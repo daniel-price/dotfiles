@@ -11,7 +11,7 @@ Two tracks: **capabilities** prove reusable mechanisms; **tools/apps** adopt the
 | Dotfile deployment | Zsh and Zellij implemented with mise | Add reviewed configs as needed |
 | Optional pinned Git dependencies | Powerlevel10k and zsh-autosuggestions implemented | Reuse as needed |
 | Guarded Git update and selective cleanup | Implemented | Explicit upgrades, drift and rollback |
-| Profiles | **Implemented (opt-in)**: [activate, combine and deactivate](guides/profiles.md) selected Git repositories with commands, aliases, app config, pinned tools and non-secret env values | Validate manually on a real machine; add safe Profile Git updates and rollback separately |
+| Profiles and modules | **Mise-native migration started:** Base config and optional OpenCode module deployed through mise; [guide](guides/mise-modules.md). Legacy [profiles](guides/profiles.md) remain for migration. | Validate real bootstrap on Pop!_OS/macOS, private-repo two-pass setup, deactivation, then remove old custom profile code |
 | Encrypted environment values | POC ready for manual validation | [**POC 1A:** age + mise, fake token and second-machine restore](guides/age-env-poc.md) |
 | Encrypted files/history | POC ready for manual validation | [**POC 1B:** synthetic encrypted file, Git history inspection and restore](guides/age-file-poc.md) |
 | Device identities (SSH/age) | Planned | New SSH identity and age recovery POC |
@@ -24,6 +24,8 @@ Suggested sequence: **secrets → identities → config layering → services �
 Each POC must answer one architectural question and include a manual test plan. Validate preview, approval/refusal, no-op rerun, conflicts, failure, recovery and platform differences as relevant. For encryption, also verify ciphertext-only Git history, missing-key failure and recovery on a fresh machine. Never use real credentials or work-owned repositories in experiments.
 
 ## Profiles roadmap
+
+**2026-11-23 direction:** Prefer native mise modules for new machines; this table below describes the legacy Profile implementation and its historical backlog, not the new target architecture. The next migration milestone is safely retiring custom profile composition after real-machine verification. See [mise modules](guides/mise-modules.md).
 
 **Base** is the shared configuration in this repository. **Profiles** are reusable, explicitly selected Git repositories: for example, a personal laptop can use `personal`, a work Mac can use `personal` and an employer-approved `work` profile, and a home server can use `home-server`. Profile selection never blocks Base bootstrap. **Local** (per-device configuration) is not implemented and is deferred until a concrete need arises.
 

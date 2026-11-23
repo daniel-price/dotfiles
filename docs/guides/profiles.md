@@ -1,5 +1,7 @@
 # Profiles: optional reusable configuration
 
+> **Legacy implementation.** New machines should use [mise native machine modules](mise-modules.md) instead. The custom `,profile` implementation remains temporarily available so existing profiles can be safely deactivated before migration. Do not activate both systems together.
+
 **Status:** Profiles are implemented as an opt-in feature, separate from unattended Base bootstrap. Preview and confirm changes before activation. Manual testing against the authorised example repository is recommended before adopting it on your devices.
 
 ## Layout

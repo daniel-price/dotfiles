@@ -1,0 +1,4 @@
+# Opt-in native host OpenCode. Base does not install it.
+# Unlike bin/opencode-sandbox, this runs without a Podman sandbox.
+[tools]
+opencode = "2.3.0"

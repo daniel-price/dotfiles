@@ -1,21 +1,9 @@
-# Reviewed machine-only manifest. Not discovered when maintaining this checkout.
-# Setup selects it via MISE_GLOBAL_CONFIG_FILE and runs mise from /.
-# Machine tool entries must be exact numeric versions; bootstrap and cleanup
-# enumerate them automatically and require individual consent.
-[tools]
-neovim = "0.12.6"
-zellij = "0.46.0"
-zoxide = "0.10.0"
-ripgrep = "15.2.0"
-fd = "10.5.2"
-gh = "2.105.0"
-argc = "1.24.0"
-atuin = "18.25.1"
-eza = "0.23.5"
-jq = "1.8.2"
-gum = "2.0.2"
-fzf = "0.75.0"
-delta = "0.21.2"
+# Reviewed Base machine manifest. Bootstrap temporarily selects this from / to
+# preserve per-operation consent; mise also reads it as normal global config once
+# it is linked to ~/.config/mise/config.toml. Optional modules use mise's native
+# config.<env>.toml files, selected per machine in miserc.local.toml.
+# Shared tool versions are declared only in .config/mise/base-tools.toml.
+include = ["../../.config/mise/base-tools.toml"]
 
 # The Ghostty package for Pop!_OS 24.04 comes from a community PPA.
 # Bootstrap previews the full package plan and asks for approval before any
@@ -31,6 +19,12 @@ ghostty = { ppa = "mkasberg/ghostty-ubuntu" }
 "brew-cask:ghostty" = { os = "macos" }
 
 [dotfiles]
+# Bootstrap the normal mise global config without a second copy of Base.
+# Keep the module file beside it so mise's env selection discovers it. These
+# targets are never force-overwritten; an existing user config is a conflict.
+"~/.config/mise/config.toml" = { source = "../../.config/mise/config.toml", mode = "symlink" }
+"~/.config/mise/base-tools.toml" = { source = "../../.config/mise/base-tools.toml", mode = "symlink" }
+"~/.config/mise/config.opencode.toml" = { source = "config.opencode.toml", mode = "symlink" }
 "~/.zshrc" = { source = "../../.config/zsh/zshrc", mode = "symlink" }
 "~/.config/git/config" = { source = "../../.config/git/config", mode = "symlink" }
 "~/.config/atuin/config.toml" = { source = "../../.config/atuin/config.toml", mode = "symlink" }
