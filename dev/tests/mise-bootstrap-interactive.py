@@ -342,7 +342,7 @@ esac
     zellij_target.symlink_to(foreign_kdl)
     # A foreign symlink is deliberately not replaceable, so it must not
     # receive a 'yes' that could accidentally approve the later font prompt.
-    foreign = run("n\\n" * (len(pins) + 3))
+    foreign = run("n\n" * (len(pins) + 3))
     assert foreign.returncode == 0, foreign.stdout
     assert zellij_target.is_symlink() and zellij_target.resolve() == foreign_kdl.resolve()
     assert "foreign symlink" in foreign.stdout
