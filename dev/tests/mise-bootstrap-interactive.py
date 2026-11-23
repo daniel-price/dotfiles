@@ -243,7 +243,7 @@ esac
     answers = ["y"] + [
         "y" if name in approved_tools else "n" for name in pins
     ]
-    approved = run("\n".join(answers + ["n", "n", "n"]) + "\n")
+    approved = run("\n".join(answers + ["y", "n", "n", "n"]) + "\n")
     assert approved.returncode == 0, approved.stdout
     assert (state / "zsh").exists() and (state / "ghostty").exists() and (state / f"neovim@{pins['neovim']}").exists() and (state / f"zoxide@{pins['zoxide']}").exists(), (approved.stdout, log.read_text(), list(state.iterdir()), pins)
     if platform.system() == "Linux":
@@ -332,7 +332,7 @@ esac
     zellij_target.unlink()
     zellij_target.write_text("existing default zellij config\n")
     before_backups = list(zellij_target.parent.glob("config.kdl.backup-*"))
-    migrated = run("y\n" + "n\n" * (len(pins) + 2))
+    migrated = run("y\nn\nn\n")
     assert migrated.returncode == 0, migrated.stdout
     assert any("dot apply --dry-run --force " in line for line in log.read_text().splitlines())
     backups = list(zellij_target.parent.glob("config.kdl.backup-*"))
@@ -346,7 +346,7 @@ esac
     zellij_target.unlink()
     zellij_target.write_text("restore me\n")
     (state / "fail-dot-apply").touch()
-    failed = run("y\n" + "n\n" * (len(pins) + 2))
+    failed = run("y\nn\nn\n")
     assert failed.returncode != 0, failed.stdout
     assert zellij_target.is_file() and not zellij_target.is_symlink()
     assert zellij_target.read_text() == "restore me\n"
