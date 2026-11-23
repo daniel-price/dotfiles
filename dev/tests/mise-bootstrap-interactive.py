@@ -56,6 +56,15 @@ fi
 """)
     fake_hidutil.chmod(0o755)
 
+    # This bootstrap test must never download real assets, even if a future
+    # prompt accidentally receives approval from a misaligned PTY fixture.
+    fake_curl = bin_dir / "curl"
+    fake_curl.write_text("""#!/usr/bin/env bash
+echo 'Unexpected network access in offline bootstrap fixture' >&2
+exit 99
+""")
+    fake_curl.chmod(0o755)
+
     fake_mise = bin_dir / "mise"
     fake_mise.write_text("""#!/usr/bin/env bash
 if [[ "$1" == --version ]]; then echo '2026.11.9 fake'; exit 0; fi
@@ -331,7 +340,9 @@ esac
     foreign_kdl.write_text("custom config\n")
     zellij_target.unlink()
     zellij_target.symlink_to(foreign_kdl)
-    foreign = run("y\n" + "n\n" * (len(pins) + 2))
+    # A foreign symlink is deliberately not replaceable, so it must not
+    # receive a 'yes' that could accidentally approve the later font prompt.
+    foreign = run("n\\n" * (len(pins) + 3))
     assert foreign.returncode == 0, foreign.stdout
     assert zellij_target.is_symlink() and zellij_target.resolve() == foreign_kdl.resolve()
     assert "foreign symlink" in foreign.stdout
