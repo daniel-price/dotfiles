@@ -8,6 +8,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from confirmations import Confirm, Deny, confirmation_keys
+
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "bin" / ",bootstrap"
 
@@ -213,8 +215,8 @@ esac
                MOCK_GHOSTTY_SOURCE=str(ROOT / ".config" / "ghostty" / "config"),
                MOCK_TOOL_ROWS=tool_rows, MOCK_TOOL_PINS=tool_pins)
 
-    def run(answers=None):
-        if answers is None:
+    def run(*answers):
+        if not answers:
             return subprocess.run(["bash", str(SCRIPT), "--no-update"], cwd=base, env=env,
                                   stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                                   stderr=subprocess.STDOUT, text=True, check=False)
@@ -225,7 +227,8 @@ esac
                                     stderr=subprocess.STDOUT)
             os.close(slave)
             slave = -1
-            os.write(master, answers.encode())
+            # Send keypresses without Enter; confirmation consumes one key.
+            os.write(master, confirmation_keys(*answers))
             out = proc.communicate(timeout=20)[0].decode(errors="replace")
             return subprocess.CompletedProcess([], proc.returncode, out)
         finally:
@@ -236,7 +239,7 @@ esac
     target = home / ".zshrc"
 
     # Each component requires its own approval. Declines are safe.
-    declined = run("n\n" * (2 + len(pins)))
+    declined = run(*(Deny() for _ in range(2 + len(pins))))
     assert declined.returncode != 0, declined.stdout
     assert not list(state.iterdir()), declined.stdout
     assert "Skipped OS package installation" in declined.stdout and "Skipped neovim" in declined.stdout
@@ -248,10 +251,10 @@ esac
     # Generate tool approvals from the manifest so adding a tool doesn't
     # silently approve it or hang an interactive test waiting for input.
     approved_tools = {"neovim", "zoxide"}
-    answers = ["y"] + [
-        "y" if name in approved_tools else "n" for name in pins
+    answers = [Confirm()] + [
+        Confirm() if name in approved_tools else Deny() for name in pins
     ]
-    approved = run("\n".join(answers + ["y", "n", "n", "n"]) + "\n")
+    approved = run(*answers, Confirm(), Deny(), Deny(), Deny())
     assert approved.returncode == 0, approved.stdout
     assert (state / "zsh").exists() and (state / "ghostty").exists() and (state / f"neovim@{pins['neovim']}").exists() and (state / f"zoxide@{pins['zoxide']}").exists(), (approved.stdout, log.read_text(), list(state.iterdir()), pins)
     if platform.system() == "Linux":
@@ -306,7 +309,7 @@ esac
         (name, version) for name, version in pins.items()
         if not (state / f"{name}@{version}").exists()
     ]
-    final = run("y\n" * len(remaining) + "n\nn\nn\n")
+    final = run(*(Confirm() for _ in remaining), Deny(), Deny(), Deny())
     assert final.returncode == 0, final.stdout
     assert (state / f"zellij@{pins['zellij']}").exists()
     assert "Bootstrap complete" in final.stdout
@@ -315,7 +318,7 @@ esac
     # Prompt is offered separately, after machine tools, with one approval.
     prompt_target = home / ".local/share/dotfiles/powerlevel10k"
     assert not prompt_target.exists()
-    theme_approved = run("y\nn\nn\n")
+    theme_approved = run(Confirm(), Deny(), Deny())
     assert theme_approved.returncode == 0, theme_approved.stdout
     assert (prompt_target / "powerlevel10k.zsh-theme").exists()
     # Font offer is tied to active Zsh prompt config, not a Ghostty executable.
@@ -325,7 +328,7 @@ esac
     # The second optional plugin has separate consent, and repeated installs are skipped.
     plugin_target = home / ".local/share/dotfiles/zsh-autosuggestions"
     assert not plugin_target.exists()
-    plugin_approved = run("n\ny\n")
+    plugin_approved = run(Deny(), Confirm())
     assert plugin_approved.returncode == 0, plugin_approved.stdout
     assert (plugin_target / "zsh-autosuggestions.zsh").exists()
     assert any(line.startswith(str(ROOT / "setup/autosuggestions.toml") + "|-C / bootstrap repos apply --yes")
@@ -340,7 +343,7 @@ esac
     zellij_target.unlink()
     zellij_target.write_text("existing default zellij config\n")
     before_backups = list(zellij_target.parent.glob("config.kdl.backup-*"))
-    migrated = run("y\nn\nn\n")
+    migrated = run(Confirm(), Deny(), Deny())
     assert migrated.returncode == 0, migrated.stdout
     assert any("dot apply --dry-run --force " in line for line in log.read_text().splitlines())
     backups = list(zellij_target.parent.glob("config.kdl.backup-*"))
@@ -354,7 +357,7 @@ esac
     zellij_target.unlink()
     zellij_target.write_text("restore me\n")
     (state / "fail-dot-apply").touch()
-    failed = run("y\nn\nn\n")
+    failed = run(Confirm(), Deny(), Deny())
     assert failed.returncode != 0, failed.stdout
     assert zellij_target.is_file() and not zellij_target.is_symlink()
     assert zellij_target.read_text() == "restore me\n"
@@ -370,7 +373,7 @@ esac
     zellij_target.symlink_to(foreign_kdl)
     # A foreign symlink is deliberately not replaceable, so it must not
     # receive a 'yes' that could accidentally approve the later font prompt.
-    foreign = run("n\n" * (len(pins) + 3))
+    foreign = run(*(Deny() for _ in range(len(pins) + 3)))
     assert foreign.returncode != 0, foreign.stdout
     assert zellij_target.is_symlink() and zellij_target.resolve() == foreign_kdl.resolve()
     assert "Skipped conflicting dotfile" in foreign.stdout

@@ -7,6 +7,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from confirmations import Confirm, Deny, confirmation_keys
+
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "setup/setup-fonts.sh"
 GHOSTTY = ROOT / ".config/ghostty/config"
@@ -74,7 +76,8 @@ fi
             )
             os.close(slave)
             slave = -1
-            os.write(master, answer.encode())
+            # Send keypresses without Enter; confirmation consumes one key.
+            os.write(master, confirmation_keys(answer))
             output = proc.communicate(timeout=15)[0].decode(errors="replace")
             return subprocess.CompletedProcess(command, proc.returncode, output)
         finally:
@@ -94,22 +97,22 @@ fi
     preview = run()
     assert preview.returncode == 0 and "Preview only" in preview.stdout
     assert not font_dir.exists() and not calls.read_text()
-    denied = run("--apply", answer="n\n")
+    denied = run("--apply", answer=Deny())
     assert denied.returncode == 0 and "declined" in denied.stdout.lower()
     assert not font_dir.exists() and not calls.read_text()
     unattended = run("--apply")
     assert unattended.returncode == 0 and not font_dir.exists()
 
-    broken = run("--apply", answer="y\n", MOCK_FAIL_FONT="Italic")
+    broken = run("--apply", answer=Confirm(), MOCK_FAIL_FONT="Italic")
     assert broken.returncode != 0, broken.stdout
     assert not font_dir.exists(), broken.stdout
 
     calls.write_text("")
-    invalid = run("--apply", answer="y\n", MOCK_BAD_FONT="1")
+    invalid = run("--apply", answer=Confirm(), MOCK_BAD_FONT="1")
     assert invalid.returncode != 0 and not font_dir.exists(), invalid.stdout
 
     calls.write_text("")
-    accepted = run("--apply", answer="y\n")
+    accepted = run("--apply", answer=Confirm())
     assert accepted.returncode == 0, accepted.stdout
     assert all((font_dir / name).is_file() for name in names)
     assert len(calls.read_text().splitlines()) == 4
@@ -121,13 +124,13 @@ fi
     foreign = base / "unrelated"
     foreign.write_text("leave me\n")
     (font_dir / names[0]).symlink_to(foreign)
-    conflict = run("--apply", answer="y\n")
+    conflict = run("--apply", answer=Confirm())
     assert conflict.returncode != 0 and "Conflicting font path" in conflict.stdout
     assert foreign.read_text() == "leave me\n"
     (font_dir / names[0]).unlink()
     (font_dir / names[0]).write_bytes(b"existing")
 
-    mac = run("--apply", answer="y\n", MOCK_KERNEL="Darwin")
+    mac = run("--apply", answer=Confirm(), MOCK_KERNEL="Darwin")
     assert mac.returncode == 0, mac.stdout
     assert all((home / "Library/Fonts" / name).is_file() for name in names)
     print("PASS: font preview, consent, immutable source, conflicts and OS paths")

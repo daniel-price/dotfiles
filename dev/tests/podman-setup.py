@@ -6,6 +6,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from confirmations import Confirm, Deny, confirmation_keys
+
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "setup/setup-podman.sh"
 MANIFEST = ROOT / "containers/podman/mise.toml"
@@ -79,7 +81,8 @@ esac
                                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             os.close(slave)
             slave = -1
-            os.write(master, answer.encode())
+            # Send keypresses without Enter; confirmation consumes one key.
+            os.write(master, confirmation_keys(answer))
             output = proc.communicate(timeout=10)[0].decode(errors="replace")
             return subprocess.CompletedProcess(cmd, proc.returncode, output)
         finally:
@@ -110,7 +113,7 @@ esac
     assert run(["--apply"], overrides={"MOCK_MISE_VERSION": "2026.8.15"}).returncode != 0
     assert not calls()
 
-    accepted = run(["--apply"], answer="y\n")
+    accepted = run(["--apply"], answer=Confirm())
     assert accepted.returncode == 0 and "ready in rootless mode" in accepted.stdout, accepted.stdout
     assert (bin_dir / "podman").exists()
     assert calls() == [str(MANIFEST) + "|-C / bootstrap --only packages --dry-run",

@@ -7,6 +7,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from confirmations import Confirm, Deny, confirmation_keys
+
 ROOT = Path(__file__).resolve().parents[2]
 
 with tempfile.TemporaryDirectory(prefix="dotfiles-dev-setup-") as scratch:
@@ -64,7 +66,7 @@ esac
                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                               text=True, check=False, timeout=12)
 
-    def tty(answers):
+    def tty(*answers):
         master, slave = pty.openpty()
         try:
             process = subprocess.Popen(["bash", script], cwd=checkout, env=env,
@@ -72,7 +74,8 @@ esac
                                        stderr=subprocess.STDOUT)
             os.close(slave)
             slave = -1
-            os.write(master, answers.encode())
+            # Send keypresses without Enter; confirmation consumes one key.
+            os.write(master, confirmation_keys(*answers))
             out = process.communicate(timeout=12)[0].decode(errors="replace")
             return process.returncode, out
         finally:
@@ -97,17 +100,17 @@ esac
     assert "exec -- shellcheck -x -- sample.sh" in calls, calls
 
     # Invoking the same setup interactively prompts once for the optional hook.
-    declined, message = tty("n\n")
+    declined, message = tty(Deny())
     assert declined == 0 and "Hook installation declined" in message, message
     assert not hook.exists(), message
-    approved, message = tty("y\n")
+    approved, message = tty(Confirm())
     assert approved == 0 and hook.is_file(), message
     assert "Enabled automatic shell formatting" in message, message
     assert log.read_text().count("exec -- lefthook install pre-commit") == 1
 
     # A repeated setup recognises an existing hook without asking or replacing it.
     before = hook.read_bytes()
-    repeated, message = tty("")
+    repeated, message = tty()
     assert repeated == 0 and "already installed" in message, message
     assert hook.read_bytes() == before
     assert log.read_text().count("exec -- lefthook install pre-commit") == 1

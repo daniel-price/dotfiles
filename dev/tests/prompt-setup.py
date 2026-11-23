@@ -6,6 +6,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from confirmations import Confirm, Deny, confirmation_keys
+
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "setup/setup-prompt.sh"
 MANIFEST = ROOT / "setup/prompt.toml"
@@ -65,7 +67,8 @@ esac
                                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             os.close(slave)
             slave = -1
-            os.write(master, answer.encode())
+            # Send keypresses without Enter; confirmation consumes one key.
+            os.write(master, confirmation_keys(answer))
             output = proc.communicate(timeout=12)[0].decode(errors="replace")
             return subprocess.CompletedProcess(cmd, proc.returncode, output)
         finally:
@@ -87,7 +90,7 @@ esac
     assert calls() == [str(MANIFEST) + "|-C / bootstrap repos apply --dry-run"], calls()
 
     log.write_text("")
-    declined = run(["--apply"], answer="n\n")
+    declined = run(["--apply"], answer=Deny())
     assert declined.returncode == 0 and "declined" in declined.stdout.lower()
     assert not target.exists()
     assert not any("apply --yes" in line for line in calls())
@@ -102,7 +105,7 @@ esac
     assert run(["--apply"], overrides={"MOCK_UID": "0"}).returncode != 0
     assert not calls()
 
-    accepted = run(["--apply"], answer="y\n")
+    accepted = run(["--apply"], answer=Confirm())
     assert accepted.returncode == 0 and "installed" in accepted.stdout, accepted.stdout
     assert (target / "powerlevel10k.zsh-theme").exists()
     assert calls() == [

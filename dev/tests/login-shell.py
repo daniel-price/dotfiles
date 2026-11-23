@@ -6,6 +6,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from confirmations import Confirm, Deny, confirmation_keys
+
 ROOT = Path(__file__).resolve().parents[2]
 COMMON = ROOT / "lib/common.sh"
 LIBRARY = ROOT / "lib/login-shell.sh"
@@ -81,7 +83,8 @@ offer_default_zsh "$TEST_PLATFORM" "$TEST_SHELLS"
                                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             os.close(slave)
             slave = -1
-            os.write(master, answer.encode())
+            # Send keypresses without Enter; confirmation consumes one key.
+            os.write(master, confirmation_keys(answer))
             out = process.communicate(timeout=10)[0].decode(errors="replace")
             return subprocess.CompletedProcess(cmd, process.returncode, out)
         finally:
@@ -93,11 +96,11 @@ offer_default_zsh "$TEST_PLATFORM" "$TEST_SHELLS"
     assert unattended.returncode == 0 and "Declined" in unattended.stdout, unattended.stdout
     assert state.read_text() == "/bin/bash\n" and log.read_text() == ""
 
-    declined = run(answer="n\n")
+    declined = run(answer=Deny())
     assert declined.returncode == 0 and "Declined" in declined.stdout, declined.stdout
     assert not log.read_text()
 
-    approved = run(answer="y\n")
+    approved = run(answer=Confirm())
     assert approved.returncode == 0 and "changed to" in approved.stdout, approved.stdout
     assert state.read_text().strip() == str(zsh_path)
     assert log.read_text().strip() == f"-s {zsh_path}"
@@ -109,7 +112,7 @@ offer_default_zsh "$TEST_PLATFORM" "$TEST_SHELLS"
     # macOS uses dscl rather than getent.
     state.write_text("/bin/bash\n")
     log.write_text("")
-    macos = run(answer="y\n", overrides={"TEST_PLATFORM": "macos"})
+    macos = run(answer=Confirm(), overrides={"TEST_PLATFORM": "macos"})
     assert macos.returncode == 0 and "changed to" in macos.stdout, macos.stdout
     assert state.read_text().strip() == str(zsh_path)
     assert log.read_text().strip() == f"-s {zsh_path}"
@@ -126,7 +129,7 @@ offer_default_zsh "$TEST_PLATFORM" "$TEST_SHELLS"
     assert "not an executable Zsh entry" in run(overrides={"TEST_SHELLS": str(unlisted)}).stdout
     assert not log.read_text()
 
-    failed = run(answer="y\n", overrides={"MOCK_CHSH_FAIL": "1"})
+    failed = run(answer=Confirm(), overrides={"MOCK_CHSH_FAIL": "1"})
     assert failed.returncode != 0 and "chsh failed" in failed.stdout, failed.stdout
     assert state.read_text() == "/bin/bash\n"
 

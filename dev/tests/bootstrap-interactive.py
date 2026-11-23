@@ -7,6 +7,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from confirmations import Confirm, Deny, confirmation_keys
+
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "bin" / ",bootstrap"
 
@@ -85,7 +87,7 @@ printf '%s  %s\n' "$MOCK_SHA256" "$file"
                PATH=str(bin_dir) + ":/usr/bin:/bin", MOCK_LOG=str(log),
                MOCK_SHA256="60adf5460b19a791b964c414a2fff9d46990c9f2b1dfc0e4ba8c2b865f882a2b")
 
-    def run_tty(answers):
+    def run_tty(*answers):
         master, slave = pty.openpty()
         try:
             process = subprocess.Popen(
@@ -93,7 +95,8 @@ printf '%s  %s\n' "$MOCK_SHA256" "$file"
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             os.close(slave)
             slave = -1
-            os.write(master, answers.encode())
+            # Send keypresses without Enter; confirmation consumes one key.
+            os.write(master, confirmation_keys(*answers))
             out = process.communicate(timeout=20)[0].decode(errors="replace")
             return process.returncode, out
         finally:
@@ -102,18 +105,18 @@ printf '%s  %s\n' "$MOCK_SHA256" "$file"
                 os.close(slave)
 
     target = home / ".local" / "bin" / "mise"
-    refused = run_tty("n\n")
+    refused = run_tty(Deny())
     assert refused[0] == 0 and not target.exists(), refused
     assert "later provisioning was skipped" in refused[1], refused
     assert log.read_text() == "", log.read_text()
 
     env["MOCK_SHA256"] = "mismatch"
-    mismatch = run_tty("y\n")
+    mismatch = run_tty(Confirm())
     assert mismatch[0] != 0 and "SHA-256 did not match" in mismatch[1], mismatch
     assert not target.exists()
 
     env["MOCK_SHA256"] = "60adf5460b19a791b964c414a2fff9d46990c9f2b1dfc0e4ba8c2b865f882a2b"
-    accepted = run_tty("y\ny\nn\nn\n")
+    accepted = run_tty(Confirm(), Confirm(), Deny(), Deny())
     assert accepted[0] == 0, accepted
     assert target.exists(), accepted
     assert "installer:v2026.11.9:" in log.read_text(), log.read_text()

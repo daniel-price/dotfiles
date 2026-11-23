@@ -7,6 +7,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from confirmations import Confirm, Deny, confirmation_keys
+
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "modules" / "opencode" / "bin" / "opencode-sandbox"
 
@@ -73,7 +75,8 @@ case "$1" in -u) echo 1000 ;; -g) echo 1000 ;; *) /usr/bin/id "$@" ;; esac
                                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             os.close(slave)
             slave = -1
-            os.write(master, answers.encode())
+            # Send keypresses without Enter; confirmation consumes one key.
+            os.write(master, confirmation_keys(*answers))
             stdout = proc.communicate(timeout=10)[0].decode(errors="replace")
             return subprocess.CompletedProcess(cmd, proc.returncode, stdout)
         finally:
@@ -117,13 +120,13 @@ case "$1" in -u) echo 1000 ;; -g) echo 1000 ;; *) /usr/bin/id "$@" ;; esac
     assert piped.returncode != 0 and not any("pull " in line for line in operations())
     log.write_text("")
 
-    declined = run(answers="n\n")
+    declined = run(answers=(Deny(),))
     assert declined.returncode == 0 and "Declined image pull" in declined.stdout
     assert not (state / "base").exists() and not (state / "local").exists()
     assert not any(line.startswith(("pull ", "build ", "run ")) for line in operations())
     log.write_text("")
 
-    approved = run(["--credential-env", "OPENAI_API_KEY"], answers="y\ny\ny\n",
+    approved = run(["--credential-env", "OPENAI_API_KEY"], answers=(Confirm(), Confirm(), Confirm()),
                    overrides={"OPENAI_API_KEY": "synth-token-not-real"})
     assert approved.returncode == 0, approved.stdout
     assert "AGENT_MOCK_LAUNCHED" in approved.stdout
@@ -142,7 +145,7 @@ case "$1" in -u) echo 1000 ;; -g) echo 1000 ;; *) /usr/bin/id "$@" ;; esac
     assert not any("synth-token-not-real" in line for line in calls), calls
 
     log.write_text("")
-    repeated = run(answers="y\n")
+    repeated = run(answers=(Confirm(),))
     assert repeated.returncode == 0 and "AGENT_MOCK_LAUNCHED" in repeated.stdout
     assert not any(line.startswith(("pull ", "build ")) for line in operations())
     assert sum(line.startswith("run ") for line in operations()) == 1
@@ -177,13 +180,13 @@ esac
     env.update({"MOCK_PODMAN_TEMPLATE": str(podman_template),
                 "MOCK_BIN": str(bin_dir), "MOCK_MISE_LOG": str(log)})
     log.write_text("")
-    refused_runtime = run(answers="n\n")
+    refused_runtime = run(answers=(Deny(),))
     assert refused_runtime.returncode != 0 and "was not installed" in refused_runtime.stdout
     assert not podman.exists()
     assert not any(line.startswith("run ") for line in operations())
 
     log.write_text("")
-    approved_runtime = run(answers="y\ny\n")
+    approved_runtime = run(answers=(Confirm(), Confirm()))
     assert approved_runtime.returncode == 0, approved_runtime.stdout
     assert "AGENT_MOCK_LAUNCHED" in approved_runtime.stdout
     assert podman.exists()
