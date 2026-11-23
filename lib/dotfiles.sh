@@ -20,7 +20,7 @@ apply_reviewed_dotfiles() {
     while IFS=$'\t' read -r state target; do
         [[ -n "$state" ]] || continue
         case "$target" in
-        '~/'*) target="$HOME/${target#\~/}" ;;
+        \~/*) target="$HOME/${target:2}" ;;
         esac
         [[ -n "$target" ]] || {
             failed=1
