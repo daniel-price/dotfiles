@@ -13,7 +13,17 @@ assert bootstrap["include"] == ["./base-tools.toml"]
 assert global_config["include"] == ["./base-tools.toml"]
 assert "tools" not in bootstrap and "tools" not in global_config
 assert "opencode" not in base_tools["tools"], "OpenCode must be opt-in"
-assert opencode == {"tools": {"opencode": "2.3.0"}}
+# Selecting OpenCode only exposes a launcher, never a native host agent.
+assert "tools" not in opencode and "bootstrap" not in opencode
+assert opencode == {"env": {"_": {"path": ["~/.dotfiles/modules/opencode/bin"]}}}
+assert "opencode" not in base_tools["tools"]
+assert "opencode" not in tomllib.loads((ROOT / "mise.toml").read_text()).get("tools", {})
+assert not (ROOT / "bin/opencode-sandbox").exists(), "Base bin/ must not expose OpenCode"
+launcher = ROOT / "modules/opencode/bin/opencode-sandbox"
+assert launcher.is_file() and launcher.stat().st_mode & 0o111, "Sandbox launcher must be executable"
+assert (ROOT / "containers/opencode/Containerfile").is_file()
+assert "modules/opencode/bin" not in (ROOT / ".config/zsh/zshrc").read_text()
+assert "modules/opencode/bin" not in (ROOT / "scripts/setup/global-mise.toml").read_text()
 assert bootstrap["settings"]["auto_install"] is False
 assert global_config["settings"]["auto_install"] is False
 
@@ -40,4 +50,4 @@ startup = (ROOT / ".config/zsh/profiles.zsh").read_text()
 assert 'elif [[ ! -f "$HOME/.config/mise/config.toml" ]]' in startup
 assert "unset MISE_GLOBAL_CONFIG_FILE" in startup
 
-print("PASS: One shared Base tool manifest and opt-in native mise modules")
+print("PASS: Shared Base and optional sandbox-only OpenCode, never host-installed")

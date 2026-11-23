@@ -34,9 +34,10 @@ main() {
         bash -n "$ROOT/$script"
     done < <(git -C "$ROOT" ls-files -z -- '*.sh')
     printf 'PASS: Bash syntax\n'
-    [[ -x "$ROOT/bin/opencode-sandbox" && -f "$ROOT/containers/opencode/Containerfile" ]] ||
+    [[ ! -e "$ROOT/bin/opencode-sandbox" && -x "$ROOT/modules/opencode/bin/opencode-sandbox" &&
+        -f "$ROOT/containers/opencode/Containerfile" ]] ||
         fail 'sandbox launcher must be executable and have a reviewed Containerfile'
-    bash -n "$ROOT/bin/opencode-sandbox" || fail 'sandbox launcher has invalid Bash syntax'
+    bash -n "$ROOT/modules/opencode/bin/opencode-sandbox" || fail 'sandbox launcher has invalid Bash syntax'
     [[ -x "$ROOT/bin/,bootstrap" ]] || fail ',bootstrap must be executable'
     bash -n "$ROOT/bin/,bootstrap" || fail ',bootstrap has invalid Bash syntax'
     # These helpers are also run directly from a shell, not just via Bash in Zellij.

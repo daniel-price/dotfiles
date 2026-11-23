@@ -20,9 +20,14 @@ which is retained during migration.
   machine, or in an approved private checkout. Never publish work-owned
   code in a personal Git repository.
 
-The public OpenCode module is a native **unsandboxed host** installation.
-The existing `opencode-sandbox` launcher remains available independently,
-and Base never automatically installs the native CLI.
+The public `opencode` module **only exposes the rootless Podman launcher**
+`modules/opencode/bin/opencode-sandbox` on `PATH` using mise's native
+`[env] _.path`. There is **no native host OpenCode installation**, either
+in Base or this module. The launcher remains unavailable in a fresh work
+shell where `opencode` is not selected. It prompts before installing a
+missing Podman prerequisite and before pulling, building or running the
+container; merely selecting the module installs nothing. This module
+assumes the documented checkout path `~/.dotfiles`.
 
 ## Choose modules for each machine
 
@@ -117,7 +122,9 @@ by this public repository.
   on unrelated configuration.
 - **Legacy custom profiles:** Deactivate each old `,profile` selection
   while the command still exists. It does not uninstall previously installed
-  OpenCode, so review and remove outdated shared versions separately.
+  native OpenCode, so remove any previously installed host CLI separately
+  after confirming other projects do not use it. The sandbox launcher is
+  accessible only while the `opencode` module is selected.
   Remove old generated files only through the existing deactivation path.
   Then open a new shell to use native module selection.
 - **Deselecting:** Edit `miserc.local.toml` to remove an environment.

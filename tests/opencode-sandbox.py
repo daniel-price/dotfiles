@@ -8,7 +8,7 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SCRIPT = ROOT / "bin" / "opencode-sandbox"
+SCRIPT = ROOT / "modules" / "opencode" / "bin" / "opencode-sandbox"
 
 with tempfile.TemporaryDirectory(prefix="dotfiles-agent-sandbox-") as scratch:
     base = Path(scratch)

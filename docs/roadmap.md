@@ -11,7 +11,7 @@ Two tracks: **capabilities** prove reusable mechanisms; **tools/apps** adopt the
 | Dotfile deployment | Zsh and Zellij implemented with mise | Add reviewed configs as needed |
 | Optional pinned Git dependencies | Powerlevel10k and zsh-autosuggestions implemented | Reuse as needed |
 | Guarded Git update and selective cleanup | Implemented | Explicit upgrades, drift and rollback |
-| Profiles and modules | **Mise-native migration started:** Base config and optional OpenCode module deployed through mise; [guide](guides/mise-modules.md). Legacy [profiles](guides/profiles.md) remain for migration. | Validate real bootstrap on Pop!_OS/macOS, private-repo two-pass setup, deactivation, then remove old custom profile code |
+| Profiles and modules | **Mise-native migration started:** Base config and sandbox-only OpenCode module deployed through mise; [guide](guides/mise-modules.md). Legacy [profiles](guides/profiles.md) remain for migration. | Validate real bootstrap on Pop!_OS/macOS, private-repo two-pass setup, deactivation, then remove old custom profile code |
 | Encrypted environment values | POC ready for manual validation | [**POC 1A:** age + mise, fake token and second-machine restore](guides/age-env-poc.md) |
 | Encrypted files/history | POC ready for manual validation | [**POC 1B:** synthetic encrypted file, Git history inspection and restore](guides/age-file-poc.md) |
 | Device identities (SSH/age) | Planned | New SSH identity and age recovery POC |

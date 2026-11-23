@@ -1,4 +1,5 @@
-# Opt-in native host OpenCode. Base does not install it.
-# Unlike bin/opencode-sandbox, this runs without a Podman sandbox.
-[tools]
-opencode = "2.3.0"
+# Optional OpenCode sandbox launcher; never install OpenCode on the host.
+# The canonical checkout path is ~/.dotfiles (see Getting started).
+# Podman remains opt-in and is offered by the launcher on first use.
+[env]
+_.path = ["~/.dotfiles/modules/opencode/bin"]

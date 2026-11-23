@@ -18,7 +18,7 @@ COMMANDS = (
     ("Format shell scripts", "scripts/dev/format.sh"),
     ("Lint shell scripts", "scripts/dev/lint.sh"),
     ("Install Git hooks", "scripts/dev/install-hooks.sh"),
-    ("OpenCode sandbox", "bin/opencode-sandbox"),
+    ("OpenCode sandbox", "modules/opencode/bin/opencode-sandbox"),
 )
 
 
