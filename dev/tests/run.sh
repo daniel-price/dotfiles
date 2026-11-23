@@ -251,7 +251,7 @@ MISE
             PATH="$TEST_ROOT/bin:$PATH" bash "$ROOT/bin/,bootstrap" --no-update)
         assert_equal "$output" "$repeated" 'bootstrap repeatability'
         [[ "$output" == *'Detected platform:'* && "$output" == *'Bootstrap complete.'* &&
-            "$output" == *'Bootstrap complete. Zsh configuration:'* ]] || fail 'bootstrap scope unclear'
+            "$output" == *'Bootstrap complete. Dotfiles:'* ]] || fail 'bootstrap scope unclear'
     else
         printf 'SKIP: bootstrap host smoke test (unsupported host)\n'
     fi
