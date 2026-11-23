@@ -10,14 +10,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPT = ROOT / "scripts" / "setup" / "cleanup.sh"
 SOURCE = ROOT / ".config" / "zsh" / "zshrc"
-MANIFEST = ROOT / ".config" / "mise" / "base-tools.toml"
+MANIFEST = ROOT / "scripts" / "setup" / "mise.toml"
+BASE_TOOLS = ROOT / ".config" / "mise" / "base-tools.toml"
 
 
 def declared_tools():
     # Fixture inventory follows the manifest, not a second list of tool names.
     tools = {}
     within = False
-    for row in MANIFEST.read_text().splitlines():
+    for row in BASE_TOOLS.read_text().splitlines():
         if row.strip() == "[tools]":
             within = True
             continue
