@@ -1,0 +1,15 @@
+# Single source of truth for Base tool versions, shared by bootstrap and normal mise.
+[tools]
+neovim = "0.12.6"
+zellij = "0.46.0"
+zoxide = "0.10.0"
+ripgrep = "15.2.0"
+fd = "10.5.2"
+gh = "2.105.0"
+argc = "1.24.0"
+atuin = "18.25.1"
+eza = "0.23.5"
+jq = "1.8.2"
+gum = "2.0.2"
+fzf = "0.75.0"
+delta = "0.21.2"

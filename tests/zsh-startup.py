@@ -14,15 +14,10 @@ PROMPT = ROOT / ".config/zsh/p10k.zsh"
 assert ZSHRC.is_file() and ALIASES.is_file() and PROMPT.is_file()
 assert "POWERLEVEL9K_CONFIG_FILE" in PROMPT.read_text()
 assert "alias zj='zellij'" in ALIASES.read_text()
-assert 'source "$_dotfiles_zsh_dir/profiles.zsh"' in ZSHRC.read_text()
-assert "_dotfiles_profiles_init" not in ZSHRC.read_text()
-assert "_dotfiles_profiles_functions" not in ZSHRC.read_text()
-assert "_dotfiles_profiles_aliases" not in ZSHRC.read_text()
-PROFILES = ROOT / ".config/zsh/profiles.zsh"
-assert PROFILES.is_file()
-assert "() {" in PROFILES.read_text()
-assert "local -a profiles=()" in PROFILES.read_text()
-assert 'source "$zsh_dir/aliases.zsh"' in PROFILES.read_text()
+assert 'mise activate zsh' in ZSHRC.read_text()
+assert 'source "$_dotfiles_zsh_dir/aliases.zsh"' in ZSHRC.read_text()
+assert "profiles.zsh" not in ZSHRC.read_text()
+assert "MISE_GLOBAL_CONFIG_FILE" not in ZSHRC.read_text()
 
 assert 'source "$_dotfiles_zsh_dir/p10k.zsh"' in ZSHRC.read_text()
 assert "git clone" not in ZSHRC.read_text()
@@ -32,7 +27,7 @@ if not zsh:
     print("SKIP: Zsh startup runtime tests (zsh is not installed)")
     raise SystemExit(0)
 
-with tempfile.TemporaryDirectory(prefix="dotfiles-zsh-profile-") as temporary:
+with tempfile.TemporaryDirectory(prefix="dotfiles-zsh-startup-") as temporary:
     home = Path(temporary)
     (home / ".zshrc").symlink_to(ZSHRC)
     env = dict(os.environ, HOME=str(home), PATH="/usr/bin:/bin",
@@ -46,17 +41,12 @@ with tempfile.TemporaryDirectory(prefix="dotfiles-zsh-profile-") as temporary:
                               stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT, text=True, timeout=15)
 
-    # The anonymous setup must not leave temporary arrays or helper functions.
-    scoped = run(
-        'print -r -- "PROFILES=${+parameters[profiles]} "'
-        '"REGISTRY=${+parameters[registry]} "'
-        '"HELPERS=${+functions[_dotfiles_profiles_init]} "'
-        '"MISE=$MISE_GLOBAL_CONFIG_FILE"',
-        interactive=True,
-    )
-    assert scoped.returncode == 0, scoped.stdout
-    assert "PROFILES=0 REGISTRY=0 HELPERS=0" in scoped.stdout, scoped.stdout
-    assert str(ROOT / "scripts/setup/mise.toml") in scoped.stdout, scoped.stdout
+    # Native mise discovery needs no shell-level configuration override.
+    native = run('print -r -- "MISE=${MISE_GLOBAL_CONFIG_FILE:-unset}"')
+    assert native.returncode == 0 and "MISE=unset" in native.stdout, native.stdout
+    custom = run('print -r -- "MISE=${MISE_GLOBAL_CONFIG_FILE:-unset}"',
+                 overrides={"MISE_GLOBAL_CONFIG_FILE": "/tmp/custom-mise.toml"})
+    assert custom.returncode == 0 and "MISE=/tmp/custom-mise.toml" in custom.stdout
 
     aliases = run("alias zj za zar g; print -r -- ZSH_READY")
     assert aliases.returncode == 0, aliases.stdout
@@ -108,4 +98,4 @@ with tempfile.TemporaryDirectory(prefix="dotfiles-zsh-profile-") as temporary:
     no_plugin = run('print -r -- "PLUGIN=${_DOTFILES_AUTOSUGGESTIONS_LOADED:-off}"')
     assert no_plugin.returncode == 0 and "PLUGIN=off" in no_plugin.stdout, no_plugin.stdout
 
-    print("PASS: Zsh aliases, optional prompt and autosuggestions startup")
+    print("PASS: Native mise Zsh startup, aliases, prompt and autosuggestions")

@@ -7,8 +7,8 @@ them**. Implementation decisions belong in [Architecture](architecture/index.md)
 | --- | --- |
 | Cross-platform | A shared Base on Pop!_OS and macOS; platform-specific behaviour only where necessary. |
 | Public by default | Source and documentation can be viewed publicly; never expose plaintext secrets or decryption identities. |
-| Base + Profiles | Base works independently; selected reusable Profiles are optional, authorised and checked for conflicts. |
-| Standalone Base | Bootstrap must work without any Profile checkout or credentials. |
+| Base + modules | Base works independently; optional tools and private configuration are selected with native mise environments. |
+| Standalone Base | Bootstrap must work without any private checkout or credentials. |
 | Work isolation | Use employer-approved storage and devices for work-related files, never assume personal private Git is authorised. |
 | Safe and explicit | Inspect first; explain and ask before **each** modifying operation; refusal is safe and defaults to no. |
 | Idempotent | Repeating setup should skip already-correct state, not create drift. |
@@ -30,13 +30,13 @@ A separate, access-controlled Git repo can store authorised non-public
 configuration **only after explicit opt-in**. Work-related files require
 employer-approved storage: a private repo under a personal account is not
 sufficient. Private Git is not itself secret encryption. See
-[Base and Profiles](architecture/configuration.md).
+[Configuration architecture](architecture/configuration.md).
 
 SSH authentication keys should be generated and stored securely on each device.
-A managed **Local** configuration layer is deferred. Individual device settings
-can remain manually configured until that capability is justified. Existing
-ignored patterns (`local/`, `*.local`, and mise's `config.local.toml`) are **not**
-loaded by the Profile mechanism.
+Per-machine module selection lives in an untracked
+`~/.config/mise/miserc.local.toml`. Other device-specific settings may remain
+manually configured. Mise loads supported `config.<env>.local.toml` files
+natively when their environments are selected.
 
 ## Operational rule
 

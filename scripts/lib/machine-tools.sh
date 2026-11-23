@@ -2,8 +2,8 @@
 # Sourced helper. Query mise's active machine config instead of parsing TOML
 # or maintaining duplicate lists of tools in setup/cleanup scripts.
 #
-# Caller selects MISE_GLOBAL_CONFIG_FILE=<reviewed machine manifest> and uses
-# a mise executable compatible with --current and config get --file.
+# Caller selects the reviewed bootstrap manifest in MISE_GLOBAL_CONFIG_FILE;
+# the argument is the separate pinned tools-only file for config get --file.
 # Prints one validated, exact tool@version per line. No side effects.
 machine_tool_specs() {
     local mise=$1 manifest=$2 rows row tool version seen=' '
@@ -33,7 +33,7 @@ machine_tool_specs() {
         esac
         seen="$seen$tool "
 
-        # Read the literal request from the exact reviewed file, not a merged
+        # Read the literal request from the shared Base pin file, not a merged
         # environment value. Never allow an externally supplied tool/version
         # to become an installation or removal target.
         version=$("$mise" -C / config get --file "$manifest" "tools.\"$tool\"") || {

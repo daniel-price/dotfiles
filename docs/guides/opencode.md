@@ -5,10 +5,13 @@ prompts are **not OS isolation**. For personal development on Pop!_OS,
 the reviewed default is **one disposable rootless Podman container per launch**.
 For untrusted or unattended work, prefer a separate disposable VM.
 
-The public bootstrap does **not** install the native OpenCode CLI through
-mise, since that would make running the unsandboxed host agent too easy.
-The entry point is `bin/opencode-sandbox`; the reviewed Zsh config adds
-the checkout's `bin/` directory to PATH.
+**Only the rootless Podman sandbox is supported.** OpenCode is not installed
+on the host through mise. Select the `opencode` mise environment on your
+personal laptop or home server; it adds
+`~/.dotfiles/modules/opencode/bin` to `PATH` and exposes
+`opencode-sandbox`. Base and the `work` environment do not expose this
+launcher. Selecting the environment does not install Podman or pull an image.
+See [machine modules](mise-modules.md) for per-device selection.
 
 ## Prerequisites (Pop!_OS / Ubuntu)
 
@@ -40,8 +43,9 @@ Neither the agent nor the image is automatically upgraded.
 
 ## Launch for one selected personal Git repository
 
-From a checkout with the reviewed Zsh configuration active (or use
-`bash ~/.dotfiles/bin/opencode-sandbox` directly):
+From a new mise-activated Zsh session with the `opencode` environment
+selected (or invoke `bash ~/.dotfiles/modules/opencode/bin/opencode-sandbox`
+explicitly):
 
 ```sh
 cd /path/to/your/personal-git-repo

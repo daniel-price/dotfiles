@@ -10,8 +10,9 @@ def markdown(value: object) -> str:
     return str(value).replace("|", r"\|").replace("\n", " ")
 
 
-def render(machine: Path = ROOT / "scripts/setup/mise.toml",
-           development: Path = ROOT / "mise.toml") -> str:
+def render(machine: Path = ROOT / "scripts/setup/base-tools.toml",
+           development: Path = ROOT / "mise.toml",
+           bootstrap: Path = ROOT / "scripts/setup/mise.toml") -> str:
     manifests = [
         ("Machine tools", machine),
         ("Repository development tools", development),
@@ -35,7 +36,7 @@ def render(machine: Path = ROOT / "scripts/setup/mise.toml",
                 raise ValueError(f"Unsupported mise version declaration: {name} in {path}")
             lines.append(f"| `{markdown(name)}` | `{markdown(version)}` |")
         if heading == "Machine tools":
-            packages = config.get("bootstrap", {}).get("packages", {})
+            packages = tomllib.loads(bootstrap.read_text()).get("bootstrap", {}).get("packages", {})
             if packages:
                 lines += ["", "### Platform packages", "", "| Package | Platform |", "| --- | --- |"]
                 for name, details in packages.items():

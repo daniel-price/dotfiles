@@ -14,11 +14,10 @@ COMMANDS = (
     ("Cleanup", "scripts/setup/cleanup.sh"),
     ("Install prompt", "scripts/setup/setup-prompt.sh"),
     ("Set up Podman", "scripts/setup/setup-podman.sh"),
-    ("Profiles", "scripts/setup/profile.sh"),
     ("Format shell scripts", "scripts/dev/format.sh"),
     ("Lint shell scripts", "scripts/dev/lint.sh"),
     ("Install Git hooks", "scripts/dev/install-hooks.sh"),
-    ("OpenCode sandbox", "bin/opencode-sandbox"),
+    ("OpenCode sandbox", "modules/opencode/bin/opencode-sandbox"),
 )
 
 

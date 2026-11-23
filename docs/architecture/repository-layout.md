@@ -9,7 +9,8 @@
 | `scripts/setup/mise.toml` | Machine packages, pinned tools and dotfiles |
 | `mise.toml` | Checkout-only development tooling |
 | `.config/` | Reviewed source configuration |
-| `bin/` | Personal executables, including `opencode-sandbox` |
+| `bin/` | Shared personal executables |
+| `modules/opencode/bin/` | Sandbox-only OpenCode launcher, exposed via the optional mise environment |
 | `containers/` | Optional, isolated workload definitions |
 | `tests/` | Synthetic/no-host-change verification |
 | `docs/` | Handbook, decisions and history |

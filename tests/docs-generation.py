@@ -62,7 +62,7 @@ assert "| `apt:zsh` | `linux` |" in tool_page
 with tempfile.TemporaryDirectory() as temporary:
     machine = Path(temporary) / "machine.toml"
     development = Path(temporary) / "development.toml"
-    machine.write_text((ROOT / "scripts/setup/mise.toml").read_text().replace('neovim = "0.12.6"', 'neovim = "99.1.0"'))
+    machine.write_text((ROOT / "scripts/setup/base-tools.toml").read_text().replace('neovim = "0.12.6"', 'neovim = "99.1.0"'))
     development.write_text((ROOT / "mise.toml").read_text())
     changed = tools.render(machine, development)
     assert "| `neovim` | `99.1.0` |" in changed
@@ -74,8 +74,6 @@ assert "Usage: ,bootstrap" in cli_page
 assert "## OpenCode sandbox" in cli_page
 assert "ANTHROPIC_API_KEY" in cli_page
 assert "## Cleanup" in cli_page
-assert "## Profiles" in cli_page
-assert "--deactivate" in cli_page
 assert "No secrets" not in cli_page
 with tempfile.TemporaryDirectory() as temporary:
     root = Path(temporary)

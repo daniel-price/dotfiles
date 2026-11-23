@@ -34,9 +34,10 @@ main() {
         bash -n "$ROOT/$script"
     done < <(git -C "$ROOT" ls-files -z -- '*.sh')
     printf 'PASS: Bash syntax\n'
-    [[ -x "$ROOT/bin/opencode-sandbox" && -f "$ROOT/containers/opencode/Containerfile" ]] ||
+    [[ ! -e "$ROOT/bin/opencode-sandbox" && -x "$ROOT/modules/opencode/bin/opencode-sandbox" &&
+        -f "$ROOT/containers/opencode/Containerfile" ]] ||
         fail 'sandbox launcher must be executable and have a reviewed Containerfile'
-    bash -n "$ROOT/bin/opencode-sandbox" || fail 'sandbox launcher has invalid Bash syntax'
+    bash -n "$ROOT/modules/opencode/bin/opencode-sandbox" || fail 'sandbox launcher has invalid Bash syntax'
     [[ -x "$ROOT/bin/,bootstrap" ]] || fail ',bootstrap must be executable'
     bash -n "$ROOT/bin/,bootstrap" || fail ',bootstrap has invalid Bash syntax'
     # These helpers are also run directly from a shell, not just via Bash in Zellij.
@@ -160,7 +161,7 @@ main() {
         # Exercise the real mise CLI (rather than just synthetic fixtures) to
         # ensure the shared enumerator handles requested-but-missing versions.
         machine_specs=$(MISE_GLOBAL_CONFIG_FILE="$machine_config" \
-            machine_tool_specs "$mise" "$machine_config") ||
+            machine_tool_specs "$mise" "$ROOT/scripts/setup/base-tools.toml") ||
             fail 'machine tool enumerator could not read the reviewed mise config'
         [[ -n "$machine_specs" ]] || fail 'machine tool inventory is unexpectedly empty'
         [[ "$machine_specs" != *lefthook* && "$machine_specs" != *shellcheck* ]] ||
@@ -262,8 +263,8 @@ MISE
         python3 "$ROOT/tests/update-interactive.py"
         python3 "$ROOT/tests/bootstrap-command.py"
         python3 "$ROOT/tests/bootstrap-interactive.py"
-        python3 "$ROOT/tests/zsh-profile.py"
-        python3 "$ROOT/tests/profile-real-repos.py"
+        python3 "$ROOT/tests/zsh-startup.py"
+        python3 "$ROOT/tests/mise-native-modules.py"
         python3 "$ROOT/tests/mise-bootstrap-interactive.py"
         python3 "$ROOT/tests/login-shell.py"
         python3 "$ROOT/tests/cleanup-interactive.py"

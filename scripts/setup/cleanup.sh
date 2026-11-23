@@ -52,7 +52,7 @@ main() {
 
     # Validate every declared version before any potentially destructive cleanup.
     # A malformed/missing declaration must not remove even the managed symlink.
-    tool_specs=$(machine_tool_specs "$mise" "$manifest") ||
+    tool_specs=$(machine_tool_specs "$mise" "$ROOT/scripts/setup/base-tools.toml") ||
         die 'Could not read exact pinned machine tool declarations; no cleanup action was taken.'
 
     # Mise discovers targets from the reviewed manifest and removes only entries it

@@ -216,7 +216,7 @@ main() {
     [[ -f "$MISE_GLOBAL_CONFIG_FILE" ]] || die 'Missing declarative machine config.'
 
     # Fail closed on unpinned or undeclared entries before package or dotfile setup.
-    tool_specs=$(machine_tool_specs "$mise" "$MISE_GLOBAL_CONFIG_FILE") ||
+    tool_specs=$(machine_tool_specs "$mise" "$ROOT/scripts/setup/base-tools.toml") ||
         die 'Could not read the reviewed machine tool declarations.'
 
     # Package provisioning is a single reviewed mise operation. On Pop!_OS
