@@ -31,6 +31,13 @@ bash ~/.dotfiles/bin/,bootstrap --no-update       # Provision checked-out versio
 
 The updater refuses dirty, divergent or unexpected repositories and never resets your changes. Bootstrap does not silently upgrade already installed tools.
 
+## Neovim
+
+Bootstrap offers to clone the public [LazyVim configuration](https://github.com/daniel-price/lazyvim) directly to `~/.config/nvim`, fast-forwards its clean `main` checkout, and uses `Lazy! restore` to install the exact plugin commits in `lazy-lock.json` (removing obsolete plugins). It never overwrites another configuration, switches branches, or resets local commits. If the network is unavailable, an existing clean checkout is usable. A Neovim failure does not stop unrelated bootstrap steps, but makes bootstrap exit non-zero.
+
+Run `,nvim-update` to approve a plugin upgrade. It fetches `main`, updates the lockfile, validates installed plugin SHAs, commits **only** `lazy-lock.json`, and pushes. On failed validation it attempts to restore the previous lockfile and plugins; if pushing fails, the validated local commit remains for a retry. Mason tools use LazyVim's own install-missing configuration and are not force-upgraded or removed.
+
+
 ## Common follow-up tasks
 
 | Task | Command or guide |

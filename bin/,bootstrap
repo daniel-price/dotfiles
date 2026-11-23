@@ -9,6 +9,8 @@ source "$ROOT/scripts/lib/common.sh"
 source "$ROOT/scripts/lib/os.sh"
 # shellcheck source=scripts/lib/mise.sh
 source "$ROOT/scripts/lib/mise.sh"
+# shellcheck source=scripts/lib/nvim.sh
+source "$ROOT/scripts/lib/nvim.sh"
 # shellcheck source=scripts/lib/machine-tools.sh
 source "$ROOT/scripts/lib/machine-tools.sh"
 # shellcheck source=scripts/lib/login-shell.sh
@@ -116,6 +118,43 @@ main() {
         [[ "$version" == "${MISE_VERSION#v}" ]] ||
             die "Mise version mismatch: expected ${MISE_VERSION#v}, found $version."
         log "Installed mise $version at $target."
+    }
+
+    # Keep Neovim separate from the dotfiles checkout.
+    setup_nvim() {
+        local config="$HOME/.config/nvim" lock_before
+
+        if ! "$mise" -C / exec -- nvim --version >/dev/null 2>&1; then
+            log 'Neovim is not installed; skipping its configuration.'
+            return 0
+        fi
+
+        if [[ ! -e "$config" ]]; then
+            if ! confirm "Clone the public LazyVim configuration into $config?"; then
+                log 'Neovim configuration clone declined.'
+                return 0
+            fi
+            mkdir -p "$HOME/.config" || return 1
+            git clone --branch main --single-branch "$NVIM_CONFIG_REMOTE" "$config" ||
+                { log 'Could not clone the LazyVim configuration.'; return 1; }
+        fi
+
+        nvim_validate_checkout "$config" || return 1
+        nvim_sync_checkout "$config" --allow-offline || return 1
+
+        lock_before=$(git -C "$config" hash-object lazy-lock.json) || return 1
+        if ! nvim_verify_plugins "$mise" -c 'Lazy! restore' -c 'Lazy! clean'; then
+            log 'Neovim plugin restore or lockfile verification failed.'
+            return 1
+        fi
+        [[ "$(git -C "$config" hash-object lazy-lock.json)" == "$lock_before" ]] ||
+            { log 'Neovim restore unexpectedly changed lazy-lock.json.'; return 1; }
+
+        # LazyVim owns its Mason tools and Tree-sitter parser declarations.
+        "$mise" -C / exec -- nvim --headless \
+            -c 'lua require("lazy").load({plugins={"mason.nvim","mason-lspconfig.nvim","nvim-treesitter"}})' \
+            -c 'qa!' || { log 'Neovim language-tool initialisation failed.'; return 1; }
+        log 'Neovim configuration and locked plugins synchronised.'
     }
 
     case "${1:-}" in
@@ -308,6 +347,12 @@ main() {
         log 'Skipping optional Zsh plugins and font: reviewed Zsh startup is not active.'
     fi
 
+    # Keep Neovim failures visible without blocking unrelated setup.
+    nvim_status='ok'
+    if ! setup_nvim; then
+        nvim_status='failed'
+    fi
+
     # Desktop keyboard preferences are independent of mise-managed dotfiles.
     # The helper only offers a mapping for a detected supported Linux desktop.
     bash "$ROOT/scripts/setup/keyboard.sh" --apply ||
@@ -319,6 +364,10 @@ main() {
     offer_default_zsh "$platform" /etc/shells
 
     log "Bootstrap complete. Zsh configuration: $zsh_config_status."
+    if [[ "$nvim_status" == failed ]]; then
+        printf '[error] Bootstrap completed with Neovim setup failure.\n' >&2
+        return 1
+    fi
 }
 
 main "$@"
