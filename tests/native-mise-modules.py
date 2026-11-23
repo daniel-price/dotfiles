@@ -31,9 +31,12 @@ if mise:
             ROOT / ".config/mise/config.opencode.toml"
         )
         env = dict(os.environ, HOME=str(home))
-        for name in ("MISE_GLOBAL_CONFIG_FILE", "MISE_ENV", "MISE_CONFIG_DIR",
+        for name in ("MISE_GLOBAL_CONFIG_FILE", "MISE_ENV",
                      "MISE_SYSTEM_CONFIG_FILE", "MISE_CONFIG_FILE"):
             env.pop(name, None)
+        # Resolve the synthetic global config explicitly in CI.
+        env["MISE_CONFIG_DIR"] = str(config)
+        env.pop("XDG_CONFIG_HOME", None)
 
         def selected(names):
             (config / "miserc.local.toml").write_text(
