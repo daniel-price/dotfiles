@@ -1,24 +1,43 @@
-# Configuration: Base and Profiles
+# Configuration: Base, optional modules and private repositories
 
-Two configuration concepts are supported:
+Two concerns are kept separate: **what is selected on a machine**, and
+**where the selected configuration is stored**.
 
-| Term | Meaning | Source |
+| Layer | What it owns | Source |
 | --- | --- | --- |
-| **Base** | Shared tools, shell defaults and app settings that work without extra repositories | Public `dotfiles` checkout |
-| **Profile** | Reusable, optional configuration selected explicitly for a purpose, such as `personal`, `work` or `home-server` | Separate, authorised Git repository |
+| Base | Tools, packages and common dotfiles on every machine | Public `scripts/setup/mise.toml`, linked as global config |
+| Module | Optional tools, repositories, files and services | Mise environment `config.<name>.toml` or `conf.d/<name>/mise.<name>.toml` |
+| Machine selection | Which modules are enabled | Local `~/.config/mise/miserc.local.toml` |
+| Private config | Work scripts, home-server apps, non-public settings | Approved local TOML and opt-in private Git repos |
 
-A device can enable multiple profiles; a profile can be reused across devices. The intended composition is **Base → selected Profiles**, with conflicts explicitly checked rather than silently overwritten. The Base works alone, without profile access or authentication.
+This is native mise [machine modules](https://mise.jdx.dev/bootstrap/modules.html),
+[environments](https://mise.jdx.dev/configuration/environments.html)
+and [repository setup](https://mise.jdx.dev/bootstrap/repos.html), rather
+than a bespoke configuration composer. Base works alone and has no private
+repository prerequisites.
 
-**Private** describes Git repository visibility, not a type of configuration. A profile may be public or private; work content still requires employer-approved storage. **Secrets** and cryptographic identities need separate protection—private Git alone is not encryption.
+The public OpenCode module is installed **only** for machines selecting
+`opencode`. Work-only scripts can be cloned with `[bootstrap.repos]`
+and added to PATH with `[env] _.path`, both declared in a machine-local
+`config.work.local.toml`. A private Radarr repository can be cloned into
+`~/.config/mise/conf.d/radarr`, containing a `mise.radarr.toml`
+environment-specific module.
 
-## Current support
+**Private** means Git repository visibility, not encryption. Work-owned
+content requires employer-approved source control and machine policies.
+Secrets, access tokens and decryption keys remain outside plaintext Git.
 
-The [Profile feature](../guides/profiles.md) clones explicitly selected repositories into `~/.dotfiles-profiles/` (outside Base), previews their effective tool and non-secret environment configuration, and asks before activation and each missing-tool installation. New Zsh sessions use the selected profiles' executables, aliases and functions. Application configuration files are linked only to non-conflicting targets. Deactivation is previewable and keeps Git checkouts and installed tools intact.
+## Compatibility and rollout
 
-Profile updates, automatic discovery, general-purpose configuration merges, and rollback of installed software are **not implemented**. Do not assume arbitrary TOML, app settings or shell scripts can be merged.
+The older `,profile` workflow remains available only for explicit
+deactivation and migration; it uses its own registry and merged tool manifest.
+Existing legacy selections still load until deactivated. `,bootstrap`
+skips native optional module setup while that registry exists to avoid
+config conflicts or surprises. The legacy composer will be removed after
+native migration is validated on the actual machines.
 
-## Deferred: Local
+Mise's native `bootstrap unapply` handles some resources but does **not**
+uninstall shared tools or delete cloned Git repositories, and Compose
+needs explicit state changes for teardown. All such cleanup remains reviewed.
 
-**Local** would mean per-device configuration, such as monitor layout, hostnames or mount paths, not reusable across computers. There is **no managed Local layer today**; configure these manually until the need justifies another mechanism. See the [roadmap](../roadmap.md).
-
-[Secrets](secrets.md) and encrypted tracked-file history are separate from Base/Profile composition.
+See the [machine profile guide](../guides/profiles.md).

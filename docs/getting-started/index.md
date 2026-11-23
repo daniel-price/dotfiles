@@ -51,4 +51,4 @@ Run `,nvim-update` to approve a plugin upgrade. It fetches `main`, updates the l
 | Preview or activate a Profile | [Profiles](../guides/profiles.md) |
 | Manage a tool or dotfile | [Tools](../guides/add-tool.md) · [Dotfiles](../guides/manage-dotfile.md) |
 
-Commands are also documented via `--help` where supported. For the current inventory and unfinished capabilities, see the [roadmap](../roadmap.md). **Profile selection and deactivation are available as opt-in commands**; profile Git updates and encrypted secrets management remain future work.
+Commands are also documented via `--help` where supported. For the current inventory and unfinished capabilities, see the [roadmap](../roadmap.md). **Optional native mise machine modules** are selected locally via `miserc.local.toml`; the old `,profile` command remains for safe migration only. Encrypted secrets management remains future work.

@@ -1,83 +1,140 @@
-# Profiles: optional reusable configuration
+# Machine profiles and optional modules (native mise)
 
-**Status:** Profiles are implemented as an opt-in feature, separate from unattended Base bootstrap. Preview and confirm changes before activation. Manual testing against the authorised example repository is recommended before adopting it on your devices.
+The public `dotfiles` repository provides **Base** setup. Each machine then
+selects any optional mise environments/modules it needs. A module can install
+tools, manage packages or services, and configure shell variables and dotfiles.
+A module is **not** a Git repository per tool.
 
-## Layout
+This uses [mise machine modules](https://mise.jdx.dev/bootstrap/modules.html),
+[config environments](https://mise.jdx.dev/configuration/environments.html),
+[repository management](https://mise.jdx.dev/bootstrap/repos.html),
+and [conf.d folders](https://mise.jdx.dev/configuration.html#conf-d-folders).
+Requires mise **2026.11.9+**. It is opt-in: Base works without private Git access.
 
-Profiles are **reusable configuration bundles**, not a synonym for private files or one specific machine. One device can enable multiple profiles (such as `personal` and `work`); one profile can be used on several devices. The **Base** is the public `dotfiles` checkout and always works independently. Repo visibility and credentials are separate security concerns. **Local** per-device configuration is deferred; nothing in the current implementation loads a Local layer.
+## How the three machines are configured
 
+Bootstrap first, then create the following **local, untracked** file on each
+machine: `~/.config/mise/miserc.local.toml`.
 
-```text
-~/.dotfiles/                          # Base configuration (standalone public checkout)
-~/.dotfiles-profiles/
-  personal/                           # Independent profile Git repository
-  home-server/                        # Optional second independent repository
-~/.config/dotfiles/active-profiles     # Managed, ordered list of activated profile names
-~/.config/mise/dotfiles-profiles.toml  # Managed tool pins and non-secret profile environment
+| Machine | File contents | Effective setup |
+| --- | --- | --- |
+| Work Mac | `env = ["work"]` | Base + work-only private scripts |
+| Personal Linux laptop | `env = ["personal", "opencode"]` | Base + pinned OpenCode |
+| Home server | `env = ["home-server", "opencode", "radarr"]` | Base + OpenCode + private Radarr configuration |
+
+The shared Base lives in `scripts/setup/mise.toml`. Bootstrap symlinks it
+to `~/.config/mise/config.toml` and deploys the **unselected**
+`config.opencode.toml` file next to it. Merely having a module file on disk
+does **not** activate or install it. No environment selected means Base only.
+
+OpenCode's native host CLI is **unsandboxed**; prefer the existing
+`opencode-sandbox` launcher for untrusted projects. Its version pin lives
+only in `.config/mise/config.opencode.toml`, not in Base.
+
+## Work-only commands in an approved private repository
+
+A work-only machine-local configuration, not committed to the public repo:
+
+```toml
+# ~/.config/mise/config.work.local.toml
+[bootstrap.repos]
+"~/.local/share/dotfiles/work-scripts" = { url = "git@github.com:APPROVED-ORG/WORK-SCRIPTS.git", ref = "main" }
+
+[env]
+_.path = ["~/.local/share/dotfiles/work-scripts/bin"]
 ```
 
-Each profile repository may contain:
-- `mise.toml` — exact `[tools]` pins, e.g. `opencode = "2.3.0"`, plus optional literal non-secret `[env]` string values such as `EDITOR = "nvim"`. Conflicting variables and reserved runtime variables (including `PATH`, `HOME` and `MISE_*`) are rejected. No executable mise hooks or arbitrary settings are accepted.
-- `bin/` — executable Bash commands; added to your Zsh `PATH` from the separate checkout.
-- `zsh/aliases.zsh` — aliases loaded **after** public aliases.
-- `zsh/functions/` — Zsh autoload functions.
-- `config/` — any nested application configuration files, mapped to corresponding `~/.config/` paths using symlinks. `config/mise` and `config/dotfiles` are reserved and rejected.
+The **employer-approved** private repository can have a `bin/` directory
+with executable Bash scripts, e.g. `,logs` or `,deploy`. Mise clones
+it when `work` is selected, and only activated shells on that machine
+add the directory to PATH. No work code, repository URL, or credentials are
+put in public dotfiles. Do **not** upload work-owned files to a personal GitHub
+account unless explicitly authorised.
 
-The Base bootstrap remains standalone and keeps its original tool manifest. Once an approved profile is activated, **new Zsh sessions** load the generated manifest containing pinned Base and selected-profile tools and declared environment variables, plus selected bins, aliases and functions. No tool is automatically installed: the generated manifest sets `auto_install = false`.
+## Radarr from a private Git repository
 
-## Try it with the personal profile fixture
+Keep the repository URL **on the home server only**:
 
-Requires Git, Bash, Python **3.11+**, an up-to-date `.dotfiles` checkout and existing mise if you want to test installing tools. Set `REPO_URL` to the exact HTTPS/SSH clone URL of the approved private fixture repo (don't commit it into public files).
+```toml
+# ~/.config/mise/config.radarr.local.toml
+[bootstrap.repos]
+"~/.config/mise/conf.d/radarr" = { url = "git@github.com:YOUR-ACCOUNT/PRIVATE-RADARR-CONFIG.git", ref = "main" }
+```
+
+The private repository contains `mise.radarr.toml` (not plain `mise.toml`)
+and, if using Compose, a `compose.yaml`. Mise loads `mise.radarr.toml`
+only when the `radarr` environment is selected:
+
+```toml
+# Private repository: mise.radarr.toml
+[bootstrap.compose.radarr]
+project_dir = "{{ config_root }}"
+files = ["compose.yaml"]
+```
+
+This illustrates the module mechanism, **not a complete Radarr deployment**:
+the private Compose file must define a valid service, secure credentials,
+persistent media/data volumes and an appropriate container engine. A private
+Git repository is not encryption; keep secrets out of Git.
+
+Mise discovers a newly cloned `conf.d` folder on its **next invocation**.
+Our `,bootstrap` runs the selected repository phase first, then re-invokes
+mise to preview/apply the resulting configuration.
+
+## Applying and updating
 
 ```sh
-REPO_URL='git@github.com:OWNER/PROFILE_REPO.git'    # Replace locally
-bash scripts/setup/profile.sh --name personal --repo "$REPO_URL"
-bash scripts/setup/profile.sh --name personal --repo "$REPO_URL" --apply
+,bootstrap                         # Base + selected modules, reviewed interactively
+mise -C / config ls               # See which native config files actually loaded
+mise -C / ls --current            # See selected pinned tools
+mise -C / bootstrap --dry-run     # Preview selected resources without changing anything
+mise -C / bootstrap repos update --dry-run  # Preview private repo updates
 ```
 
-1. **Preview:** The first command must make **no network calls or changes**. It prints the intended checkout path.
-2. **Clone approval:** The second command asks to clone, then prints the real profile's tools, shell directories and proposed app symlinks. Answer `n` here to keep the public checkout and HOME untouched.
-3. **Activation approval:** After cloning, the command asks separately before creating the managed registry, effective tool manifest and symlinks. Decline here to retain just the inactive checkout.
-4. **Tools:** Mise checks each private tool and asks separately before installing a missing pinned version. The example Profile declares **OpenCode 2.3.0**. Its *host* install is not sandboxed, unlike the Base `opencode-sandbox` command, so only approve the install if you actually want it.
-5. **Check from a new Zsh session** (not an already-open shell):
-   ```sh
-   ,personal-hello
-   personal-ping
-   personal-greet world
-   cat ~/.config/profile-example/settings.toml
-   cat ~/.config/mise/dotfiles-profiles.toml
-   echo "$MISE_GLOBAL_CONFIG_FILE"
-   echo "$DOTFILES_PROFILE_EXAMPLE"  # personal-profile-active
-   echo "$EDITOR"                    # nvim
-   opencode --version  # Only if its tool installation was approved
-   ```
-   The command, alias and function should print fixture greetings. The app config should contain synthetic demo settings and be a symlink to the private checkout. The generated TOML should contain both Base pins and `opencode = "2.3.0"`, alongside `[env]` values such as `EDITOR = "nvim"`. `MISE_GLOBAL_CONFIG_FILE` should point to it.
-6. **Repeat safely:** Re-running `--apply` with the same URL must not fetch, overwrite your existing app config or duplicate activation. It may re-offer declined tools. An entirely different URL for the same name must be refused.
-7. **Try another profile:** Clone/apply a second independently authorised repository with `--name home-server --repo "$SERVER_URL"`. Its bins, aliases and config should join the personal profile in order. Conflicting tool pins, command names, functions or application targets are rejected.
-8. **Automated:** Run `python3 tests/profile-real-repos.py`. Tests use disposable local Git remotes, a fake mise, PTY approvals and synthetic HOME. They do **not** access GitHub or install software.
+Bootstrap retains explicit confirmations for Base actions. With a local
+module selection, it previews and asks before cloning/updating private
+repositories and before applying modules. The final native `mise bootstrap`
+retains mise's own confirmations (we do not pass `--yes`).
 
-### Preview, deactivate and recover
+If you deselect a module, **existing installations are not automatically
+uninstalled**, and private repository checkouts are never deleted by mise.
+Preview `mise bootstrap unapply NAME --dry-run`, and review tool or package
+cleanup separately. Never apply destructive Compose removal without backups.
 
-Deactivation is supported. It does **not** delete cloned repositories or uninstall tools:
+Mise refuses to update Git checkouts that contain uncommitted work; changes
+must be reviewed and intentionally applied.
 
-```sh
-bash scripts/setup/profile.sh --name personal --deactivate          # Preview only
-bash scripts/setup/profile.sh --name personal --deactivate --apply  # Confirm
-```
+## Migrating an existing legacy Profile installation
 
-After approval, only verified symlinks owned by `personal` are removed, and the effective tool/environment manifest and active-profile list are recomputed for any remaining profiles. If this was the **last active profile**, the two generated managed files are removed, and a new Zsh session falls back to the Base tool manifest. The cloned repository and installed OpenCode are left untouched. Repeating deactivation is a no-op.
+If you previously used `,profile --name ... --repo ... --apply`, its checkout,
+managed registry and generated manifest still exist. Legacy setup remains
+supported temporarily to prevent a shell configuration regression.
 
-If a config path has been replaced by a different symlink or a real file, deactivation **refuses** to remove it. For recovery, inspect the conflicting path and restore the original profile-owned symlink before re-running. It does not blindly remove or overwrite anything.
+1. Record the profile's executable paths, aliases, environment values and
+   app links; move the declarations into the relevant native module or
+   a local `config.<env>.local.toml`.
+2. Preview `,profile --name NAME --deactivate`, then approve deactivation
+   with `--apply`. Do this for **all** active legacy profiles.
+3. Create the machine's `miserc.local.toml` selection and its approved
+   private module declarations, then run `,bootstrap` again.
+4. Validate `mise -C / config ls`, shell aliases, PATH, and any private
+   commands in a **new shell**. Delete old profile checkouts only after
+   you've validated migration and no longer need them.
 
-To reactivate the retained checkout, use the original `--name personal --repo "$REPO_URL" --apply` command and review the prompts; no automatic fetch/pull is performed. General Git profile updates and automated version rollback remain follow-up work.
+While the old registry exists, bootstrap deliberately skips native modules.
+Legacy profile activation is deprecated and should not be used for new setups.
 
 ## Safety and limitations
 
-- No profile repository is discovered, implicitly cloned, fetched, pulled or pushed. Existing checkouts must have exactly the selected `origin` URL and be clean.
-- Each clone, activation, deactivation and missing-tool install requires independent interactive consent. Unmanaged destination files and foreign symlinks are never overwritten; profiles cannot shadow public commands or autoload functions.
-- The generated files are marked as managed; the composer rejects unexpected existing files instead of silently replacing them. Shell startup sources approved profile aliases and functions from the checked-out repository, so **review their code before approving** and whenever you explicitly update the repo.
-- The Profile feature handles *file-level* conflicts, exact tool-pin and environment conflicts, and command/function-name conflicts. It does not fully analyse semantic alias collisions or merge arbitrary app settings inside an existing file.
-- No credentials or private keys should go into Git. Work-specific code must remain in an employer-approved source and must not be uploaded to a personal GitHub account.
-- Python 3.11+ is currently required by the opt-in Profile command, not by Base bootstrap.
+- The normal Base setup needs Git and works without private repository access.
+- Only explicitly selected environments load their optional declarations.
+- Remote repositories require configured SSH access and approval before
+  cloning; their content can run commands, so review it before trusting.
+- Existing app files or symlinks are not silently overwritten; test on a
+  disposable HOME before using work or server machines.
+- Use local configuration files for private URLs and authorised work settings.
+  Store cryptographic identities and secrets in dedicated secure storage.
+- Work and home-server roles can stay local, without creating public fake
+  definitions for them.
 
-See [configuration architecture](../architecture/configuration.md) and [roadmap](../roadmap.md).
+See [configuration architecture](../architecture/configuration.md).

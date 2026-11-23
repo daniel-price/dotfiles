@@ -7,7 +7,7 @@ them**. Implementation decisions belong in [Architecture](architecture/index.md)
 | --- | --- |
 | Cross-platform | A shared Base on Pop!_OS and macOS; platform-specific behaviour only where necessary. |
 | Public by default | Source and documentation can be viewed publicly; never expose plaintext secrets or decryption identities. |
-| Base + Profiles | Base works independently; selected reusable Profiles are optional, authorised and checked for conflicts. |
+| Base + native modules | Base works independently; optional mise environments and private repositories are explicitly selected per machine. |
 | Standalone Base | Bootstrap must work without any Profile checkout or credentials. |
 | Work isolation | Use employer-approved storage and devices for work-related files, never assume personal private Git is authorised. |
 | Safe and explicit | Inspect first; explain and ask before **each** modifying operation; refusal is safe and defaults to no. |
