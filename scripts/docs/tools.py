@@ -10,7 +10,7 @@ def markdown(value: object) -> str:
     return str(value).replace("|", r"\|").replace("\n", " ")
 
 
-def render(machine: Path = ROOT / ".config/mise/base-tools.toml",
+def render(machine: Path = ROOT / "scripts/setup/base-tools.toml",
            development: Path = ROOT / "mise.toml",
            bootstrap: Path = ROOT / "scripts/setup/mise.toml") -> str:
     manifests = [

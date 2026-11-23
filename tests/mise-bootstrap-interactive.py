@@ -154,7 +154,7 @@ esac
     # an extra named-tool fixture when a new tool is added.
     pins = {}
     within_tools = False
-    for item in (ROOT / ".config/mise/base-tools.toml").read_text().splitlines():
+    for item in (ROOT / "scripts/setup/base-tools.toml").read_text().splitlines():
         if item.strip() == "[tools]":
             within_tools = True
             continue

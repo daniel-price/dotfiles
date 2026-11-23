@@ -160,7 +160,7 @@ main() {
         # Exercise the real mise CLI (rather than just synthetic fixtures) to
         # ensure the shared enumerator handles requested-but-missing versions.
         machine_specs=$(MISE_GLOBAL_CONFIG_FILE="$machine_config" \
-            machine_tool_specs "$mise" "$ROOT/.config/mise/base-tools.toml") ||
+            machine_tool_specs "$mise" "$ROOT/scripts/setup/base-tools.toml") ||
             fail 'machine tool enumerator could not read the reviewed mise config'
         [[ -n "$machine_specs" ]] || fail 'machine tool inventory is unexpectedly empty'
         [[ "$machine_specs" != *lefthook* && "$machine_specs" != *shellcheck* ]] ||

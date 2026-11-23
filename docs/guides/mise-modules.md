@@ -7,9 +7,9 @@ which is retained during migration.
 
 ## How it fits together
 
-- **Base** tool versions are defined once in `.config/mise/base-tools.toml`
+- **Base** tool versions are defined once in `scripts/setup/base-tools.toml`
   and loaded by both `scripts/setup/mise.toml` (bootstrap-only packages and
-  dotfiles) and `.config/mise/config.toml` (normal global mise config).
+  dotfiles) and `scripts/setup/global-mise.toml` (normal global mise config).
   `,bootstrap` continues to preview and approve each Base install. It also
   links the global config, shared pins and optional OpenCode module into
   `~/.config/mise/`. All sources are public dotfiles files, not copies.

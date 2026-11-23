@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SCRIPT = ROOT / "scripts" / "setup" / "cleanup.sh"
 SOURCE = ROOT / ".config" / "zsh" / "zshrc"
 MANIFEST = ROOT / "scripts" / "setup" / "mise.toml"
-BASE_TOOLS = ROOT / ".config" / "mise" / "base-tools.toml"
+BASE_TOOLS = ROOT / "scripts" / "setup" / "base-tools.toml"
 
 
 def declared_tools():

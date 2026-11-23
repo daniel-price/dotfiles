@@ -5,11 +5,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 bootstrap = tomllib.loads((ROOT / "scripts/setup/mise.toml").read_text())
-global_config = tomllib.loads((ROOT / ".config/mise/config.toml").read_text())
-base_tools = tomllib.loads((ROOT / ".config/mise/base-tools.toml").read_text())
+global_config = tomllib.loads((ROOT / "scripts/setup/global-mise.toml").read_text())
+base_tools = tomllib.loads((ROOT / "scripts/setup/base-tools.toml").read_text())
 opencode = tomllib.loads((ROOT / "scripts/setup/config.opencode.toml").read_text())
 
-assert bootstrap["include"] == ["../../.config/mise/base-tools.toml"]
+assert bootstrap["include"] == ["./base-tools.toml"]
 assert global_config["include"] == ["./base-tools.toml"]
 assert "tools" not in bootstrap and "tools" not in global_config
 assert "opencode" not in base_tools["tools"], "OpenCode must be opt-in"
@@ -18,8 +18,8 @@ assert bootstrap["settings"]["auto_install"] is False
 assert global_config["settings"]["auto_install"] is False
 
 symlinks = {
-    "config.toml": "../../.config/mise/config.toml",
-    "base-tools.toml": "../../.config/mise/base-tools.toml",
+    "config.toml": "global-mise.toml",
+    "base-tools.toml": "base-tools.toml",
     "config.opencode.toml": "config.opencode.toml",
 }
 for target, source in symlinks.items():
@@ -31,6 +31,10 @@ for manifest in (bootstrap, global_config, base_tools, opencode):
     assert "bootstrap" not in manifest or "repos" not in manifest["bootstrap"], (
         "Public config must not clone private repositories"
     )
+
+# A developer checkout must not offer Base machine tools from a discovered
+# .config/mise/config.toml; only the root mise.toml declares dev tools.
+assert not (ROOT / ".config/mise/config.toml").exists()
 
 startup = (ROOT / ".config/zsh/profiles.zsh").read_text()
 assert 'elif [[ ! -f "$HOME/.config/mise/config.toml" ]]' in startup

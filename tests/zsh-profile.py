@@ -62,8 +62,8 @@ with tempfile.TemporaryDirectory(prefix="dotfiles-zsh-profile-") as temporary:
     # to load; neither a fresh nor an inherited Base override may mask them.
     mise_dir = home / ".config/mise"
     mise_dir.mkdir(parents=True)
-    (mise_dir / "config.toml").symlink_to(ROOT / ".config/mise/config.toml")
-    (mise_dir / "base-tools.toml").symlink_to(ROOT / ".config/mise/base-tools.toml")
+    (mise_dir / "config.toml").symlink_to(ROOT / "scripts/setup/global-mise.toml")
+    (mise_dir / "base-tools.toml").symlink_to(ROOT / "scripts/setup/base-tools.toml")
     (mise_dir / "config.opencode.toml").symlink_to(ROOT / "scripts/setup/config.opencode.toml")
     (mise_dir / "miserc.local.toml").write_text('env = ["personal", "opencode"]\n')
     native = run('print -r -- "MISE=${MISE_GLOBAL_CONFIG_FILE:-unset}"')
