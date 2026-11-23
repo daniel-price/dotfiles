@@ -13,10 +13,8 @@ opencode = tomllib.loads((ROOT / ".config/mise/config.opencode.toml").read_text(
 
 assert "opencode" not in base["tools"]
 assert opencode["tools"]["opencode"] == "2.3.0"
-assert base["dotfiles"]["~/.config/mise/config.toml"]["source"].endswith("/mise.toml")
-assert base["dotfiles"]["~/.config/mise/config.opencode.toml"]["source"].endswith(
-    ".config/mise/config.opencode.toml"
-)
+assert base["dotfiles"]["~/.config/mise/config.toml"]["source"] == "~/.dotfiles/scripts/setup/mise.toml"
+assert base["dotfiles"]["~/.config/mise/config.opencode.toml"]["source"] == "~/.dotfiles/.config/mise/config.opencode.toml"
 assert base["settings"]["auto_install"] is False
 assert "MISE_GLOBAL_CONFIG_FILE" not in (ROOT / ".config/mise/config.opencode.toml").read_text()
 
@@ -26,6 +24,7 @@ if mise:
         home = Path(tmp)
         config = home / ".config/mise"
         config.mkdir(parents=True)
+        (home / ".dotfiles").symlink_to(ROOT, target_is_directory=True)
         (config / "config.toml").symlink_to(ROOT / "scripts/setup/mise.toml")
         (config / "config.opencode.toml").symlink_to(
             ROOT / ".config/mise/config.opencode.toml"
@@ -45,7 +44,8 @@ if mise:
             env=env, capture_output=True, text=True, timeout=20
         )
         assert status.returncode == 0, status.stdout + status.stderr
-        assert str(ROOT / ".config/zsh/zshrc") in status.stdout, status.stdout
+        assert "~/.dotfiles/.config/zsh/zshrc" in status.stdout, status.stdout
+        assert "source_missing" not in status.stdout, status.stdout
 
         def selected(names):
             (config / "miserc.local.toml").write_text(

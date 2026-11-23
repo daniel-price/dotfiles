@@ -33,14 +33,14 @@ ghostty = { ppa = "mkasberg/ghostty-ubuntu" }
 [dotfiles]
 # Native global configuration; installed explicitly by Base bootstrap.
 # Optional modules are deployed but only loaded when selected via miserc.local.toml.
-"~/.config/mise/config.toml" = { source = "{{ config_source | canonicalize | dirname }}/mise.toml", mode = "symlink" }
-"~/.config/mise/config.opencode.toml" = { source = "{{ config_source | canonicalize | dirname }}/../../.config/mise/config.opencode.toml", mode = "symlink" }
-"~/.zshrc" = { source = "{{ config_source | canonicalize | dirname }}/../../.config/zsh/zshrc", mode = "symlink" }
-"~/.config/git/config" = { source = "{{ config_source | canonicalize | dirname }}/../../.config/git/config", mode = "symlink" }
-"~/.config/atuin/config.toml" = { source = "{{ config_source | canonicalize | dirname }}/../../.config/atuin/config.toml", mode = "symlink" }
-"~/.config/stylua.toml" = { source = "{{ config_source | canonicalize | dirname }}/../../.config/stylua.toml", mode = "symlink" }
-"~/.config/zellij/config.kdl" = { source = "{{ config_source | canonicalize | dirname }}/../../.config/zellij/config.kdl", mode = "symlink" }
-"~/.config/ghostty/config" = { source = "{{ config_source | canonicalize | dirname }}/../../.config/ghostty/config", mode = "symlink" }
+"~/.config/mise/config.toml" = { source = "~/.dotfiles/scripts/setup/mise.toml", mode = "symlink" }
+"~/.config/mise/config.opencode.toml" = { source = "~/.dotfiles/.config/mise/config.opencode.toml", mode = "symlink" }
+"~/.zshrc" = { source = "~/.dotfiles/.config/zsh/zshrc", mode = "symlink" }
+"~/.config/git/config" = { source = "~/.dotfiles/.config/git/config", mode = "symlink" }
+"~/.config/atuin/config.toml" = { source = "~/.dotfiles/.config/atuin/config.toml", mode = "symlink" }
+"~/.config/stylua.toml" = { source = "~/.dotfiles/.config/stylua.toml", mode = "symlink" }
+"~/.config/zellij/config.kdl" = { source = "~/.dotfiles/.config/zellij/config.kdl", mode = "symlink" }
+"~/.config/ghostty/config" = { source = "~/.dotfiles/.config/ghostty/config", mode = "symlink" }
 
 [settings]
 auto_install = false

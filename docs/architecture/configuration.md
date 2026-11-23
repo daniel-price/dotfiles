@@ -10,6 +10,10 @@ Two concerns are kept separate: **what is selected on a machine**, and
 | Machine selection | Which modules are enabled | Local `~/.config/mise/miserc.local.toml` |
 | Private config | Work scripts, home-server apps, non-public settings | Approved local TOML and opt-in private Git repos |
 
+The Base checkout must be at `~/.dotfiles`, as in the documented
+installation command, because mise does not template managed dotfile
+source paths.
+
 This is native mise [machine modules](https://mise.jdx.dev/bootstrap/modules.html),
 [environments](https://mise.jdx.dev/configuration/environments.html)
 and [repository setup](https://mise.jdx.dev/bootstrap/repos.html), rather

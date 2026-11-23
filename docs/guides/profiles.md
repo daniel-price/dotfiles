@@ -22,7 +22,9 @@ machine: `~/.config/mise/miserc.local.toml`.
 | Personal Linux laptop | `env = ["personal", "opencode"]` | Base + pinned OpenCode |
 | Home server | `env = ["home-server", "opencode", "radarr"]` | Base + OpenCode + private Radarr configuration |
 
-The shared Base lives in `scripts/setup/mise.toml`. Bootstrap symlinks it
+The shared Base lives in `scripts/setup/mise.toml`. Install the public repository at
+`~/.dotfiles` (the documented bootstrap location); mise's dotfile sources
+use this stable path. Bootstrap symlinks it
 to `~/.config/mise/config.toml` and deploys the **unselected**
 `config.opencode.toml` file next to it. Merely having a module file on disk
 does **not** activate or install it. No environment selected means Base only.
