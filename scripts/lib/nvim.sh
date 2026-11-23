@@ -18,15 +18,27 @@ nvim_validate_checkout() {
     }
     case "$origin" in
     "$NVIM_CONFIG_REMOTE" | 'https://github.com/daniel-price/lazyvim') ;;
-    *) log "Unexpected LazyVim origin: $origin"; return 1 ;;
+    *)
+        log "Unexpected LazyVim origin: $origin"
+        return 1
+        ;;
     esac
 
     [[ "$(git -C "$config" symbolic-ref --quiet --short HEAD 2>/dev/null || :)" == main ]] ||
-        { log 'Neovim config must be on main.'; return 1; }
+        {
+            log 'Neovim config must be on main.'
+            return 1
+        }
     [[ -z "$(git -C "$config" status --porcelain --untracked-files=all)" ]] ||
-        { log 'Neovim config has uncommitted changes.'; return 1; }
+        {
+            log 'Neovim config has uncommitted changes.'
+            return 1
+        }
     [[ -f "$config/lazy-lock.json" ]] ||
-        { log 'Neovim lazy-lock.json is missing.'; return 1; }
+        {
+            log 'Neovim lazy-lock.json is missing.'
+            return 1
+        }
 }
 
 # Caller validates the checkout first. Fetch failure is tolerable during
