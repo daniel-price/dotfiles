@@ -7,6 +7,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from confirmations import Confirm, Deny, confirmation_keys
+
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "setup" / "cleanup.sh"
 SOURCE = ROOT / ".config" / "zsh" / "zshrc"
@@ -126,7 +128,7 @@ esac
             check=False, timeout=12,
         )
 
-    def run_tty(args, answers):
+    def run_tty(args, *answers):
         master, slave = pty.openpty()
         try:
             proc = subprocess.Popen(
@@ -136,7 +138,7 @@ esac
             os.close(slave)
             slave = -1
             # Send keypresses without Enter; confirmation consumes one key.
-            os.write(master, answers.replace("\n", "").encode())
+            os.write(master, confirmation_keys(*answers))
             output = proc.communicate(timeout=12)[0].decode(errors="replace")
             return proc.returncode, output
         finally:
@@ -200,8 +202,8 @@ esac
     reset_log()
     target.symlink_to(SOURCE)
     first = next(iter(pins))
-    answers = "n\n" + "".join("y\n" if name == first else "n\n" for name in pins)
-    code, out = run_tty(["--apply"], answers)
+    answers = [Deny(), *(Confirm() if name == first else Deny() for name in pins)]
+    code, out = run_tty(["--apply"], *answers)
     assert code == 0, out
     assert target.is_symlink() and zellij_target.is_symlink()
     assert not (state / f"{first}@{pins[first]}").exists()
@@ -212,7 +214,7 @@ esac
     # Subsequent approval removes only the remaining declared versions.
     reset_log()
     remaining = [(name, version) for name, version in pins.items() if name != first]
-    code, out = run_tty(["--apply"], "y\n" * (len(remaining) + 1))
+    code, out = run_tty(["--apply"], *(Confirm() for _ in range(len(remaining) + 1)))
     assert code == 0, out
     assert not target.exists() and not zellij_target.exists()
     assert not any(state.iterdir())
