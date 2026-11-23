@@ -62,7 +62,7 @@ assert "| `apt:zsh` | `linux` |" in tool_page
 with tempfile.TemporaryDirectory() as temporary:
     machine = Path(temporary) / "machine.toml"
     development = Path(temporary) / "development.toml"
-    machine.write_text((ROOT / "scripts/setup/mise.toml").read_text().replace('neovim = "0.12.6"', 'neovim = "99.1.0"'))
+    machine.write_text((ROOT / ".config/mise/base-tools.toml").read_text().replace('neovim = "0.12.6"', 'neovim = "99.1.0"'))
     development.write_text((ROOT / "mise.toml").read_text())
     changed = tools.render(machine, development)
     assert "| `neovim` | `99.1.0` |" in changed
