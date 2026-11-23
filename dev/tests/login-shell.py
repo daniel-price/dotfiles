@@ -81,7 +81,8 @@ offer_default_zsh "$TEST_PLATFORM" "$TEST_SHELLS"
                                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             os.close(slave)
             slave = -1
-            os.write(master, answer.encode())
+            # Send keypresses without Enter; confirmation consumes one key.
+            os.write(master, answer.replace("\n", "").encode())
             out = process.communicate(timeout=10)[0].decode(errors="replace")
             return subprocess.CompletedProcess(cmd, process.returncode, out)
         finally:
