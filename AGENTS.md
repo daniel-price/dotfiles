@@ -60,8 +60,9 @@ and are **not** evidence that a feature already exists.
   implementation and entry documentation/tool configuration at the root.
 - **Cleanup:** default to dry-run; remove only explicitly eligible targets after terminal confirmation. Never use `mise implode`, system package prune, forceful dotfile removal or automatic deletion of selected Profile configurations. Tool installations can be shared across projects.
 - **Docs:** user-facing guidance should be accurate, concise and task-oriented.
-  Store dense plans and older investigations under `docs/reference/`, label
-  historical material, and link to it instead of duplicating it.
+  Keep guides command-first: prerequisites, commands and essential caveats only.
+  Do not repeat safeguards, inventories or implementation details. Store dense
+  plans and older investigations under `docs/reference/` and label historical material.
 
 Do not claim a test or deployment succeeded unless it was actually run and
 verified. In particular, GitHub Pages is not live merely because its workflow
