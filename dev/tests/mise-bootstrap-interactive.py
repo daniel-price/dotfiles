@@ -358,7 +358,7 @@ esac
     assert failed.returncode != 0, failed.stdout
     assert zellij_target.is_file() and not zellij_target.is_symlink()
     assert zellij_target.read_text() == "restore me\n"
-    assert "Restored original Zellij config" in failed.stdout
+    assert "Restored " + str(zellij_target) + " after failed deployment" in failed.stdout
     (state / "fail-dot-apply").unlink()
     zellij_target.unlink()
     zellij_target.symlink_to(ROOT / ".config/zellij/config.kdl")
@@ -373,7 +373,7 @@ esac
     foreign = run("n\n" * (len(pins) + 3))
     assert foreign.returncode != 0, foreign.stdout
     assert zellij_target.is_symlink() and zellij_target.resolve() == foreign_kdl.resolve()
-    assert "Dotfile conflict" in foreign.stdout
+    assert "Skipped conflicting dotfile" in foreign.stdout
     zellij_target.unlink()
     zellij_target.symlink_to(ROOT / ".config/zellij/config.kdl")
 
