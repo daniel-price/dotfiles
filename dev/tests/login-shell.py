@@ -6,7 +6,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from confirmations import Confirm, Deny, confirmation_keys
+from confirmations import Confirm, Deny, communicate_confirmations
 
 ROOT = Path(__file__).resolve().parents[2]
 COMMON = ROOT / "lib/common.sh"
@@ -81,16 +81,11 @@ offer_default_zsh "$TEST_PLATFORM" "$TEST_SHELLS"
         try:
             process = subprocess.Popen(cmd, cwd=root, env=context, stdin=slave,
                                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            os.close(slave)
-            slave = -1
-            # Send keypresses without Enter; confirmation consumes one key.
-            os.write(master, confirmation_keys(answer))
-            out = process.communicate(timeout=10)[0].decode(errors="replace")
+            out = communicate_confirmations(process, master, slave, answer, timeout=10)
             return subprocess.CompletedProcess(cmd, process.returncode, out)
         finally:
             os.close(master)
-            if slave != -1:
-                os.close(slave)
+            os.close(slave)
 
     unattended = run()
     assert unattended.returncode == 0 and "Declined" in unattended.stdout, unattended.stdout

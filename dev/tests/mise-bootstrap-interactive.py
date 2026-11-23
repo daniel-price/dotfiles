@@ -8,7 +8,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from confirmations import Confirm, Deny, confirmation_keys
+from confirmations import Confirm, Deny, communicate_confirmations
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "bin" / ",bootstrap"
@@ -225,16 +225,11 @@ esac
             proc = subprocess.Popen(["bash", str(SCRIPT), "--no-update"], cwd=base, env=env,
                                     stdin=slave, stdout=subprocess.PIPE,
                                     stderr=subprocess.STDOUT)
-            os.close(slave)
-            slave = -1
-            # Send keypresses without Enter; confirmation consumes one key.
-            os.write(master, confirmation_keys(*answers))
-            out = proc.communicate(timeout=20)[0].decode(errors="replace")
+            out = communicate_confirmations(proc, master, slave, *answers, timeout=20)
             return subprocess.CompletedProcess([], proc.returncode, out)
         finally:
             os.close(master)
-            if slave != -1:
-                os.close(slave)
+            os.close(slave)
 
     target = home / ".zshrc"
 

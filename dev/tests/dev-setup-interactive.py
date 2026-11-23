@@ -7,7 +7,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from confirmations import Confirm, Deny, confirmation_keys
+from confirmations import Confirm, Deny, communicate_confirmations
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -72,16 +72,11 @@ esac
             process = subprocess.Popen(["bash", script], cwd=checkout, env=env,
                                        stdin=slave, stdout=subprocess.PIPE,
                                        stderr=subprocess.STDOUT)
-            os.close(slave)
-            slave = -1
-            # Send keypresses without Enter; confirmation consumes one key.
-            os.write(master, confirmation_keys(*answers))
-            out = process.communicate(timeout=12)[0].decode(errors="replace")
+            out = communicate_confirmations(process, master, slave, *answers, timeout=12)
             return process.returncode, out
         finally:
             os.close(master)
-            if slave != -1:
-                os.close(slave)
+            os.close(slave)
 
     # A checkout without shell activation can still install developer tools.
     result = quiet(["bash", script])
