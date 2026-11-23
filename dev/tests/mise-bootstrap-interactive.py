@@ -240,7 +240,7 @@ esac
     assert declined.returncode != 0, declined.stdout
     assert not list(state.iterdir()), declined.stdout
     assert "Skipped OS package installation" in declined.stdout and "Skipped neovim" in declined.stdout
-    assert "Zsh configuration: skipped (zsh unavailable)" in declined.stdout
+    assert "Dotfiles: failed" in declined.stdout
     assert not any("dot apply --yes" in line for line in log.read_text().splitlines())
     assert not any("bootstrap packages apply --yes" in line for line in log.read_text().splitlines()), "Declining package consent must never install Ghostty or its PPA"
 
@@ -266,7 +266,7 @@ esac
     ghostty_target = home / ".config/ghostty/config"
     assert ghostty_target.is_symlink() and ghostty_target.resolve() == (ROOT / ".config/ghostty/config").resolve()
     assert any(line.endswith("bootstrap packages apply --yes") for line in log.read_text().splitlines()), log.read_text()
-    assert "Zsh configuration: applied" in approved.stdout
+    assert "Dotfiles: ok" in approved.stdout
     calls = log.read_text().splitlines()
     assert any("dot apply --dry-run" in line for line in calls)
     assert sum("dot apply --yes " in line for line in calls) == 3
@@ -293,7 +293,7 @@ esac
     zoxide_before_repeat = sum(line.endswith(f"install zoxide@{pins['zoxide']}") for line in calls)
     repeated = run()
     assert repeated.returncode == 0, repeated.stdout
-    assert "Zsh configuration: applied" in repeated.stdout
+    assert "Dotfiles: ok" in repeated.stdout
     assert sum("dot apply --yes" in line for line in log.read_text().splitlines()) == dot_before_repeat
     assert sum("bootstrap packages apply --yes" in line for line in log.read_text().splitlines()) == packages_before_repeat
     assert sum(line.endswith(f"install zoxide@{pins['zoxide']}") for line in log.read_text().splitlines()) == zoxide_before_repeat
@@ -383,7 +383,7 @@ esac
     before = len(log.read_text().splitlines())
     conflict = run()
     assert conflict.returncode != 0, conflict.stdout
-    assert "Zsh configuration: not applied" in conflict.stdout
+    assert "Dotfiles: failed" in conflict.stdout
     assert target.read_text() == "personal shell setup\\n"
     assert not any("dot apply --yes" in line for line in log.read_text().splitlines()[before:])
     target.unlink()
@@ -394,7 +394,7 @@ esac
     conflict_link = run()
     assert conflict_link.returncode != 0, conflict_link.stdout
     assert target.is_symlink() and target.resolve() == other.resolve()
-    assert "Zsh configuration: not applied" in conflict_link.stdout
+    assert "Dotfiles: failed" in conflict_link.stdout
     target.unlink()
 
     # Noninteractive runs preview the safe deployment but never approve it.
@@ -402,7 +402,7 @@ esac
     unattended = run()
     assert unattended.returncode != 0, unattended.stdout
     assert not target.exists()
-    assert "Zsh configuration: not applied" in unattended.stdout
+    assert "Dotfiles: failed" in unattended.stdout
     assert any("dot apply --dry-run" in line for line in log.read_text().splitlines()[before:])
     assert not any("dot apply --yes " in line for line in log.read_text().splitlines()[before:])
 
