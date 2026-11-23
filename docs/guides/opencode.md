@@ -3,7 +3,8 @@
 OpenCode is a coding agent with file and shell tools. Its built-in permission
 prompts are **not OS isolation**. For personal development on Pop!_OS,
 the reviewed default is **one disposable rootless Podman container per launch**.
-For untrusted or unattended work, prefer a separate disposable VM.
+The container is disposable, but project-scoped OpenCode session data persists
+in a rootless Podman named volume. For untrusted or unattended work, prefer a separate disposable VM.
 
 **Only the rootless Podman sandbox is supported.** OpenCode is not installed
 on the host through mise. Select the `opencode` mise environment on your
@@ -51,6 +52,8 @@ explicitly):
 cd /path/to/your/personal-git-repo
 opencode-sandbox --dry-run    # Preview; no Podman calls or network
 opencode-sandbox              # Confirm pull, build, then launch
+opencode-sandbox -c           # Continue the current project's latest session
+opencode-sandbox -s ses_...   # Resume a saved session ID
 ```
 
 On first use the launcher independently asks before **pulling the base image**,
@@ -58,6 +61,15 @@ On first use the launcher independently asks before **pulling the base image**,
 runs, it asks before launching but reuses the existing local image.
 Noninteractive and piped approvals are rejected. You may select a different
 repository with `--project /absolute/path/to/repository`.
+The `-s`/`--session ID` and `-c`/`--continue` options are explicit
+OpenCode pass-throughs and cannot be combined; arbitrary Podman/OpenCode flags
+remain disallowed.
+
+Persistent state uses a rootless Podman named volume derived from the canonical
+Git checkout path (`dotfiles-opencode-<hash>`), mounted at `/state` with
+`XDG_DATA_HOME=/state`. Reopening the same checkout reuses sessions; a different
+path gets a different volume. **Previous ephemeral sandbox sessions cannot be
+recovered**, and host OpenCode sessions are never imported.
 
 See the [generated CLI reference](cli.md#opencode-sandbox) for the current launcher flags.
 
@@ -69,10 +81,12 @@ home directories, arbitrary mounts and running as root are refused.
 
 The reviewed launcher runs with:
 
-- A **single read/write bind mount**: the selected repo at `/workspace`
+- A **single host-directory bind mount**: the selected repo at `/workspace` (read/write)
+- A separate per-project **Podman named volume** at `/state` for persistent OpenCode data
 - No host home, `~/.ssh`, Git/cloud credentials, unrelated directories,
   or Docker/Podman socket mounts
-- An **ephemeral** container home under `/tmp` with no persistent auth
+- An **ephemeral** container home/config/cache under `/tmp`, with sessions and
+  potentially saved provider credentials persisting in the named volume
 - Rootless Podman with mapped user UID/GID, all Linux capabilities dropped,
   `no-new-privileges`, read-only image filesystem, memory and PID limits
 - No published server ports and no arbitrary Podman/agent command flags
@@ -100,11 +114,13 @@ Supported names: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` and
 literal values in Podman's command arguments; Podman forwards the selected
 environment variable **to the agent**, so the agent may use or exfiltrate it.
 Prefer revocable keys with limited spending and permissions. Do not put
-token values in shell history or the repository. Interactive provider logins
-inside the container disappear when the container exits.
+token values in shell history or the repository. Interactive provider logins may persist if OpenCode stores them in its data directory.
 
-Persistent OAuth/provider login would require a separately reviewed state
-volume and is deliberately **not enabled**.
+**Persistence security trade-off:** session transcripts, snapshots and stored
+provider credentials (including API keys or OAuth tokens) may remain in the
+named volume after the container exits. This is not an encryption boundary.
+No host credentials are mounted by default. Use trusted code, limit provider
+permissions and remove state you no longer need.
 
 ### Developer dependencies
 
@@ -126,12 +142,18 @@ podman images
 ```
 
 The launcher reuses the local image; version changes are deliberate.
-The existing `setup/cleanup.sh` only manages mise tools, not
-Podman images. To remove the custom image after review:
+The existing `setup/cleanup.sh` manages mise tools, not
+Podman images or session volumes. Removing the image does not remove state.
+To remove the custom image after review:
 
 ```sh
 podman image rm localhost/dotfiles-opencode-sandbox:2.3.0-r1
 ```
+
+List sandbox state volumes with `podman volume ls --filter name=dotfiles-opencode-`.
+Check the exact volume name using `opencode-sandbox --dry-run` before running
+`podman volume rm VOLUME_NAME`; **this permanently deletes session history
+and saved credentials**. Do not remove volumes you still need.
 
 Podman and unrelated images remain untouched. If you previously installed
 `opencode@2.3.0` on the host from an earlier PR, removing that manifest entry
