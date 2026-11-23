@@ -11,7 +11,7 @@ Two tracks: **capabilities** prove reusable mechanisms; **tools/apps** adopt the
 | Dotfile deployment | Zsh and Zellij implemented with mise | Add reviewed configs as needed |
 | Optional pinned Git dependencies | Powerlevel10k and zsh-autosuggestions implemented | Reuse as needed |
 | Guarded Git update and selective cleanup | Implemented | Explicit upgrades, drift and rollback |
-| Profiles and modules | **Mise-native migration started:** Base config and sandbox-only OpenCode module deployed through mise; [guide](guides/mise-modules.md). Legacy [profiles](guides/profiles.md) remain for migration. | Validate real bootstrap on Pop!_OS/macOS, private-repo two-pass setup, deactivation, then remove old custom profile code |
+| Machine modules | Base config and sandbox-only OpenCode module configured through native mise; [guide](guides/mise-modules.md). | Test module selection on Pop!_OS/macOS, private-repo setup and deselection |
 | Encrypted environment values | POC ready for manual validation | [**POC 1A:** age + mise, fake token and second-machine restore](guides/age-env-poc.md) |
 | Encrypted files/history | POC ready for manual validation | [**POC 1B:** synthetic encrypted file, Git history inspection and restore](guides/age-file-poc.md) |
 | Device identities (SSH/age) | Planned | New SSH identity and age recovery POC |
@@ -23,26 +23,19 @@ Suggested sequence: **secrets → identities → config layering → services �
 
 Each POC must answer one architectural question and include a manual test plan. Validate preview, approval/refusal, no-op rerun, conflicts, failure, recovery and platform differences as relevant. For encryption, also verify ciphertext-only Git history, missing-key failure and recovery on a fresh machine. Never use real credentials or work-owned repositories in experiments.
 
-## Profiles roadmap
+## Machine modules roadmap
 
-**2026-11-23 direction:** Prefer native mise modules for new machines; this table below describes the legacy Profile implementation and its historical backlog, not the new target architecture. The next migration milestone is safely retiring custom profile composition after real-machine verification. See [mise modules](guides/mise-modules.md).
+Use native mise configuration environments to select tools and services per
+machine. Keep public optional modules in `dotfiles`, and use local, explicitly
+authorised `[bootstrap.repos]` declarations for private sources.
 
-**Base** is the shared configuration in this repository. **Profiles** are reusable, explicitly selected Git repositories: for example, a personal laptop can use `personal`, a work Mac can use `personal` and an employer-approved `work` profile, and a home server can use `home-server`. Profile selection never blocks Base bootstrap. **Local** (per-device configuration) is not implemented and is deferred until a concrete need arises.
-
-| Status | Capability | Scope / acceptance criteria |
+| Priority | Capability | Next step |
 | --- | --- | --- |
-| **Implemented / next** | Profile lifecycle: activate, deactivate, update and rollback | **Implemented:** activation and deactivation with preview, consent, owned-symlink cleanup and preservation of clones/installed tools. **Next:** reviewed Git fast-forward updates, explicit removal/rollback and recovery tests on real macOS and Pop!_OS machines. |
-| **Implemented (opt-in)** | Literal non-secret environment variables | An optional `[env]` table in profile `mise.toml`, with string-only values, reserved-name checks and cross-profile conflict refusal. Effective variables are declared through the managed mise manifest; no arbitrary environment scripts or secrets in Git. |
-| **Next** | PATH composition and environment precedence | Declarative extra search paths, order, portability and composition across Profiles; refuse unsafe paths and clashes. Local is out of scope. No automatic execution of profile snippets. |
-| **Next** | Profile OS packages | Declare additional packages per OS (`apt` on Pop!_OS, Homebrew on macOS). Preview the exact package/OS operations, ask before each install/upgrade and prevent unreviewed removals; reuse existing declarative mise integration where suitable. |
-| **Next** | Git identity and configuration | Per-profile Git user/email, signing preference, aliases and `includeIf` scoped to authorised directories or repositories. Avoid changing global identity for unrelated work; never store signing private keys in Git. |
-| **Later** | GUI applications and settings | Optional per-platform apps (e.g. browser, Ghostty, VS Code), with tested installers, paths, permissions and explicit approval; treat app installation separately from file configuration. |
-| **Later** | OS/device preferences | Keyboard, power, display and other reversible settings; preview OS-specific effects and provide a rollback path. |
-| **Later** | Services and scheduled jobs | Home-server examples: Jellyfin, Radarr and backup timers. Test rootless services, permissions, restart policy, persistent volumes, health checks and recovery. |
-| **Later** | Secrets references | Profiles name required secrets or encrypted files but **never** contain credentials or private keys in plaintext. Use independently secured identities, recovery and per-machine access controls. |
-| **Deferred** | Local per-device configuration | Only add this concept when real device-only settings (hostnames, mount paths, monitor layouts) need management. Until then, leave them manually configured; if added, test Base → Profiles → Local precedence and rollback. |
-
-Start with real-profile manual validation and safe Git update/rollback. Environment values and profile deactivation are implemented; add the remaining **Next** capabilities (PATH, OS packages and Git identity) as separate, narrowly scoped POCs. Add GUI, OS settings, services and secrets references only with their own security and rollback tests. Do not implement Local yet. Work-owned material must remain in employer-approved storage.
+| Next | Native module validation | Test Base, work, personal and home-server combinations, opt-in PATH and refusal |
+| Next | Private repositories | Test safe checkout, local module loading and idempotent updates with synthetic Git fixtures |
+| Next | Module removal | Preview deselection, installed-tool retention and explicit resource cleanup |
+| Later | Service lifecycle | Prototype rootless Radarr containers, volumes, backups and scheduled jobs |
+| Later | OS and device preferences | Add reversible host settings only when needed |
 
 ## Tools, apps and services
 

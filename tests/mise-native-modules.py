@@ -46,8 +46,13 @@ for manifest in (bootstrap, global_config, base_tools, opencode):
 # .config/mise/config.toml; only the root mise.toml declares dev tools.
 assert not (ROOT / ".config/mise/config.toml").exists()
 
-startup = (ROOT / ".config/zsh/profiles.zsh").read_text()
-assert 'elif [[ ! -f "$HOME/.config/mise/config.toml" ]]' in startup
-assert "unset MISE_GLOBAL_CONFIG_FILE" in startup
+startup = (ROOT / ".config/zsh/zshrc").read_text()
+assert "profiles.zsh" not in startup
+assert "MISE_GLOBAL_CONFIG_FILE" not in startup
+assert "mise activate zsh" in startup
+assert not (ROOT / ".config/zsh/profiles.zsh").exists()
+assert not (ROOT / "scripts/setup/profile.sh").exists()
+assert not (ROOT / "scripts/setup/profile-config.py").exists()
+assert not (ROOT / "bin/,profile").exists()
 
 print("PASS: Shared Base and optional sandbox-only OpenCode, never host-installed")

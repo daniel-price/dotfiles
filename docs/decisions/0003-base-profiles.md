@@ -1,6 +1,6 @@
 # ADR-0003: Standalone Base with optional Profiles
 
-**Status:** Accepted (terminology updated 2026-11-22)
+**Status:** Superseded (2026-11-23) by native mise modules; retained as decision history.
 **Date:** 2026-11-15
 
 ## Context
@@ -26,6 +26,6 @@ The current tested composition is **Base → selected Profiles**. Detect conflic
 
 ## Consequences and follow-up
 
-The [Profiles feature](../guides/profiles.md) implements explicit selection and a constrained subset of tool, environment, shell and app configuration. Finish safe Git updates and rollback before production rollout. Introduce Local only if actual device-specific needs justify it, as tracked in the [roadmap](../roadmap.md).
+The [historical Profiles feature](../guides/mise-modules.md) implements explicit selection and a constrained subset of tool, environment, shell and app configuration. Finish safe Git updates and rollback before production rollout. Introduce Local only if actual device-specific needs justify it, as tracked in the [roadmap](../roadmap.md).
 
-The original design referred to “public/private/local” layers; these were deployment/security properties, not the current user-facing model. [Base and Profiles architecture](../architecture/configuration.md).
+The original design referred to “public/private/local” layers; these were deployment/security properties, not the current user-facing model. [Current configuration architecture](../architecture/configuration.md).

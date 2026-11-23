@@ -1,9 +1,7 @@
 # Mise-native machine modules
 
-**Status:** Implemented for Base and public OpenCode module; private work and
-Radarr are documented patterns to validate with authorised repositories.
-This is the replacement for the [legacy custom Profile mechanism](profiles.md),
-which is retained during migration.
+**Status:** Base and sandbox-only OpenCode module implemented. Private work
+scripts and Radarr are documented examples pending validation.
 
 ## How it fits together
 
@@ -114,19 +112,12 @@ Actual Radarr service/container setup, persistence, secrets and updates
 must be designed and tested separately; no Radarr service is installed
 by this public repository.
 
-## Safety, migration and removal
+## Safety and removal
 
 - **Conflicts are preserved.** `,bootstrap` must not replace a foreign
   `~/.config/mise/config.toml` or module file without explicit resolution.
   If a link cannot be applied, inspect it manually; do not use `--force`
   on unrelated configuration.
-- **Legacy custom profiles:** Deactivate each old `,profile` selection
-  while the command still exists. It does not uninstall previously installed
-  native OpenCode, so remove any previously installed host CLI separately
-  after confirming other projects do not use it. The sandbox launcher is
-  accessible only while the `opencode` module is selected.
-  Remove old generated files only through the existing deactivation path.
-  Then open a new shell to use native module selection.
 - **Deselecting:** Edit `miserc.local.toml` to remove an environment.
   This stops loading it but **does not uninstall its tools or delete repos**.
   For resources managed by the module, preview

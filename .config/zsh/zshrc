@@ -28,9 +28,37 @@ if [[ -d "$_dotfiles_bin" && ":$PATH:" != *":$_dotfiles_bin:"* ]]; then
 fi
 unset _dotfiles_bin
 
-# Initialize Base and selected Profiles; all scratch variables stay function-local.
+# Activate mise with native global config and selected machine modules.
 _dotfiles_zsh_dir=${${(%):-%x}:A:h}
-source "$_dotfiles_zsh_dir/profiles.zsh"
+if (( $+commands[mise] )); then
+  eval "$(mise activate zsh)"
+elif [[ -x "$HOME/.local/bin/mise" ]]; then
+  eval "$("$HOME/.local/bin/mise" activate zsh)"
+fi
+
+# Zoxide must initialize before its bookmark wrapper.
+if (( $+commands[zoxide] )); then
+  eval "$(zoxide init zsh)"
+  [[ -r "$_dotfiles_zsh_dir/zoxide-bookmarks.zsh" ]] &&
+    source "$_dotfiles_zsh_dir/zoxide-bookmarks.zsh"
+fi
+
+if [[ -o interactive ]]; then
+  if [[ -d "$_dotfiles_zsh_dir/functions" ]]; then
+    fpath=("$_dotfiles_zsh_dir/functions" $fpath)
+    for _dotfiles_function in "$_dotfiles_zsh_dir/functions"/*(N-.); do
+      autoload -Uz "${_dotfiles_function:t}"
+    done
+    unset _dotfiles_function
+  fi
+  autoload -Uz compinit
+  compinit
+  [[ -r "$_dotfiles_zsh_dir/completions.zsh" ]] &&
+    source "$_dotfiles_zsh_dir/completions.zsh"
+fi
+
+[[ -r "$_dotfiles_zsh_dir/aliases.zsh" ]] &&
+  source "$_dotfiles_zsh_dir/aliases.zsh"
 
 # doc: prompt theme | Powerlevel10k is loaded for interactive Zsh outside VS Code when installed; otherwise the default prompt remains.
 # doc: prompt font | Use a Nerd Font in your terminal to display prompt glyphs correctly.
