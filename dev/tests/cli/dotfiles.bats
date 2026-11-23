@@ -7,6 +7,7 @@ setup() {
   export ACTION_LOG="$BATS_TEST_TMPDIR/actions"
   export FAKE_SOURCE="$BATS_TEST_TMPDIR/source"
   export FAKE_FINAL_STATUS=0
+  export APPROVE_CONFLICTS=0
   export FAKE_ROWS=''
   mkdir -p "$HOME/.config/zellij"
   printf 'managed\n' >"$FAKE_SOURCE"
@@ -28,10 +29,7 @@ elif [[ "$3" == exec && "$4" == -- && "$5" == jq ]]; then
 elif [[ "$3" == dot && "$4" == apply ]]; then
   target="${@: -1}"
   if [[ "$5" == --dry-run ]]; then
-    # Mise rejects a foreign symlink unless explicitly forced.
-    if [[ -L "$target" && "${6:-}" != --force ]]; then
-      exit 17
-    fi
+    # Mise may repoint an existing symlink without --force.
     printf 'preview:%s\n' "$target" >>"$ACTION_LOG"
   elif [[ "$5" == --yes ]]; then
     printf 'apply:%s\n' "$target" >>"$ACTION_LOG"
@@ -50,7 +48,7 @@ SH
 }
 
 run_dotfiles() {
-  bash -c 'source "$1"; source "$2"; confirm() { return 0; }; apply_reviewed_dotfiles "$3"' \
+  bash -c 'source "$1"; source "$2"; confirm() { [[ "$1" != *"conflicting dotfile"* ]] || [[ "$APPROVE_CONFLICTS" == 1 ]]; }; apply_reviewed_dotfiles "$3"' \
     _ "$COMMON" "$DOTFILES" "$MISE"
 }
 
@@ -63,7 +61,7 @@ run_dotfiles() {
 
   run run_dotfiles
   [ "$status" -ne 0 ]
-  [[ "$output" == *'Dotfile conflict'* ]]
+  [[ "$output" == *'Skipped conflicting dotfile'* ]]
   [ "$(readlink "$HOME/.config/zellij/config.kdl")" = "$BATS_TEST_TMPDIR/foreign" ]
   [ -L "$HOME/.zshrc" ]
   ! grep -q "apply:$HOME/.config/zellij/config.kdl" "$ACTION_LOG"
@@ -80,6 +78,7 @@ run_dotfiles() {
 }
 
 @test "existing regular Zellij config is backed up before applying" {
+  export APPROVE_CONFLICTS=1
   printf 'original\n' >"$HOME/.config/zellij/config.kdl"
   export FAKE_ROWS
   FAKE_ROWS=$(printf 'differs\t%s\n' "$HOME/.config/zellij/config.kdl")
@@ -90,6 +89,20 @@ run_dotfiles() {
   backups=("$HOME"/.config/zellij/config.kdl.backup-*)
   [ "${#backups[@]}" -eq 1 ]
   [ "$(cat "${backups[0]}")" = original ]
+}
+
+@test "approved foreign symlink is backed up before replacement" {
+  export APPROVE_CONFLICTS=1
+  ln -s "$BATS_TEST_TMPDIR/foreign" "$HOME/.config/zellij/config.kdl"
+  export FAKE_ROWS
+  FAKE_ROWS=$(printf 'differs\t%s\n' "$HOME/.config/zellij/config.kdl")
+
+  run run_dotfiles
+  [ "$status" -eq 0 ]
+  [ "$(readlink "$HOME/.config/zellij/config.kdl")" = "$FAKE_SOURCE" ]
+  backups=("$HOME"/.config/zellij/config.kdl.backup-*)
+  [ "${#backups[@]}" -eq 1 ]
+  [ "$(readlink "${backups[0]}")" = "$BATS_TEST_TMPDIR/foreign" ]
 }
 
 @test "fully applied dotfiles need no changes (including Bash 3.2)" {
