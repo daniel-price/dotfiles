@@ -6,7 +6,8 @@ apply_reviewed_dotfiles() {
     local mise=$1 status_json rows state target
     local zellij_target="$HOME/.config/zellij/config.kdl"
     local failed=0 backup timestamp suffix
-    local -a candidates=() reviewed=() force=()
+    local candidate_count=0 reviewed_count=0
+    local -a candidates=() reviewed=()
 
     status_json=$("$mise" -C / dot status --json) || {
         log 'Could not inspect mise-managed dotfiles.'
@@ -33,6 +34,7 @@ apply_reviewed_dotfiles() {
             if [[ ! -e "$target" && ! -L "$target" ]] ||
                 [[ "$target" == "$zellij_target" && -f "$target" && ! -L "$target" ]]; then
                 candidates+=("$target")
+                candidate_count=$((candidate_count + 1))
             else
                 printf '[error] Dotfile conflict; left untouched: %s\n' "$target" >&2
                 failed=1
@@ -45,21 +47,29 @@ apply_reviewed_dotfiles() {
         esac
     done <<<"$rows"
 
-    for target in "${candidates[@]}"; do
-        force=()
-        if [[ "$target" == "$zellij_target" && -f "$target" && ! -L "$target" ]]; then
-            force=(--force)
-        fi
-        if "$mise" -C / dot apply --dry-run "${force[@]}" "$target"; then
-            reviewed+=("$target")
-        else
-            printf '[error] Could not preview dotfile: %s\n' "$target" >&2
-            failed=1
-        fi
-    done
+    # Bash 3.2 (macOS) treats an empty array expansion as unbound under set -u.
+    if ((candidate_count > 0)); then
+        for target in "${candidates[@]}"; do
+            if [[ "$target" == "$zellij_target" && -f "$target" && ! -L "$target" ]]; then
+                if "$mise" -C / dot apply --dry-run --force "$target"; then
+                    reviewed+=("$target")
+                    reviewed_count=$((reviewed_count + 1))
+                else
+                    printf '[error] Could not preview dotfile: %s\n' "$target" >&2
+                    failed=1
+                fi
+            elif "$mise" -C / dot apply --dry-run "$target"; then
+                reviewed+=("$target")
+                reviewed_count=$((reviewed_count + 1))
+            else
+                printf '[error] Could not preview dotfile: %s\n' "$target" >&2
+                failed=1
+            fi
+        done
+    fi
 
-    if (("${#reviewed[@]}" > 0)); then
-        if confirm "Apply ${#reviewed[@]} reviewed dotfile(s), backing up an existing regular Zellij config?"; then
+    if ((reviewed_count > 0)); then
+        if confirm "Apply $reviewed_count reviewed dotfile(s), backing up an existing regular Zellij config?"; then
             for target in "${reviewed[@]}"; do
                 backup=''
                 if [[ "$target" == "$zellij_target" && -f "$target" && ! -L "$target" ]]; then
