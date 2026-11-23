@@ -161,7 +161,13 @@ case "$*" in
     [[ -L "$HOME/.config/zellij/config.kdl" && "$HOME/.config/zellij/config.kdl" -ef "$MOCK_ZELLIJ_SOURCE" ]] || exit 1
     [[ -L "$HOME/.config/ghostty/config" && "$HOME/.config/ghostty/config" -ef "$MOCK_GHOSTTY_SOURCE" ]] || exit 1
     ;;
-  "dot apply --dry-run"*) exit 0 ;;
+  "dot apply --dry-run"*)
+    target="${@: -1}"
+    if [[ "$*" == "dot apply --dry-run --force "* && "$target" == "$HOME/.config/zellij/config.kdl" ]]; then
+      exit 0
+    fi
+    [[ ! -e "$target" && ! -L "$target" ]] || exit 17
+    ;;
   "dot apply --yes "*)
     target="${@: -1}"
     [[ ! -e "$MOCK_STATE/fail-dot-apply" ]] || exit 18
