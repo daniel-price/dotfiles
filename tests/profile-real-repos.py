@@ -291,7 +291,8 @@ exit 0
     assert (home / ".dotfiles-profiles/server/.git").is_dir()
     assert sentinel.read_text() == "untouched"
 
-    # A nested Zsh with a stale managed override must now fall back to Base.
+    # After the last legacy deactivation, native mise discovery supersedes
+    # the stale generated manifest override.
     if shutil.which("zsh"):
         fallback = subprocess.run(
             ["zsh", "-ic", "print -r -- BASE=$MISE_GLOBAL_CONFIG_FILE"],
@@ -299,6 +300,8 @@ exit 0
             cwd=tmp, capture_output=True, text=True, timeout=20,
         )
         assert fallback.returncode == 0, fallback.stdout + fallback.stderr
-        assert "BASE=" + str(ROOT / "scripts/setup/mise.toml") in fallback.stdout
+        assert "BASE=" in fallback.stdout, fallback.stdout
+        assert "BASE=" + str(manifest) not in fallback.stdout, fallback.stdout
+        assert "BASE=" + str(ROOT / "scripts/setup/mise.toml") not in fallback.stdout
 
     print("PASS: real profile clone, env, consent, deactivation, Zsh, app links and conflicts")

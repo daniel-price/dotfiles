@@ -65,6 +65,15 @@ if mise:
             )
         assert "opencode" in selected(["home-server", "opencode", "radarr"])
         assert "opencode" not in selected(["home-server", "radarr"])
+
+        # A private conf.d folder is loaded only for its selected environment.
+        private_module = config / "conf.d/radarr"
+        private_module.mkdir(parents=True)
+        (private_module / "mise.radarr.toml").write_text(
+            '[tools]\\njust = "1.40.0"\\n'.replace("\\\\n", "\\n")
+        )
+        assert "just" not in selected(["personal", "opencode"])
+        assert "just" in selected(["home-server", "radarr"])
 else:
     print("SKIP: real native mise resolution (mise not installed)")
 
