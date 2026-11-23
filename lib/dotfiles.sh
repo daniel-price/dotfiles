@@ -1,89 +1,107 @@
 #!/usr/bin/env bash
-# Apply independent mise-managed dotfiles while preserving conflicting targets.
-# Requires the reviewed machine tool set (including jq) to be provisioned first.
+# Deploy mise-managed dotfiles without allowing one conflict to block others.
 
 apply_reviewed_dotfiles() {
-    local mise=$1 status_json targets target
-    local zellij_target="$HOME/.config/zellij/config.kdl"
-    local failed=0 backup timestamp suffix reviewed_count=0
-    local -a reviewed=()
+    local mise=$1 status_json rows state target backup timestamp suffix
+    local failed=0 missing_count=0 conflict_count=0
+    local -a missing=() conflicts=()
 
+    # Mise is the source of truth for declarations and pending changes.
     status_json=$("$mise" -C / dot status --json) || {
         log 'Could not inspect mise-managed dotfiles.'
         return 1
     }
-    targets=$(printf '%s\n' "$status_json" |
-        "$mise" -C / exec -- jq -r '.files[] | select(.state == "missing" or .state == "differs") | .target') || {
+    rows=$(printf '%s\n' "$status_json" |
+        "$mise" -C / exec -- jq -r '.files[] | select(.state == "missing" or .state == "differs" or .state == "source_missing") | [.state, .target] | @tsv') || {
         log 'Could not read mise dotfile status (jq is required).'
         return 1
     }
 
-    # Let mise decide which entries can be safely applied: do not reimplement
-    # its symlink, content, or conflict detection in shell.
-    while IFS= read -r target; do
-        [[ -n "$target" ]] || continue
+    # Preview every pending target before making any changes.
+    while IFS=$'\t' read -r state target; do
+        [[ -n "$state" ]] || continue
         case "$target" in
         \~/*) target="$HOME/${target:2}" ;;
         esac
 
-        # Preserve the existing recoverable Zellij regular-file migration.
-        if [[ "$target" == "$zellij_target" && -f "$target" && ! -L "$target" ]]; then
-            if "$mise" -C / dot apply --dry-run --force "$target"; then
-                reviewed+=("$target")
-                reviewed_count=$((reviewed_count + 1))
+        if [[ "$state" == source_missing ]]; then
+            printf '[error] Dotfile source missing: %s\n' "$target" >&2
+            failed=1
+        elif [[ ! -e "$target" && ! -L "$target" ]]; then
+            if "$mise" -C / dot apply --dry-run "$target"; then
+                missing+=("$target")
+                missing_count=$((missing_count + 1))
             else
                 printf '[error] Dotfile preview failed: %s\n' "$target" >&2
                 failed=1
             fi
-        elif "$mise" -C / dot apply --dry-run "$target"; then
-            reviewed+=("$target")
-            reviewed_count=$((reviewed_count + 1))
+        elif [[ -f "$target" || -L "$target" ]]; then
+            # Even a foreign symlink is a conflict: mise may repoint it without --force.
+            if "$mise" -C / dot apply --dry-run --force "$target"; then
+                conflicts+=("$target")
+                conflict_count=$((conflict_count + 1))
+            else
+                printf '[error] Dotfile conflict could not be previewed: %s\n' "$target" >&2
+                failed=1
+            fi
         else
-            printf '[error] Dotfile conflict or preview failure; left untouched: %s\n' "$target" >&2
+            printf '[error] Dotfile is neither a regular file nor a symlink; left untouched: %s\n' "$target" >&2
             failed=1
         fi
-    done <<<"$targets"
+    done <<<"$rows"
 
-    if ((reviewed_count > 0)); then
-        if confirm "Apply $reviewed_count reviewed dotfile(s), backing up an existing regular Zellij config?"; then
-            for target in "${reviewed[@]}"; do
-                backup=''
-                if [[ "$target" == "$zellij_target" && -f "$target" && ! -L "$target" ]]; then
-                    timestamp=$(date +%Y%m%d-%H%M%S)
-                    backup="$target.backup-$timestamp"
-                    suffix=0
-                    while [[ -e "$backup" || -L "$backup" ]]; do
-                        suffix=$((suffix + 1))
-                        backup="$target.backup-$timestamp-$suffix"
-                    done
-                    if ! mv -- "$target" "$backup"; then
-                        printf '[error] Could not back up Zellij config: %s\n' "$target" >&2
-                        failed=1
-                        continue
-                    fi
-                    log "Backed up existing Zellij config to $backup"
-                fi
+    if ((missing_count > 0)); then
+        if confirm "Apply $missing_count missing mise-managed dotfile(s)?"; then
+            for target in "${missing[@]}"; do
                 if ! "$mise" -C / dot apply --yes "$target"; then
-                    printf '[error] Could not apply dotfile: %s\n' "$target" >&2
+                    printf '[error] Dotfile apply failed: %s\n' "$target" >&2
                     failed=1
-                    if [[ -n "$backup" && ! -e "$target" && ! -L "$target" ]]; then
-                        if mv -- "$backup" "$target"; then
-                            log 'Restored original Zellij config after failed deployment.'
-                        else
-                            printf '[error] Could not restore Zellij backup: %s\n' "$backup" >&2
-                        fi
-                    fi
                 fi
             done
         else
-            log 'Dotfile deployment declined; missing targets remain unchanged.'
+            log 'Declined installation of missing dotfiles.'
             failed=1
         fi
     fi
 
-    # Capture missing sources and unresolved conflicts in the final exit status.
+    if ((conflict_count > 0)); then
+        for target in "${conflicts[@]}"; do
+            # Existing content is never overwritten automatically. Every conflict
+            # gets a separate approval and an on-disk backup before mise applies.
+            if ! confirm "Back up and replace conflicting dotfile $target?"; then
+                log "Skipped conflicting dotfile: $target"
+                failed=1
+                continue
+            fi
+            timestamp=$(date +%Y%m%d-%H%M%S)
+            backup="$target.backup-$timestamp"
+            suffix=0
+            while [[ -e "$backup" || -L "$backup" ]]; do
+                suffix=$((suffix + 1))
+                backup="$target.backup-$timestamp-$suffix"
+            done
+            if ! mv -- "$target" "$backup"; then
+                printf '[error] Could not back up dotfile: %s\n' "$target" >&2
+                failed=1
+                continue
+            fi
+            log "Backed up $target to $backup"
+            if ! "$mise" -C / dot apply --yes "$target"; then
+                printf '[error] Dotfile apply failed: %s\n' "$target" >&2
+                failed=1
+                if [[ ! -e "$target" && ! -L "$target" ]]; then
+                    if mv -- "$backup" "$target"; then
+                        log "Restored $target after failed deployment."
+                    else
+                        printf '[error] Could not restore dotfile backup: %s\n' "$backup" >&2
+                    fi
+                fi
+            fi
+        done
+    fi
+
     if ! "$mise" -C / dot status --missing; then
-        log 'Some managed dotfiles remain unapplied or conflicting.'
+        log 'Some mise-managed dotfiles remain unapplied or conflicting.'
         failed=1
     fi
     return "$failed"
