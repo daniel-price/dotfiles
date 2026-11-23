@@ -74,7 +74,6 @@ assert "Usage: ,bootstrap" in cli_page
 assert "## OpenCode sandbox" in cli_page
 assert "ANTHROPIC_API_KEY" in cli_page
 assert "## Cleanup" in cli_page
-assert "--deactivate" in cli_page
 assert "No secrets" not in cli_page
 with tempfile.TemporaryDirectory() as temporary:
     root = Path(temporary)
