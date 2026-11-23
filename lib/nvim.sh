@@ -44,7 +44,7 @@ nvim_clone_checkout() {
     # Force HTTPS so gh's credential helper works regardless of git_protocol.
     # Git's environment-scoped settings affect only this clone, not ~/.gitconfig.
     GIT_CONFIG_COUNT=2 \
-        GIT_CONFIG_KEY_0=credential.helper GIT_CONFIG_VALUE_0= \
+        GIT_CONFIG_KEY_0=credential.helper GIT_CONFIG_VALUE_0='' \
         GIT_CONFIG_KEY_1=credential.https://github.com.helper \
         GIT_CONFIG_VALUE_1='!gh auth git-credential' \
         gh repo clone "$NVIM_CONFIG_REMOTE" "$config" -- --branch main --single-branch
