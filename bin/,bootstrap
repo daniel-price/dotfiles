@@ -130,13 +130,17 @@ main() {
         fi
 
         if [[ ! -e "$config" ]]; then
-            if ! confirm "Clone the public LazyVim configuration into $config?"; then
+            if ! confirm "Clone LazyVim into $config using authenticated GitHub CLI?"; then
                 log 'Neovim configuration clone declined.'
                 return 0
             fi
+        fi
+
+        nvim_ensure_gh "$mise" || return 1
+        if [[ ! -e "$config" ]]; then
             mkdir -p "$HOME/.config" || return 1
-            git clone --branch main --single-branch "$NVIM_CONFIG_REMOTE" "$config" ||
-                { log 'Could not clone the LazyVim configuration.'; return 1; }
+            nvim_clone_checkout "$config" ||
+                { log 'Could not clone LazyVim using GitHub CLI.'; return 1; }
         fi
 
         nvim_validate_checkout "$config" || return 1

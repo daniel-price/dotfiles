@@ -34,6 +34,7 @@ main() {
         return 0
     fi
 
+    nvim_ensure_gh "$mise" || die 'GitHub CLI is unavailable.'
     nvim_sync_checkout "$config" || die "Neovim checkout sync failed."
 
     # A failed update or validation restores the previous tracked lockfile and
@@ -74,7 +75,7 @@ main() {
         die 'Could not stage lazy-lock.json.'
     git -C "$config" commit -m 'chore(nvim): update locked plugins' -- lazy-lock.json ||
         die 'Could not commit lazy-lock.json.'
-    if ! git -C "$config" push origin main; then
+    if ! nvim_gh_git -C "$config" push origin main; then
         die 'Push failed; the validated local commit was preserved.'
     fi
     log 'Neovim plugins updated, validated, committed and pushed.'

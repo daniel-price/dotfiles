@@ -3,6 +3,53 @@
 
 NVIM_CONFIG_REMOTE='https://github.com/daniel-price/lazyvim.git'
 
+# Bootstrap may have installed gh through mise without updating this shell's PATH.
+nvim_ensure_gh() {
+    local mise=$1 executable
+
+    if command -v gh >/dev/null 2>&1; then
+        return 0
+    fi
+    executable=$("$mise" -C / which gh 2>/dev/null) || {
+        log 'GitHub CLI is unavailable; install the pinned gh tool and authenticate with gh auth login.'
+        return 1
+    }
+    [[ -x "$executable" ]] || {
+        log "GitHub CLI is not executable: $executable"
+        return 1
+    }
+    export PATH="${executable%/*}:$PATH"
+}
+
+# Use the existing gh login only for these Git operations. Never change the
+# global Git credential helper or print/store a token.
+nvim_gh_git() {
+    git -c credential.helper= \
+        -c 'credential.https://github.com.helper=!gh auth git-credential' "$@"
+}
+
+nvim_clone_checkout() {
+    local config=$1
+
+    command -v gh >/dev/null 2>&1 || {
+        log 'GitHub CLI is unavailable; cannot clone Neovim configuration.'
+        return 1
+    }
+    if ! gh auth status --hostname github.com >/dev/null 2>&1; then
+        log 'GitHub CLI is not authenticated to github.com; run gh auth login.'
+        return 1
+    fi
+
+    # gh repo clone preserves a Git checkout for later fast-forward and push.
+    # Force HTTPS so gh's credential helper works regardless of git_protocol.
+    # Git's environment-scoped settings affect only this clone, not ~/.gitconfig.
+    GIT_CONFIG_COUNT=2 \
+        GIT_CONFIG_KEY_0=credential.helper GIT_CONFIG_VALUE_0= \
+        GIT_CONFIG_KEY_1=credential.https://github.com.helper \
+        GIT_CONFIG_VALUE_1='!gh auth git-credential' \
+        gh repo clone "$NVIM_CONFIG_REMOTE" "$config" -- --branch main --single-branch
+}
+
 nvim_validate_checkout() {
     local config=$1 origin
 
@@ -46,7 +93,7 @@ nvim_validate_checkout() {
 nvim_sync_checkout() {
     local config=$1 allow_offline=${2:-}
 
-    if ! git -C "$config" fetch origin main; then
+    if ! nvim_gh_git -C "$config" fetch origin main; then
         if [[ "$allow_offline" == --allow-offline ]]; then
             log 'Neovim fetch failed (possibly offline); using existing clean checkout.'
             return 0
