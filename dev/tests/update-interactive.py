@@ -101,7 +101,8 @@ exec "@GIT@" "$@"
                                  stderr=subprocess.STDOUT)
             os.close(slave)
             slave = -1
-            os.write(master, answers.encode())
+            # Send keypresses without Enter; confirmation consumes one key.
+            os.write(master, answers.replace("\n", "").encode())
             out = p.communicate(timeout=12)[0].decode(errors="replace")
             return p.returncode, out
         finally:
