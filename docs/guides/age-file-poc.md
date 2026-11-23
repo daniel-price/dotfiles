@@ -11,8 +11,8 @@ Prerequisites: `git` and `mise` with `mise dot track --encrypt` support. If `age
 Review the script first:
 
 ```sh
-bash scripts/poc/age-file.sh
-bash scripts/poc/age-file.sh --apply
+bash dev/poc/age-file.sh
+bash dev/poc/age-file.sh --apply
 ```
 
 The default is read-only. `--apply` requires a terminal and explicit approval. It creates a new disposable directory under `${TMPDIR:-/tmp}`, with isolated HOME, XDG paths and mise config/data/state/cache. It generates a **disposable age identity** outside the history store, writes fake versions of `example.conf`, tracks the file with `--encrypt` *before* its first save, and checks every reachable Git blob for either plaintext version. It then verifies a missing-key rollback fails without modifying the live file and a keyed rollback restores version one. Finally, it tracks its public mise configuration, pushes synthetic checkpoints into a **local-only bare Git origin**, and runs `mise bootstrap --adopt` from two separate disposable homes: one without the identity (must fail without restoring the target), then one with the identity (must restore version one). No external Git remote or real machine state is used.

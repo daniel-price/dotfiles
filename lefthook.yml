@@ -1,5 +1,5 @@
 # Git hooks must use this checkout's pinned tools, including outside mise shells.
-lefthook: bash scripts/dev/run-mise.sh exec -- lefthook
+lefthook: bash dev/scripts/run-mise.sh exec -- lefthook
 assert_lefthook_installed: true
 # Only the explicit setup command installs hooks; check/format remain opt-in.
 no_auto_install: true
@@ -9,8 +9,8 @@ pre-commit:
   jobs:
     - name: shfmt
       glob: "*.sh"
-      run: bash scripts/dev/format.sh -- {staged_files}
+      run: bash dev/scripts/format.sh -- {staged_files}
       stage_fixed: true
     - name: shellcheck
       glob: "*.sh"
-      run: bash scripts/dev/lint.sh -- {staged_files}
+      run: bash dev/scripts/lint.sh -- {staged_files}

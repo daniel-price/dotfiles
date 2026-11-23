@@ -8,7 +8,7 @@ contains a container recipe.
 
 - `containers/podman/mise.toml` declares only the Linux system package
   `"apt:podman" = { os = "linux" }` using mise's native package management.
-- `scripts/setup/setup-podman.sh` is the shared, small safety wrapper: isolate
+- `setup/setup-podman.sh` is the shared, small safety wrapper: isolate
   that manifest, preview changes, obtain one explicit terminal confirmation,
   delegate installation to mise, and verify **rootless** operation.
 - Every workload reuses that same setup command. A service's own image,
@@ -24,8 +24,8 @@ reviewed machine bootstrap to install mise first if it is absent.
 ## Usage on Pop!_OS
 
 ```sh
-bash scripts/setup/setup-podman.sh            # Preview missing apt package
-bash scripts/setup/setup-podman.sh --apply    # Ask before installing it
+bash setup/setup-podman.sh            # Preview missing apt package
+bash setup/setup-podman.sh --apply    # Ask before installing it
 podman info --format '{{.Host.Security.Rootless}}'
 ```
 
@@ -46,7 +46,7 @@ it **never edits these files, enables daemons or switches to rootful mode**.
 ## Reuse in applications and services
 
 **OpenCode:** `opencode-sandbox` runs in a rootless container and, only when
-Podman is missing, calls `scripts/setup/setup-podman.sh --apply` before
+Podman is missing, calls `setup/setup-podman.sh --apply` before
 proceeding. Its mount, token and image policies are defined separately;
 see the [OpenCode guide](opencode.md).
 
@@ -69,7 +69,7 @@ containers, services, credentials, ports or volumes are created here.
 
 ## Cleanup and ownership
 
-`bash scripts/setup/cleanup.sh` continues to manage only eligible mise
+`bash setup/cleanup.sh` continues to manage only eligible mise
 **tool versions** and reviewed dotfiles, not system packages.
 An apt-installed Podman runtime may be shared by multiple workloads.
 Never uninstall Podman or remove its containers, images or volumes

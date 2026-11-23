@@ -5,9 +5,9 @@ scripts and Radarr are documented examples pending validation.
 
 ## How it fits together
 
-- **Base** tool versions are defined once in `scripts/setup/base-tools.toml`
-  and loaded by both `scripts/setup/mise.toml` (bootstrap-only packages and
-  dotfiles) and `scripts/setup/global-mise.toml` (normal global mise config).
+- **Base** tool versions are defined once in `setup/base-tools.toml`
+  and loaded by both `setup/mise.toml` (bootstrap-only packages and
+  dotfiles) and `setup/global-mise.toml` (normal global mise config).
   `,bootstrap` continues to preview and approve each Base install. It also
   links the global config, shared pins and optional OpenCode module into
   `~/.config/mise/`. All sources are public dotfiles files, not copies.

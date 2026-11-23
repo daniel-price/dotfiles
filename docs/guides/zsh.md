@@ -13,30 +13,30 @@ The optional [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggesti
 Bootstrap offers a **commit-pinned Git checkout** at `~/.local/share/dotfiles/zsh-autosuggestions`. Preview or approve it separately:
 
 ```sh
-bash ~/.dotfiles/scripts/setup/setup-autosuggestions.sh
-bash ~/.dotfiles/scripts/setup/setup-autosuggestions.sh --apply
+bash ~/.dotfiles/setup/setup-autosuggestions.sh
+bash ~/.dotfiles/setup/setup-autosuggestions.sh --apply
 ```
 
 Every install requires approval. The shell starts normally without the plugin; startup never downloads anything. Existing/conflicting plugin directories are preserved. System packages (`apt install zsh-autosuggestions`, `brew install zsh-autosuggestions`) are also supported. Set `DOTFILES_ZSH_AUTOSUGGESTIONS_FILE` to load an explicit plugin file.
 
 ## Prompt
 
-Powerlevel10k is a separate optional pinned checkout, offered by `scripts/setup/setup-prompt.sh`. It loads outside VS Code with the reviewed `p10k.zsh` configuration.
+Powerlevel10k is a separate optional pinned checkout, offered by `setup/setup-prompt.sh`. It loads outside VS Code with the reviewed `p10k.zsh` configuration.
 
 The prompt expects **MesloLGS NF**, Powerlevel10k's recommended Nerd Font. The reviewed Ghostty configuration (`~/.config/ghostty/config`) selects it. Bootstrap offers to install the four font faces alongside the optional Zsh prompt setup, regardless of terminal; headless machines can decline, and existing user font files are never overwritten.
 
 Preview or install missing faces manually on macOS or Pop!_OS:
 
 ```sh
-bash ~/.dotfiles/scripts/setup/setup-fonts.sh
-bash ~/.dotfiles/scripts/setup/setup-fonts.sh --apply
+bash ~/.dotfiles/setup/setup-fonts.sh
+bash ~/.dotfiles/setup/setup-fonts.sh --apply
 ```
 
 Fonts are downloaded from an immutable `powerlevel10k-media` commit. Installation is user-local (`~/.local/share/fonts` on Linux, `~/Library/Fonts` on macOS), without elevated privileges. Restart Ghostty or reload its configuration after installation. On macOS, Ghostty's application-specific config may override the shared config. If another terminal renders the prompt, select `MesloLGS NF` in that terminal too.
 
 ## Ghostty application
 
-The Ghostty application and configuration are both declared in the regular machine `scripts/setup/mise.toml`. Bootstrap previews the OS package changes and asks for **one explicit approval** to install missing Zsh/Ghostty packages.
+The Ghostty application and configuration are both declared in the regular machine `setup/mise.toml`. Bootstrap previews the OS package changes and asks for **one explicit approval** to install missing Zsh/Ghostty packages.
 
 - **Pop!_OS 24.04:** `apt:ghostty` uses the **unofficial** [mkasberg Ghostty PPA](https://github.com/mkasberg/ghostty-ubuntu). Approval also enables this persistent APT source, which can supply future updates.
 - **macOS:** `brew-cask:ghostty` uses Homebrew.
@@ -44,7 +44,7 @@ The Ghostty application and configuration are both declared in the regular machi
 Preview the same shared declaration manually:
 
 ```sh
-MISE_GLOBAL_CONFIG_FILE="$HOME/.dotfiles/scripts/setup/mise.toml" mise -C / bootstrap packages apply --dry-run
+MISE_GLOBAL_CONFIG_FILE="$HOME/.dotfiles/setup/mise.toml" mise -C / bootstrap packages apply --dry-run
 ```
 
 Headless machines can decline the OS package offer; noninteractive bootstrap will not approve it. Mise leaves installed packages at their current version, unless explicitly asked to upgrade. If the PPA was added and is no longer wanted, remove `/etc/apt/sources.list.d/mise-ghostty.sources` manually.

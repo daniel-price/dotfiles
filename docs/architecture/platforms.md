@@ -2,7 +2,7 @@
 
 Supported: **Pop!_OS / Debian-derived Linux** and **macOS**.
 
-Machine configuration belongs in [`scripts/setup/mise.toml`](../../scripts/setup/mise.toml); the root `mise.toml` is for developing this repository.
+Machine configuration belongs in [`setup/mise.toml`](../../setup/mise.toml); `dev/mise.toml` is for developing this repository.
 
 ## Installed tool inventory
 
@@ -21,7 +21,7 @@ Machine tool **names and versions** are maintained only in the manifest, not in 
 
 ## Checkout development tools
 
-The root `mise.toml` contains checkout-only tools (Lefthook, shfmt and ShellCheck). They are not installed by machine bootstrap; see [development](../guides/development.md).
+The `dev/mise.toml` contains checkout-only tools (Lefthook, shfmt and ShellCheck). They are not installed by machine bootstrap; see [development](../guides/development.md).
 
 ## Other platform behaviour
 

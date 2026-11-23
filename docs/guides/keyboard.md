@@ -7,4 +7,4 @@ Bootstrap offers to make **Caps Lock an additional Ctrl key** (the original Ctrl
 
 Other keyboard options are preserved. Bootstrap does not overwrite an existing conflicting Caps/Ctrl mapping, change keyboard layouts, or install a background remapping daemon. Other unsupported desktops are skipped.
 
-To retry this step by itself, run `bash scripts/setup/keyboard.sh --apply` from the dotfiles checkout. On macOS, remove the LaunchAgent and run `hidutil property --set '{"UserKeyMapping":[]}'` to clear the mapping (only if no other mappings need preserving). For COSMIC, remove `ctrl:nocaps` from the existing options in the keyboard configuration (or use COSMIC Settings).
+To retry this step by itself, run `bash setup/keyboard.sh --apply` from the dotfiles checkout. On macOS, remove the LaunchAgent and run `hidutil property --set '{"UserKeyMapping":[]}'` to clear the mapping (only if no other mappings need preserving). For COSMIC, remove `ctrl:nocaps` from the existing options in the keyboard configuration (or use COSMIC Settings).

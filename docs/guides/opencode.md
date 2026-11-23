@@ -22,8 +22,8 @@ to install it via mise/apt only when it is missing, with a preview and an
 individual confirmation first. You can also inspect or install it explicitly:
 
 ```sh
-bash scripts/setup/setup-podman.sh          # Read-only preview / rootless check
-bash scripts/setup/setup-podman.sh --apply  # Ask before missing apt:podman install
+bash setup/setup-podman.sh          # Read-only preview / rootless check
+bash setup/setup-podman.sh --apply  # Ask before missing apt:podman install
 podman info --format '{{.Host.Security.Rootless}}'
 ```
 
@@ -126,7 +126,7 @@ podman images
 ```
 
 The launcher reuses the local image; version changes are deliberate.
-The existing `scripts/setup/cleanup.sh` only manages mise tools, not
+The existing `setup/cleanup.sh` only manages mise tools, not
 Podman images. To remove the custom image after review:
 
 ```sh

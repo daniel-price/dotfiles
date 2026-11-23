@@ -6,13 +6,13 @@ ROOT=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
 IFS=$'\n\t'
 
 # shellcheck source=lib/copy_to_clipboard
-source "$ROOT/bin/lib/copy_to_clipboard"
+source "$ROOT/lib/copy_to_clipboard"
 # shellcheck source=lib/format_cmd_output
-source "$ROOT/bin/lib/format_cmd_output"
+source "$ROOT/lib/format_cmd_output"
 # shellcheck source=lib/zellij_dump_screen
-source "$ROOT/bin/lib/zellij_dump_screen"
+source "$ROOT/lib/zellij_dump_screen"
 # shellcheck source=lib/extract_last_output
-source "$ROOT/bin/lib/extract_last_output"
+source "$ROOT/lib/extract_last_output"
 
 main() {
     _is_copy_cmd() {

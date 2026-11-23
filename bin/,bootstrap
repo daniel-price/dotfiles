@@ -3,18 +3,18 @@ set -euo pipefail
 
 ROOT=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
 
-# shellcheck source=scripts/lib/common.sh
-source "$ROOT/scripts/lib/common.sh"
-# shellcheck source=scripts/lib/os.sh
-source "$ROOT/scripts/lib/os.sh"
-# shellcheck source=scripts/lib/mise.sh
-source "$ROOT/scripts/lib/mise.sh"
-# shellcheck source=scripts/lib/nvim.sh
-source "$ROOT/scripts/lib/nvim.sh"
-# shellcheck source=scripts/lib/machine-tools.sh
-source "$ROOT/scripts/lib/machine-tools.sh"
-# shellcheck source=scripts/lib/login-shell.sh
-source "$ROOT/scripts/lib/login-shell.sh"
+# shellcheck source=lib/common.sh
+source "$ROOT/lib/common.sh"
+# shellcheck source=lib/os.sh
+source "$ROOT/lib/os.sh"
+# shellcheck source=lib/mise.sh
+source "$ROOT/lib/mise.sh"
+# shellcheck source=lib/nvim.sh
+source "$ROOT/lib/nvim.sh"
+# shellcheck source=lib/machine-tools.sh
+source "$ROOT/lib/machine-tools.sh"
+# shellcheck source=lib/login-shell.sh
+source "$ROOT/lib/login-shell.sh"
 
 main() {
     MISE_VERSION='v2026.11.9'
@@ -173,7 +173,7 @@ main() {
         DOTFILES_BOOTSTRAP_ROOT="$ROOT" exec bash -c '
         set -euo pipefail
         root=$DOTFILES_BOOTSTRAP_ROOT
-        bash "$root/scripts/setup/update.sh" --apply --require-current
+        bash "$root/setup/update.sh" --apply --require-current
         [[ "$(git -C "$root" symbolic-ref --quiet --short HEAD)" == main ]] || {
             printf "[error] Checkout is not on main; bootstrap skipped.\\n" >&2
             exit 1
@@ -212,11 +212,11 @@ main() {
     mise_supports_dot "$mise" || die 'mise 2026.11.9 or newer is required for native machine bootstrap.'
     # Run from / so the checkout's root mise.toml (dev tooling) is never loaded.
     # The single reviewed machine config is the only global config for these calls.
-    export MISE_GLOBAL_CONFIG_FILE="$ROOT/scripts/setup/mise.toml"
+    export MISE_GLOBAL_CONFIG_FILE="$ROOT/setup/mise.toml"
     [[ -f "$MISE_GLOBAL_CONFIG_FILE" ]] || die 'Missing declarative machine config.'
 
     # Fail closed on unpinned or undeclared entries before package or dotfile setup.
-    tool_specs=$(machine_tool_specs "$mise" "$ROOT/scripts/setup/base-tools.toml") ||
+    tool_specs=$(machine_tool_specs "$mise" "$ROOT/setup/base-tools.toml") ||
         die 'Could not read the reviewed machine tool declarations.'
 
     # Package provisioning is a single reviewed mise operation. On Pop!_OS
@@ -337,11 +337,11 @@ main() {
     # The prompt is an optional Git checkout, not a native installed executable.
     # Only offer it when our reviewed Zsh startup file is actually active.
     if [[ "$zsh_config_status" == 'already applied' || "$zsh_config_status" == applied* ]]; then
-        bash "$ROOT/scripts/setup/setup-prompt.sh" --apply ||
+        bash "$ROOT/setup/setup-prompt.sh" --apply ||
             die "Optional prompt setup failed; check the preceding error."
-        bash "$ROOT/scripts/setup/setup-fonts.sh" --apply ||
+        bash "$ROOT/setup/setup-fonts.sh" --apply ||
             die "Optional font setup failed; check the preceding error."
-        bash "$ROOT/scripts/setup/setup-autosuggestions.sh" --apply ||
+        bash "$ROOT/setup/setup-autosuggestions.sh" --apply ||
             die "Optional autosuggestions setup failed; check the preceding error."
     else
         log 'Skipping optional Zsh plugins and font: reviewed Zsh startup is not active.'
@@ -355,7 +355,7 @@ main() {
 
     # Desktop keyboard preferences are independent of mise-managed dotfiles.
     # The helper only offers a mapping for a detected supported Linux desktop.
-    bash "$ROOT/scripts/setup/keyboard.sh" --apply ||
+    bash "$ROOT/setup/keyboard.sh" --apply ||
         die "Keyboard setup failed; check the preceding error."
 
     # Changing the login shell is independent of package and dotfile setup.

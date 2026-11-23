@@ -6,8 +6,8 @@ set -euo pipefail
 ROOT=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
 
 
-# shellcheck source=scripts/lib/common.sh
-source "$ROOT/scripts/lib/common.sh"
+# shellcheck source=lib/common.sh
+source "$ROOT/lib/common.sh"
 
 main() {
     usage() {
@@ -89,7 +89,7 @@ main() {
 
     if ! command -v podman >/dev/null 2>&1; then
         log 'Podman is missing; offering the optional shared container runtime prerequisite.'
-        bash "$ROOT/scripts/setup/setup-podman.sh" --apply ||
+        bash "$ROOT/setup/setup-podman.sh" --apply ||
             die 'Podman prerequisite setup failed; OpenCode was not launched.'
         command -v podman >/dev/null 2>&1 ||
             die 'Podman was not installed; OpenCode was not launched.'
