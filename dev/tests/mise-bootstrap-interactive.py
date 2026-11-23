@@ -135,25 +135,53 @@ case "$*" in
     spec="$2"
     touch "$MOCK_STATE/$spec"
     ;;
+  "dot status --json")
+    printf '%s\\n' '{"files":[]}'
+    ;;
+  "exec -- jq -r "*)
+    cat >/dev/null
+    for target in "$HOME/.zshrc" "$HOME/.config/zellij/config.kdl" "$HOME/.config/ghostty/config"; do
+      case "$target" in
+        "$HOME/.zshrc") source="$MOCK_DOT_SOURCE" ;;
+        "$HOME/.config/zellij/config.kdl") source="$MOCK_ZELLIJ_SOURCE" ;;
+        *) source="$MOCK_GHOSTTY_SOURCE" ;;
+      esac
+      if [[ ! -e "$target" && ! -L "$target" ]]; then
+        state=missing
+      elif [[ -L "$target" && "$target" -ef "$source" ]]; then
+        state=applied
+      else
+        state=differs
+      fi
+      if [[ "$state" == missing || "$state" == differs ]]; then
+        printf '%s\\t%s\\n' "$state" "$target"
+      fi
+    done
+    ;;
   "dot status --missing")
-    [[ -L "$HOME/.zshrc" && -L "$HOME/.config/zellij/config.kdl" && -L "$HOME/.config/ghostty/config" ]] && exit 0 || exit 1
+    [[ -L "$HOME/.zshrc" && "$HOME/.zshrc" -ef "$MOCK_DOT_SOURCE" ]] || exit 1
+    [[ -L "$HOME/.config/zellij/config.kdl" && "$HOME/.config/zellij/config.kdl" -ef "$MOCK_ZELLIJ_SOURCE" ]] || exit 1
+    [[ -L "$HOME/.config/ghostty/config" && "$HOME/.config/ghostty/config" -ef "$MOCK_GHOSTTY_SOURCE" ]] || exit 1
     ;;
-  "dot apply --dry-run --force") exit 0 ;;
-  "dot apply --dry-run")
-    # Model mise refusing to preview an existing unmanaged Zellij file.
-    [[ ! -f "$HOME/.config/zellij/config.kdl" || -L "$HOME/.config/zellij/config.kdl" ]] || exit 17
-    exit 0
+  "dot apply --dry-run"*)
+    target="${@: -1}"
+    if [[ "$*" == "dot apply --dry-run --force "* && "$target" == "$HOME/.config/zellij/config.kdl" ]]; then
+      exit 0
+    fi
+    [[ ! -e "$target" && ! -L "$target" ]] || exit 17
     ;;
-  "dot apply --yes")
-    mkdir -p "$HOME/.config/zellij" "$HOME/.config/ghostty"
+  "dot apply --yes "*)
+    target="${@: -1}"
     [[ ! -e "$MOCK_STATE/fail-dot-apply" ]] || exit 18
-    [[ ! -e "$HOME/.zshrc" || -L "$HOME/.zshrc" ]] || exit 17
-    [[ ! -e "$HOME/.config/zellij/config.kdl" || -L "$HOME/.config/zellij/config.kdl" ]] || exit 17
-    [[ ! -e "$HOME/.config/ghostty/config" || -L "$HOME/.config/ghostty/config" ]] || exit 17
-    if [[ ! -e "$HOME/.zshrc" && ! -L "$HOME/.zshrc" ]]; then ln -s "$MOCK_DOT_SOURCE" "$HOME/.zshrc"; fi
-    if [[ ! -e "$HOME/.config/zellij/config.kdl" && ! -L "$HOME/.config/zellij/config.kdl" ]]; then ln -s "$MOCK_ZELLIJ_SOURCE" "$HOME/.config/zellij/config.kdl"; fi
-    if [[ ! -e "$HOME/.config/ghostty/config" && ! -L "$HOME/.config/ghostty/config" ]]; then ln -s "$MOCK_GHOSTTY_SOURCE" "$HOME/.config/ghostty/config"; fi
-    exit 0
+    [[ ! -e "$target" && ! -L "$target" ]] || exit 17
+    case "$target" in
+      "$HOME/.zshrc") source="$MOCK_DOT_SOURCE" ;;
+      "$HOME/.config/zellij/config.kdl") source="$MOCK_ZELLIJ_SOURCE" ;;
+      "$HOME/.config/ghostty/config") source="$MOCK_GHOSTTY_SOURCE" ;;
+      *) exit 19 ;;
+    esac
+    mkdir -p "$(dirname "$target")"
+    ln -s "$source" "$target"
     ;;
   *) exit 21 ;;
 esac
@@ -209,21 +237,21 @@ esac
 
     # Each component requires its own approval. Declines are safe.
     declined = run("n\n" * (2 + len(pins)))
-    assert declined.returncode == 0, declined.stdout
+    assert declined.returncode != 0, declined.stdout
     assert not list(state.iterdir()), declined.stdout
     assert "Skipped OS package installation" in declined.stdout and "Skipped neovim" in declined.stdout
-    assert "Zsh configuration: skipped (zsh unavailable)" in declined.stdout
+    assert "Dotfiles: failed" in declined.stdout
     assert not any("dot apply --yes" in line for line in log.read_text().splitlines())
     assert not any("bootstrap packages apply --yes" in line for line in log.read_text().splitlines()), "Declining package consent must never install Ghostty or its PPA"
 
-    # The two initial approvals are for the OS packages and mise-managed dotfiles.
+    # Tool approvals precede the independent dotfile-application consent.
     # Generate tool approvals from the manifest so adding a tool doesn't
     # silently approve it or hang an interactive test waiting for input.
     approved_tools = {"neovim", "zoxide"}
-    answers = ["y", "y"] + [
+    answers = ["y"] + [
         "y" if name in approved_tools else "n" for name in pins
     ]
-    approved = run("\n".join(answers + ["n", "n", "n"]) + "\n")
+    approved = run("\n".join(answers + ["y", "n", "n", "n"]) + "\n")
     assert approved.returncode == 0, approved.stdout
     assert (state / "zsh").exists() and (state / "ghostty").exists() and (state / f"neovim@{pins['neovim']}").exists() and (state / f"zoxide@{pins['zoxide']}").exists(), (approved.stdout, log.read_text(), list(state.iterdir()), pins)
     if platform.system() == "Linux":
@@ -238,11 +266,11 @@ esac
     ghostty_target = home / ".config/ghostty/config"
     assert ghostty_target.is_symlink() and ghostty_target.resolve() == (ROOT / ".config/ghostty/config").resolve()
     assert any(line.endswith("bootstrap packages apply --yes") for line in log.read_text().splitlines()), log.read_text()
-    assert "Zsh configuration: applied" in approved.stdout
+    assert "Dotfiles: ok" in approved.stdout
     calls = log.read_text().splitlines()
     assert any("dot apply --dry-run" in line for line in calls)
-    assert sum(line.endswith("dot apply --yes") for line in calls) == 1
-    assert next(i for i, line in enumerate(calls) if line.endswith("dot apply --yes")) < next(
+    assert sum("dot apply --yes " in line for line in calls) == 3
+    assert next(i for i, line in enumerate(calls) if "dot apply --yes " in line) > next(
         i for i, line in enumerate(calls) if line.endswith(f"install neovim@{pins['neovim']}")
     ), calls
     assert any(line.endswith(f"install zoxide@{pins['zoxide']}") for line in calls), calls
@@ -265,7 +293,7 @@ esac
     zoxide_before_repeat = sum(line.endswith(f"install zoxide@{pins['zoxide']}") for line in calls)
     repeated = run()
     assert repeated.returncode == 0, repeated.stdout
-    assert "Zsh configuration: applied" in repeated.stdout
+    assert "Dotfiles: ok" in repeated.stdout
     assert sum("dot apply --yes" in line for line in log.read_text().splitlines()) == dot_before_repeat
     assert sum("bootstrap packages apply --yes" in line for line in log.read_text().splitlines()) == packages_before_repeat
     assert sum(line.endswith(f"install zoxide@{pins['zoxide']}") for line in log.read_text().splitlines()) == zoxide_before_repeat
@@ -312,9 +340,9 @@ esac
     zellij_target.unlink()
     zellij_target.write_text("existing default zellij config\n")
     before_backups = list(zellij_target.parent.glob("config.kdl.backup-*"))
-    migrated = run("y\n" + "n\n" * (len(pins) + 2))
+    migrated = run("y\nn\nn\n")
     assert migrated.returncode == 0, migrated.stdout
-    assert any(line.endswith("dot apply --dry-run --force") for line in log.read_text().splitlines())
+    assert any("dot apply --dry-run --force " in line for line in log.read_text().splitlines())
     backups = list(zellij_target.parent.glob("config.kdl.backup-*"))
     assert len(backups) == len(before_backups) + 1, backups
     assert backups[-1].read_text() == "existing default zellij config\n"
@@ -326,11 +354,11 @@ esac
     zellij_target.unlink()
     zellij_target.write_text("restore me\n")
     (state / "fail-dot-apply").touch()
-    failed = run("y\n" + "n\n" * (len(pins) + 2))
-    assert failed.returncode == 0, failed.stdout
+    failed = run("y\nn\nn\n")
+    assert failed.returncode != 0, failed.stdout
     assert zellij_target.is_file() and not zellij_target.is_symlink()
     assert zellij_target.read_text() == "restore me\n"
-    assert "Restored original Zellij config" in failed.stdout
+    assert "Restored " + str(zellij_target) + " after failed deployment" in failed.stdout
     (state / "fail-dot-apply").unlink()
     zellij_target.unlink()
     zellij_target.symlink_to(ROOT / ".config/zellij/config.kdl")
@@ -343,9 +371,9 @@ esac
     # A foreign symlink is deliberately not replaceable, so it must not
     # receive a 'yes' that could accidentally approve the later font prompt.
     foreign = run("n\n" * (len(pins) + 3))
-    assert foreign.returncode == 0, foreign.stdout
+    assert foreign.returncode != 0, foreign.stdout
     assert zellij_target.is_symlink() and zellij_target.resolve() == foreign_kdl.resolve()
-    assert "foreign symlink" in foreign.stdout
+    assert "Skipped conflicting dotfile" in foreign.stdout
     zellij_target.unlink()
     zellij_target.symlink_to(ROOT / ".config/zellij/config.kdl")
 
@@ -354,8 +382,8 @@ esac
     target.write_text("personal shell setup\\n")
     before = len(log.read_text().splitlines())
     conflict = run()
-    assert conflict.returncode == 0, conflict.stdout
-    assert "Zsh configuration: not applied" in conflict.stdout
+    assert conflict.returncode != 0, conflict.stdout
+    assert "Dotfiles: failed" in conflict.stdout
     assert target.read_text() == "personal shell setup\\n"
     assert not any("dot apply --yes" in line for line in log.read_text().splitlines()[before:])
     target.unlink()
@@ -364,19 +392,19 @@ esac
     other.write_text("foreign symlink target\\n")
     target.symlink_to(other)
     conflict_link = run()
-    assert conflict_link.returncode == 0, conflict_link.stdout
+    assert conflict_link.returncode != 0, conflict_link.stdout
     assert target.is_symlink() and target.resolve() == other.resolve()
-    assert "Zsh configuration: not applied" in conflict_link.stdout
+    assert "Dotfiles: failed" in conflict_link.stdout
     target.unlink()
 
     # Noninteractive runs preview the safe deployment but never approve it.
     before = len(log.read_text().splitlines())
     unattended = run()
-    assert unattended.returncode == 0, unattended.stdout
+    assert unattended.returncode != 0, unattended.stdout
     assert not target.exists()
-    assert "Zsh configuration: not applied" in unattended.stdout
+    assert "Dotfiles: failed" in unattended.stdout
     assert any("dot apply --dry-run" in line for line in log.read_text().splitlines()[before:])
-    assert not any(line.endswith("dot apply --yes") for line in log.read_text().splitlines()[before:])
+    assert not any("dot apply --yes " in line for line in log.read_text().splitlines()[before:])
 
     # An earlier mise cannot safely run the new bootstrap phases.
     fake_mise.write_text("#!/usr/bin/env bash\necho '2026.8.15 fake'\n")

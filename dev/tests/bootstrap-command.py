@@ -15,7 +15,7 @@ with tempfile.TemporaryDirectory(prefix="dotfiles-bootstrap-command-") as scratc
     (checkout / "bin").mkdir(parents=True)
     (checkout / "setup").mkdir(parents=True)
     (checkout / "lib").mkdir(parents=True)
-    for library in ("common.sh", "os.sh", "mise.sh", "nvim.sh", "machine-tools.sh", "login-shell.sh"):
+    for library in ("common.sh", "os.sh", "mise.sh", "nvim.sh", "dotfiles.sh", "machine-tools.sh", "login-shell.sh"):
         (checkout / "lib" / library).write_text((ROOT / "lib" / library).read_text())
     (checkout / "bin/,bootstrap").write_text(LAUNCHER.read_text())
     (checkout / "setup/update.sh").write_text("""#!/usr/bin/env bash
