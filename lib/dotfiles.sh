@@ -11,18 +11,32 @@ apply_reviewed_dotfiles() {
         log 'Could not inspect mise-managed dotfiles.'
         return 1
     }
+    # Inspect every declaration: mise can report an old symlink as applied
+    # after normalising ../ segments, even when an intermediate directory was
+    # removed and the symlink no longer resolves.
     rows=$(printf '%s\n' "$status_json" |
-        "$mise" -C / exec -- jq -r '.files[] | select(.state == "missing" or .state == "differs" or .state == "source_missing") | [.state, .target] | @tsv') || {
+        "$mise" -C / exec -- jq -r '.files[] | [.state, .mode, .target] | @tsv') || {
         log 'Could not read mise dotfile status (jq is required).'
         return 1
     }
 
     # Preview every pending target before making any changes.
-    while IFS=$'\t' read -r state target; do
+    while IFS=$'\t' read -r state mode target; do
         [[ -n "$state" ]] || continue
         case "$target" in
         \~/*) target="$HOME/${target:2}" ;;
         esac
+
+        # A broken "applied" symlink is still a conflict; back it up and
+        # let mise deploy the current declaration after explicit approval.
+        if [[ "$state" == applied ]]; then
+            if [[ "$mode" != symlink || ! -L "$target" || -e "$target" ]]; then
+                continue
+            fi
+            log "Broken mise-managed symlink: $target -> $(readlink "$target")"
+        elif [[ "$state" != missing && "$state" != differs && "$state" != source_missing ]]; then
+            continue
+        fi
 
         if [[ "$state" == source_missing ]]; then
             printf '[error] Dotfile source missing: %s\n' "$target" >&2
@@ -104,5 +118,16 @@ apply_reviewed_dotfiles() {
         log 'Some mise-managed dotfiles remain unapplied or conflicting.'
         failed=1
     fi
+    # Do not trust "applied" alone: it does not guarantee a symlink resolves.
+    while IFS=$'\t' read -r state mode target; do
+        [[ "$mode" == symlink ]] || continue
+        case "$target" in
+        \~/*) target="$HOME/${target:2}" ;;
+        esac
+        if [[ -L "$target" && ! -e "$target" ]]; then
+            printf '[error] Mise-managed symlink is still broken: %s\n' "$target" >&2
+            failed=1
+        fi
+    done <<<"$rows"
     return "$failed"
 }

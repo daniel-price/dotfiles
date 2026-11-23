@@ -23,7 +23,7 @@ elif [[ "$3" == exec && "$4" == -- && "$5" == jq ]]; then
   cat >/dev/null
   while IFS=$'\t' read -r state target; do
     case "$state" in
-      missing | differs | source_missing) printf '%s\t%s\n' "$state" "$target" ;;
+      missing | differs | source_missing | applied) printf '%s\tsymlink\t%s\n' "$state" "$target" ;;
     esac
   done <<<"$FAKE_ROWS"
 elif [[ "$3" == dot && "$4" == apply ]]; then
@@ -103,6 +103,38 @@ run_dotfiles() {
   backups=("$HOME"/.config/zellij/config.kdl.backup-*)
   [ "${#backups[@]}" -eq 1 ]
   [ "$(readlink "${backups[0]}")" = "$BATS_TEST_TMPDIR/foreign" ]
+}
+
+@test "stale symlink reported applied by mise is backed up and repaired" {
+  export APPROVE_CONFLICTS=1
+  export FAKE_ROWS
+  # The logical destination is correct, but the removed intermediate
+  # directory makes this old symlink impossible to resolve.
+  ln -s "$BATS_TEST_TMPDIR/old/setup/../../source" "$HOME/.zshrc"
+  [ ! -e "$HOME/.zshrc" ]
+  FAKE_ROWS=$(printf 'applied\t%s\n' "$HOME/.zshrc")
+
+  run run_dotfiles
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Broken mise-managed symlink:"* ]]
+  [ -L "$HOME/.zshrc" ]
+  [ -e "$HOME/.zshrc" ]
+  [ "$(readlink "$HOME/.zshrc")" = "$FAKE_SOURCE" ]
+  backups=("$HOME"/.zshrc.backup-*)
+  [ "${#backups[@]}" -eq 1 ]
+  [ "$(readlink "${backups[0]}")" = "$BATS_TEST_TMPDIR/old/setup/../../source" ]
+}
+
+@test "declining repair of stale applied symlink fails bootstrap" {
+  export FAKE_ROWS
+  ln -s "$BATS_TEST_TMPDIR/old/setup/../../source" "$HOME/.zshrc"
+  FAKE_ROWS=$(printf 'applied\t%s\n' "$HOME/.zshrc")
+
+  run run_dotfiles
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"Mise-managed symlink is still broken:"* ]]
+  [ "$(readlink "$HOME/.zshrc")" = "$BATS_TEST_TMPDIR/old/setup/../../source" ]
+  ! grep -q '^apply:' "$ACTION_LOG"
 }
 
 @test "fully applied dotfiles need no changes (including Bash 3.2)" {
