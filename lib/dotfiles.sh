@@ -81,8 +81,11 @@ apply_reviewed_dotfiles() {
                     printf '[error] Could not apply dotfile: %s\n' "$target" >&2
                     failed=1
                     if [[ -n "$backup" && ! -e "$target" && ! -L "$target" ]]; then
-                        mv -- "$backup" "$target" ||
+                        if mv -- "$backup" "$target"; then
+                            log 'Restored original Zellij config after failed deployment.'
+                        else
                             printf '[error] Could not restore Zellij backup: %s\n' "$backup" >&2
+                        fi
                     fi
                 fi
             done
