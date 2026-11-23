@@ -42,7 +42,7 @@ authorised `[bootstrap.repos]` declarations for private sources.
 | Category | Examples | State |
 | --- | --- | --- |
 | Core setup | Git, mise, Zsh | Implemented |
-| CLI tools | Neovim, Zellij, zoxide, ripgrep, fd | Implemented; versions in [machine manifest](../scripts/setup/mise.toml) |
+| CLI tools | Neovim, Zellij, zoxide, ripgrep, fd | Implemented; versions in [machine manifest](../setup/mise.toml) |
 | Shell config | Zsh aliases, bookmarks, Powerlevel10k and autosuggestions | Implemented; optional pinned plugins |
 | Repo tooling | shfmt, ShellCheck, Lefthook | Implemented; opt-in hooks |
 | On-demand isolated app | OpenCode through rootless Podman | Implemented on Linux; approval required |

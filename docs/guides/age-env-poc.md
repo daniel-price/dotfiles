@@ -6,11 +6,11 @@ Question: can a committed, encrypted mise environment value be restored using an
 
 ## Run
 
-Prerequisite: `mise` with age-value support. The POC uses an existing `age-keygen` if available; otherwise it offers to install pinned `age@1.3.2` through a dedicated [mise tool manifest](../../scripts/poc/age-tools.toml). Review the script and manifest first. This tool is **not** part of normal bootstrap.
+Prerequisite: `mise` with age-value support. The POC uses an existing `age-keygen` if available; otherwise it offers to install pinned `age@1.3.2` through a dedicated [mise tool manifest](../../dev/poc/age-tools.toml). Review the script and manifest first. This tool is **not** part of normal bootstrap.
 
 ```sh
-bash scripts/poc/age-env.sh
-bash scripts/poc/age-env.sh --apply
+bash dev/poc/age-env.sh
+bash dev/poc/age-env.sh --apply
 ```
 
 The default command previews only. `--apply` first asks whether to run the experiment, then separately requests consent to install the pinned `age` tool if it is missing. Declining either makes no changes. On approval it creates a fresh directory under `${TMPDIR:-/tmp}` with `mise.toml` and an **untracked, synthetic-only** `identity.txt`. It tests that `mise exec` receives the fake value and that decryption fails with a missing key. No files in your dotfiles checkout are changed. If the `age` installation is approved, mise stores the tool in its normal per-user installation directory; it does not modify your global tool selection. The script prints the workspace path, not the key or decrypted value.

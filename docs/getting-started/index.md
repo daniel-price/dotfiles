@@ -24,8 +24,8 @@ without running bootstrap. The command preserves your existing Git changes.
 
 ```sh
 ,bootstrap                                        # Update (with approval), then bootstrap
-bash ~/.dotfiles/scripts/setup/update.sh          # Local status (no network)
-bash ~/.dotfiles/scripts/setup/update.sh --apply  # Approve fetch/update
+bash ~/.dotfiles/setup/update.sh          # Local status (no network)
+bash ~/.dotfiles/setup/update.sh --apply  # Approve fetch/update
 bash ~/.dotfiles/bin/,bootstrap --no-update       # Provision checked-out version only
 ```
 
@@ -43,10 +43,10 @@ Run `,nvim-update` to approve a plugin upgrade. It fetches `main`, updates the l
 | Task | Command or guide |
 | --- | --- |
 | Preview or apply reviewed Zsh and Zellij dotfiles | [Manage a dotfile](../guides/manage-dotfile.md) |
-| Preview optional prompt installation | `bash ~/.dotfiles/scripts/setup/setup-prompt.sh` |
-| Install optional prompt after approval | `bash ~/.dotfiles/scripts/setup/setup-prompt.sh --apply` |
-| Preview cleanup | `bash ~/.dotfiles/scripts/setup/cleanup.sh` |
-| Approve selective cleanup | `bash ~/.dotfiles/scripts/setup/cleanup.sh --apply` |
+| Preview optional prompt installation | `bash ~/.dotfiles/setup/setup-prompt.sh` |
+| Install optional prompt after approval | `bash ~/.dotfiles/setup/setup-prompt.sh --apply` |
+| Preview cleanup | `bash ~/.dotfiles/setup/cleanup.sh` |
+| Approve selective cleanup | `bash ~/.dotfiles/setup/cleanup.sh --apply` |
 | Develop the repository | [Development and hooks](../guides/development.md) |
 | Select optional tools, private repos and machine modules | [Mise modules](../guides/mise-modules.md) |
 | Manage a tool or dotfile | [Tools](../guides/add-tool.md) · [Dotfiles](../guides/manage-dotfile.md) |

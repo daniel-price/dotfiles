@@ -24,12 +24,12 @@ jobs:
           version: "2026.11.9"
           install: false
       - name: Install development tools
-        run: bash scripts/dev/install-dev-tools.sh
+        run: bash dev/scripts/install-dev-tools.sh
       - name: Check formatting
-        run: bash scripts/dev/format.sh --check
+        run: bash dev/scripts/format.sh --check
       - name: Lint shell scripts
-        run: bash scripts/dev/lint.sh
+        run: bash dev/scripts/lint.sh
       - name: Test CLI and integration behaviour
-        run: bash scripts/dev/test.sh
+        run: bash dev/scripts/test.sh
       - name: Check validation left tracked files unchanged
-        run: bash scripts/dev/check-clean.sh
+        run: bash dev/scripts/check-clean.sh

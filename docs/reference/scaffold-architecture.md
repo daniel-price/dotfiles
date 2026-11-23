@@ -142,7 +142,7 @@ Do not run mise commands that install, trust or apply anything as scaffold check
 
 ## Validation boundary
 
-`tests/run.sh` checks Bash syntax, representative OS fixtures, refusal of
+`dev/tests/run.sh` checks Bash syntax, representative OS fixtures, refusal of
 noninteractive confirmation, entry-point help/error handling and read-only smoke
 execution from another directory. Fixtures are temporary; no host OS metadata is
 changed. Real macOS and Pop!_OS execution, interactive-terminal confirmation and

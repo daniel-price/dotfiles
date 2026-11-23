@@ -11,7 +11,7 @@ Small personal Bash utilities need flags, options, validation, help, Zsh complet
 
 - Prefer [argc](https://github.com/sigoden/argc) for **standalone Bash commands** where argument parsing and completion justify it. Keep lightweight scripts unchanged unless there is a clear benefit. This PR converts `,uuid` as the first production example.
 - Pin argc 1.24.0 in the machine and development mise manifests. Machine bootstrap continues to require only its existing minimal prerequisites and offers argc installation explicitly. No additional compilation/build step is required after editing a command.
-- Generate Markdown at documentation-build time from `argc --argc-export` metadata via `scripts/docs/argc_docs.py`. Never parse the annotations twice. Add reviewed command paths to its allowlist as they are migrated.
+- Generate Markdown at documentation-build time from `argc --argc-export` metadata via `dev/generators/argc_docs.py`. Never parse the annotations twice. Add reviewed command paths to its allowlist as they are migrated.
 - Register argc-generated Zsh completion only when argc is available. Keep shell-state-changing functions (for example `cdWorktree`) native to Zsh.
 - Retain the existing `--help` reference for commands that have not migrated, without broad changes to bootstrap/setup utilities.
 

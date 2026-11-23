@@ -13,7 +13,7 @@ configured, not narrate migration history.
 ## Decision
 
 Generate configuration references when building documentation, not in Git.
-Use one local entrypoint (`scripts/docs/generate.py`) to invoke small,
+Use one local entrypoint (`dev/generators/generate.py`) to invoke small,
 format-specific extractors for Zsh and Zellij, plus the standard-library
 TOML parser for the machine and checkout development tool manifests.
 Generate a command reference from an explicit allowlist of scripts' safe

@@ -25,13 +25,13 @@ jobs:
           version: "2026.11.9"
           install: false
       - name: Install argc for generated command reference
-        run: bash scripts/dev/run-mise.sh install argc
+        run: bash dev/scripts/install-dev-tools.sh
       - name: Install Zensical
-        run: bash scripts/dev/install-docs-deps.sh
+        run: bash dev/scripts/install-docs-deps.sh
       - name: Validate bootstrap scripts
-        run: bash tests/run.sh
+        run: bash dev/scripts/run-mise.sh exec -- bash dev/tests/run.sh
       - name: Build and validate site
-        run: bash scripts/dev/build-docs.sh
+        run: bash dev/scripts/build-docs.sh
       - name: Upload PR documentation preview
         id: preview
         if: github.event_name == 'pull_request'

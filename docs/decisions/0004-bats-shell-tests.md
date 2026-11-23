@@ -9,9 +9,9 @@ Small standalone utilities need regression coverage for their arguments, stdout/
 
 ## Decision
 
-Pin **Bats-core** in the checkout-only `mise.toml` (never the machine manifest) and invoke it through `scripts/dev/test-bats.sh`. Store behavioural tests in `tests/cli/<command>.bats`, with one file per utility and focused `@test` cases. Each test runs its command in an isolated, disposable fixture, asserts status and observable behaviour, and must not require external services or credentials.
+Pin **Bats-core** in the checkout-only `dev/mise.toml` (never the machine manifest) and invoke it through `dev/scripts/test-bats.sh`. Store behavioural tests in `dev/tests/cli/<command>.bats`, with one file per utility and focused `@test` cases. Each test runs its command in an isolated, disposable fixture, asserts status and observable behaviour, and must not require external services or credentials.
 
-Expose `mise run test:bats` for the Bats suite and `mise run test` for Bats plus the existing hook and integration checks. CI calls the same repository scripts rather than the test framework directly. Keep the existing Python process/PTY integration tests as Python; do not migrate them merely for uniformity.
+Expose `mise -C dev run test:bats` for the Bats suite and `mise -C dev run test` for Bats plus the existing hook and integration checks. CI calls the same repository scripts rather than the test framework directly. Keep the existing Python process/PTY integration tests as Python; do not migrate them merely for uniformity.
 
 Do not add assertion/mocking libraries until repeated cases justify their maintenance. Keep formatting and linting separate from behavioural tests; Bats files are run with Bats, not executed by a plain Bash syntax check.
 
