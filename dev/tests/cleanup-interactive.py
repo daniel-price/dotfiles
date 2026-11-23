@@ -135,7 +135,8 @@ esac
             )
             os.close(slave)
             slave = -1
-            os.write(master, answers.encode())
+            # Send keypresses without Enter; confirmation consumes one key.
+            os.write(master, answers.replace("\n", "").encode())
             output = proc.communicate(timeout=12)[0].decode(errors="replace")
             return proc.returncode, output
         finally:
