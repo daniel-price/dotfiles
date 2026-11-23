@@ -13,7 +13,7 @@ opencode = tomllib.loads((ROOT / ".config/mise/config.opencode.toml").read_text(
 
 assert "opencode" not in base["tools"]
 assert opencode["tools"]["opencode"] == "2.3.0"
-assert base["dotfiles"]["~/.config/mise/config.toml"]["source"] == "mise.toml"
+assert base["dotfiles"]["~/.config/mise/config.toml"]["source"].endswith("/mise.toml")
 assert base["dotfiles"]["~/.config/mise/config.opencode.toml"]["source"].endswith(
     ".config/mise/config.opencode.toml"
 )
