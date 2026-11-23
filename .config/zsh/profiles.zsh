@@ -30,7 +30,7 @@
   # reviewed global config is deployed, allow mise to discover native modules.
   if [[ "${MISE_GLOBAL_CONFIG_FILE:-}" == "$root/scripts/setup/mise.toml" &&
         -L "$HOME/.config/mise/config.toml" &&
-        "$HOME/.config/mise/config.toml" -ef "$root/scripts/setup/mise.toml" ]]; then
+        "$HOME/.config/mise/config.toml" -ef "$root/scripts/setup/global-mise.toml" ]]; then
     unset MISE_GLOBAL_CONFIG_FILE
   fi
 

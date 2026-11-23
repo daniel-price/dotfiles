@@ -22,7 +22,7 @@ ghostty = { ppa = "mkasberg/ghostty-ubuntu" }
 # Keep the module file beside it so mise's env selection discovers it. These
 # targets are never force-overwritten; an existing user config is a conflict.
 "~/.config/mise/config.toml" = { source = "global-mise.toml", mode = "symlink" }
-"~/scripts/setup/base-tools.toml" = { source = "base-tools.toml", mode = "symlink" }
+"~/.config/mise/base-tools.toml" = { source = "base-tools.toml", mode = "symlink" }
 "~/.config/mise/config.opencode.toml" = { source = "config.opencode.toml", mode = "symlink" }
 "~/.zshrc" = { source = "../../.config/zsh/zshrc", mode = "symlink" }
 "~/.config/git/config" = { source = "../../.config/git/config", mode = "symlink" }
