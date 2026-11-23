@@ -21,7 +21,24 @@ apply_reviewed_dotfiles() {
     }
 
     # Preview every pending target before making any changes.
-    while IFS=
+    while IFS=$'\t' read -r state mode target; do
+        [[ -n "$state" ]] || continue
+        case "$target" in
+        \~/*) target="$HOME/${target:2}" ;;
+        esac
+
+        # A broken "applied" symlink is still a conflict; back it up and
+        # let mise deploy the current declaration after explicit approval.
+        if [[ "$state" == applied ]]; then
+            if [[ "$mode" != symlink || ! -L "$target" || -e "$target" ]]; then
+                continue
+            fi
+            log "Broken mise-managed symlink: $target -> $(readlink "$target")"
+        elif [[ "$state" != missing && "$state" != differs && "$state" != source_missing ]]; then
+            continue
+        fi
+
+        if [[ "$state" == source_missing ]]; then
             printf '[error] Dotfile source missing: %s\n' "$target" >&2
             failed=1
         elif [[ ! -e "$target" && ! -L "$target" ]]; then
@@ -102,108 +119,7 @@ apply_reviewed_dotfiles() {
         failed=1
     fi
     # Do not trust "applied" alone: it does not guarantee a symlink resolves.
-    while IFS=
-}
-\t' read -r state mode target; do
-        [[ -n "$state" ]] || continue
-        case "$target" in
-        \~/*) target="$HOME/${target:2}" ;;
-        esac
-
-        # A broken "applied" symlink is still a conflict; back it up and
-        # let mise deploy the current declaration after explicit approval.
-        if [[ "$state" == applied ]]; then
-            if [[ "$mode" != symlink || ! -L "$target" || -e "$target" ]]; then
-                continue
-            fi
-            log "Broken mise-managed symlink: $target -> $(readlink "$target")"
-        elif [[ "$state" != missing && "$state" != differs && "$state" != source_missing ]]; then
-            continue
-        fi
-
-        if [[ "$state" == source_missing ]]; then
-            printf '[error] Dotfile source missing: %s\n' "$target" >&2
-            failed=1
-        elif [[ ! -e "$target" && ! -L "$target" ]]; then
-            if "$mise" -C / dot apply --dry-run "$target"; then
-                missing+=("$target")
-                missing_count=$((missing_count + 1))
-            else
-                printf '[error] Dotfile preview failed: %s\n' "$target" >&2
-                failed=1
-            fi
-        elif [[ -f "$target" || -L "$target" ]]; then
-            # Even a foreign symlink is a conflict: mise may repoint it without --force.
-            if "$mise" -C / dot apply --dry-run --force "$target"; then
-                conflicts+=("$target")
-                conflict_count=$((conflict_count + 1))
-            else
-                printf '[error] Dotfile conflict could not be previewed: %s\n' "$target" >&2
-                failed=1
-            fi
-        else
-            printf '[error] Dotfile is neither a regular file nor a symlink; left untouched: %s\n' "$target" >&2
-            failed=1
-        fi
-    done <<<"$rows"
-
-    if ((missing_count > 0)); then
-        if confirm "Apply $missing_count missing mise-managed dotfile(s)?"; then
-            for target in "${missing[@]}"; do
-                if ! "$mise" -C / dot apply --yes "$target"; then
-                    printf '[error] Dotfile apply failed: %s\n' "$target" >&2
-                    failed=1
-                fi
-            done
-        else
-            log 'Declined installation of missing dotfiles.'
-            failed=1
-        fi
-    fi
-
-    if ((conflict_count > 0)); then
-        for target in "${conflicts[@]}"; do
-            # Existing content is never overwritten automatically. Every conflict
-            # gets a separate approval and an on-disk backup before mise applies.
-            if ! confirm "Back up and replace conflicting dotfile $target?"; then
-                log "Skipped conflicting dotfile: $target"
-                failed=1
-                continue
-            fi
-            timestamp=$(date +%Y%m%d-%H%M%S)
-            backup="$target.backup-$timestamp"
-            suffix=0
-            while [[ -e "$backup" || -L "$backup" ]]; do
-                suffix=$((suffix + 1))
-                backup="$target.backup-$timestamp-$suffix"
-            done
-            if ! mv -- "$target" "$backup"; then
-                printf '[error] Could not back up dotfile: %s\n' "$target" >&2
-                failed=1
-                continue
-            fi
-            log "Backed up $target to $backup"
-            if ! "$mise" -C / dot apply --yes "$target"; then
-                printf '[error] Dotfile apply failed: %s\n' "$target" >&2
-                failed=1
-                if [[ ! -e "$target" && ! -L "$target" ]]; then
-                    if mv -- "$backup" "$target"; then
-                        log "Restored $target after failed deployment."
-                    else
-                        printf '[error] Could not restore dotfile backup: %s\n' "$backup" >&2
-                    fi
-                fi
-            fi
-        done
-    fi
-
-    if ! "$mise" -C / dot status --missing; then
-        log 'Some mise-managed dotfiles remain unapplied or conflicting.'
-        failed=1
-    fi
-    return "$failed"
-}
-\t' read -r state mode target; do
+    while IFS=$'\t' read -r state mode target; do
         [[ "$mode" == symlink ]] || continue
         case "$target" in
         \~/*) target="$HOME/${target:2}" ;;
@@ -213,104 +129,5 @@ apply_reviewed_dotfiles() {
             failed=1
         fi
     done <<<"$rows"
-    return "$failed"
-}
-\t' read -r state mode target; do
-        [[ -n "$state" ]] || continue
-        case "$target" in
-        \~/*) target="$HOME/${target:2}" ;;
-        esac
-
-        # A broken "applied" symlink is still a conflict; back it up and
-        # let mise deploy the current declaration after explicit approval.
-        if [[ "$state" == applied ]]; then
-            if [[ "$mode" != symlink || ! -L "$target" || -e "$target" ]]; then
-                continue
-            fi
-            log "Broken mise-managed symlink: $target -> $(readlink "$target")"
-        elif [[ "$state" != missing && "$state" != differs && "$state" != source_missing ]]; then
-            continue
-        fi
-
-        if [[ "$state" == source_missing ]]; then
-            printf '[error] Dotfile source missing: %s\n' "$target" >&2
-            failed=1
-        elif [[ ! -e "$target" && ! -L "$target" ]]; then
-            if "$mise" -C / dot apply --dry-run "$target"; then
-                missing+=("$target")
-                missing_count=$((missing_count + 1))
-            else
-                printf '[error] Dotfile preview failed: %s\n' "$target" >&2
-                failed=1
-            fi
-        elif [[ -f "$target" || -L "$target" ]]; then
-            # Even a foreign symlink is a conflict: mise may repoint it without --force.
-            if "$mise" -C / dot apply --dry-run --force "$target"; then
-                conflicts+=("$target")
-                conflict_count=$((conflict_count + 1))
-            else
-                printf '[error] Dotfile conflict could not be previewed: %s\n' "$target" >&2
-                failed=1
-            fi
-        else
-            printf '[error] Dotfile is neither a regular file nor a symlink; left untouched: %s\n' "$target" >&2
-            failed=1
-        fi
-    done <<<"$rows"
-
-    if ((missing_count > 0)); then
-        if confirm "Apply $missing_count missing mise-managed dotfile(s)?"; then
-            for target in "${missing[@]}"; do
-                if ! "$mise" -C / dot apply --yes "$target"; then
-                    printf '[error] Dotfile apply failed: %s\n' "$target" >&2
-                    failed=1
-                fi
-            done
-        else
-            log 'Declined installation of missing dotfiles.'
-            failed=1
-        fi
-    fi
-
-    if ((conflict_count > 0)); then
-        for target in "${conflicts[@]}"; do
-            # Existing content is never overwritten automatically. Every conflict
-            # gets a separate approval and an on-disk backup before mise applies.
-            if ! confirm "Back up and replace conflicting dotfile $target?"; then
-                log "Skipped conflicting dotfile: $target"
-                failed=1
-                continue
-            fi
-            timestamp=$(date +%Y%m%d-%H%M%S)
-            backup="$target.backup-$timestamp"
-            suffix=0
-            while [[ -e "$backup" || -L "$backup" ]]; do
-                suffix=$((suffix + 1))
-                backup="$target.backup-$timestamp-$suffix"
-            done
-            if ! mv -- "$target" "$backup"; then
-                printf '[error] Could not back up dotfile: %s\n' "$target" >&2
-                failed=1
-                continue
-            fi
-            log "Backed up $target to $backup"
-            if ! "$mise" -C / dot apply --yes "$target"; then
-                printf '[error] Dotfile apply failed: %s\n' "$target" >&2
-                failed=1
-                if [[ ! -e "$target" && ! -L "$target" ]]; then
-                    if mv -- "$backup" "$target"; then
-                        log "Restored $target after failed deployment."
-                    else
-                        printf '[error] Could not restore dotfile backup: %s\n' "$backup" >&2
-                    fi
-                fi
-            fi
-        done
-    fi
-
-    if ! "$mise" -C / dot status --missing; then
-        log 'Some mise-managed dotfiles remain unapplied or conflicting.'
-        failed=1
-    fi
     return "$failed"
 }
