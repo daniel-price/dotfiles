@@ -7,7 +7,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from confirmations import Confirm, Deny, confirmation_keys
+from confirmations import Confirm, Deny, communicate_confirmations
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "setup/setup-fonts.sh"
@@ -74,16 +74,11 @@ fi
                 command, env=context, stdin=slave,
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             )
-            os.close(slave)
-            slave = -1
-            # Send keypresses without Enter; confirmation consumes one key.
-            os.write(master, confirmation_keys(answer))
-            output = proc.communicate(timeout=15)[0].decode(errors="replace")
+            output = communicate_confirmations(proc, master, slave, answer, timeout=15)
             return subprocess.CompletedProcess(command, proc.returncode, output)
         finally:
             os.close(master)
-            if slave != -1:
-                os.close(slave)
+            os.close(slave)
 
     font_dir = home / ("Library/Fonts" if platform.system() == "Darwin" else ".local/share/fonts")
     names = [

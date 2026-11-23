@@ -6,7 +6,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from confirmations import Confirm, Deny, confirmation_keys
+from confirmations import Confirm, Deny, communicate_confirmations
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "setup/setup-prompt.sh"
@@ -65,16 +65,11 @@ esac
         try:
             proc = subprocess.Popen(cmd, cwd=base, env=context, stdin=slave,
                                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            os.close(slave)
-            slave = -1
-            # Send keypresses without Enter; confirmation consumes one key.
-            os.write(master, confirmation_keys(answer))
-            output = proc.communicate(timeout=12)[0].decode(errors="replace")
+            output = communicate_confirmations(proc, master, slave, answer, timeout=12)
             return subprocess.CompletedProcess(cmd, proc.returncode, output)
         finally:
             os.close(master)
-            if slave != -1:
-                os.close(slave)
+            os.close(slave)
 
     def calls():
         return log.read_text().splitlines()

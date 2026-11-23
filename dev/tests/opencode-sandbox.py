@@ -7,7 +7,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from confirmations import Confirm, Deny, confirmation_keys
+from confirmations import Confirm, Deny, communicate_confirmations
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "modules" / "opencode" / "bin" / "opencode-sandbox"
@@ -73,16 +73,11 @@ case "$1" in -u) echo 1000 ;; -g) echo 1000 ;; *) /usr/bin/id "$@" ;; esac
         try:
             proc = subprocess.Popen(cmd, cwd=base, env=actual, stdin=slave,
                                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            os.close(slave)
-            slave = -1
-            # Send keypresses without Enter; confirmation consumes one key.
-            os.write(master, confirmation_keys(*answers))
-            stdout = proc.communicate(timeout=10)[0].decode(errors="replace")
+            stdout = communicate_confirmations(proc, master, slave, *answers, timeout=10)
             return subprocess.CompletedProcess(cmd, proc.returncode, stdout)
         finally:
             os.close(master)
-            if slave != -1:
-                os.close(slave)
+            os.close(slave)
 
     def operations():
         return log.read_text().splitlines()
