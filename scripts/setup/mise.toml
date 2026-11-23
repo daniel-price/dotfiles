@@ -31,6 +31,10 @@ ghostty = { ppa = "mkasberg/ghostty-ubuntu" }
 "brew-cask:ghostty" = { os = "macos" }
 
 [dotfiles]
+# Native global configuration; installed explicitly by Base bootstrap.
+# Optional modules are deployed but only loaded when selected via miserc.local.toml.
+"~/.config/mise/config.toml" = { source = "mise.toml", mode = "symlink" }
+"~/.config/mise/config.opencode.toml" = { source = "../../.config/mise/config.opencode.toml", mode = "symlink" }
 "~/.zshrc" = { source = "../../.config/zsh/zshrc", mode = "symlink" }
 "~/.config/git/config" = { source = "../../.config/git/config", mode = "symlink" }
 "~/.config/atuin/config.toml" = { source = "../../.config/atuin/config.toml", mode = "symlink" }

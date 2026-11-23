@@ -358,6 +358,55 @@ main() {
     bash "$ROOT/scripts/setup/keyboard.sh" --apply ||
         die "Keyboard setup failed; check the preceding error."
 
+    # Optional native mise environments are selected only on this machine.
+    # Base bootstrap above always uses the reviewed, explicit manifest. Switch
+    # to normal global discovery only after its symlink was deployed successfully.
+    setup_selected_modules() {
+        local registry="$HOME/.config/dotfiles/active-profiles"
+        local selected="$HOME/.config/mise/miserc.local.toml"
+        local installed="$HOME/.config/mise/config.toml"
+
+        if [[ -f "$registry" && ! -L "$registry" ]]; then
+            log 'Legacy profiles still active; native module setup skipped. Deactivate them with ,profile before migrating.'
+            return 0
+        fi
+        [[ -e "$selected" || -L "$selected" ]] || return 0
+        [[ -f "$selected" && ! -L "$selected" ]] ||
+            die "Machine module selection must be a regular file: $selected"
+        if [[ ! -L "$installed" || ! "$installed" -ef "$ROOT/scripts/setup/mise.toml" ]]; then
+            log 'Native module setup skipped: approve the managed ~/.config/mise/config.toml symlink first.'
+            return 0
+        fi
+
+        unset MISE_GLOBAL_CONFIG_FILE
+        # Clone private module repositories first. A newly cloned conf.d module
+        # is discovered by the next mise invocation without a custom loader.
+        if "$mise" -C / bootstrap repos status --missing >/dev/null 2>&1; then
+            log 'Selected module repositories are already present.'
+        else
+            "$mise" -C / bootstrap repos apply --dry-run ||
+                die 'Could not preview selected module Git checkouts.'
+            if confirm 'Clone or update the selected module repositories shown above?'; then
+                "$mise" -C / bootstrap repos apply --yes ||
+                    die 'Could not apply selected module Git repositories.'
+            else
+                log 'Selected module repository setup declined.'
+                return 0
+            fi
+        fi
+
+        "$mise" -C / bootstrap --dry-run ||
+            die 'Could not preview the selected native mise modules.'
+        if confirm 'Apply the selected mise modules (packages, tools, dotfiles and services)?'; then
+            # No --yes: let mise retain its own per-operation confirmations.
+            "$mise" -C / bootstrap ||
+                die 'Selected native mise module provisioning failed.'
+        else
+            log 'Selected module provisioning declined.'
+        fi
+    }
+    setup_selected_modules
+
     # Changing the login shell is independent of package and dotfile setup.
     # Run this last so any earlier approval answers cannot apply to chsh.
     # chsh changes only this user's login account and may ask for a password.

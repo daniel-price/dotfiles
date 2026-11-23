@@ -1,3 +1,0 @@
-# Intentionally inert until the global configuration is deployed explicitly.
-# Checkout machine setup uses scripts/setup/mise.toml, not this file.
-[tools]

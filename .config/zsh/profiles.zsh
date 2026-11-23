@@ -1,4 +1,5 @@
-# Base + explicitly activated Profiles, in the same startup order as zshrc.
+# Native mise environments are selected via miserc.local.toml.
+# Keep legacy profile startup working until its explicit deactivation.
 # The anonymous function scopes temporary variables; shell setup persists.
 () {
   local zsh_dir=${${(%):-%x}:A:h}
@@ -21,20 +22,19 @@
     done < "$registry"
   fi
 
-  # A nested shell may inherit the old manifest after the last deactivation.
-  if [[ "${MISE_GLOBAL_CONFIG_FILE:-}" == "$manifest" && ! -f "$registry" ]]; then
-    unset MISE_GLOBAL_CONFIG_FILE
-  fi
-
-  # Respect an external mise override, otherwise select Base or the
-  # reviewed manifest combining Base with the active Profiles.
-  if [[ -z "${MISE_GLOBAL_CONFIG_FILE:-}" ]]; then
-    candidate="$root/scripts/setup/mise.toml"
-    if [[ -f "$registry" && ! -L "$registry" &&
-          -f "$manifest" && ! -L "$manifest" ]]; then
-      candidate="$manifest"
+  # Legacy profiles remain functional until explicitly deactivated.
+  # Otherwise, let mise discover its native global config and selected environments.
+  if (( ${#profiles} )); then
+    if [[ -z "${MISE_GLOBAL_CONFIG_FILE:-}" ]]; then
+      candidate="$root/scripts/setup/mise.toml"
+      [[ -f "$manifest" && ! -L "$manifest" ]] && candidate="$manifest"
+      [[ -f "$candidate" ]] && export MISE_GLOBAL_CONFIG_FILE="$candidate"
     fi
-    [[ -f "$candidate" ]] && export MISE_GLOBAL_CONFIG_FILE="$candidate"
+  else
+    case "${MISE_GLOBAL_CONFIG_FILE:-}" in
+      "$manifest" | "$root/scripts/setup/mise.toml")
+        unset MISE_GLOBAL_CONFIG_FILE ;;
+    esac
   fi
 
   if (( $+commands[mise] )); then

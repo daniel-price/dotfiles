@@ -1,0 +1,4 @@
+# Optional host OpenCode CLI (not sandboxed); available only when env selects opencode.
+# For isolated personal development prefer the existing opencode-sandbox launcher.
+[tools]
+opencode = "2.3.0"

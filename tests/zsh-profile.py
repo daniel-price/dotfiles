@@ -56,7 +56,7 @@ with tempfile.TemporaryDirectory(prefix="dotfiles-zsh-profile-") as temporary:
     )
     assert scoped.returncode == 0, scoped.stdout
     assert "PROFILES=0 REGISTRY=0 HELPERS=0" in scoped.stdout, scoped.stdout
-    assert str(ROOT / "scripts/setup/mise.toml") in scoped.stdout, scoped.stdout
+    assert 'MISE=""' in scoped.stdout or scoped.stdout.strip().endswith("MISE="), scoped.stdout
 
     aliases = run("alias zj za zar g; print -r -- ZSH_READY")
     assert aliases.returncode == 0, aliases.stdout

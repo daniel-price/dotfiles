@@ -264,6 +264,7 @@ MISE
         python3 "$ROOT/tests/bootstrap-interactive.py"
         python3 "$ROOT/tests/zsh-profile.py"
         python3 "$ROOT/tests/profile-real-repos.py"
+        python3 "$ROOT/tests/native-mise-modules.py"
         python3 "$ROOT/tests/mise-bootstrap-interactive.py"
         python3 "$ROOT/tests/login-shell.py"
         python3 "$ROOT/tests/cleanup-interactive.py"
