@@ -154,7 +154,7 @@ case "$*" in
         state=differs
       fi
       if [[ "$state" == missing || "$state" == differs ]]; then
-        printf '%s\\t%s\\n' "$state" "$target"
+        printf '%s\\tsymlink\\t%s\\n' "$state" "$target"
       fi
     done
     ;;
