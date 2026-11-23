@@ -74,7 +74,8 @@ fi
             )
             os.close(slave)
             slave = -1
-            os.write(master, answer.encode())
+            # Send keypresses without Enter; confirmation consumes one key.
+            os.write(master, answer.replace("\n", "").encode())
             output = proc.communicate(timeout=15)[0].decode(errors="replace")
             return subprocess.CompletedProcess(command, proc.returncode, output)
         finally:
