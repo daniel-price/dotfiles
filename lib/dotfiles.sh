@@ -22,7 +22,10 @@ apply_reviewed_dotfiles() {
         case "$target" in
         '~/'*) target="$HOME/${target#\~/}" ;;
         esac
-        [[ -n "$target" ]] || { failed=1; continue; }
+        [[ -n "$target" ]] || {
+            failed=1
+            continue
+        }
 
         case "$state" in
         applied | tracked) ;;
