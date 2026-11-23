@@ -46,10 +46,22 @@ if mise:
             assert result.returncode == 0, result.stderr
             return result.stdout
 
-        assert "opencode " not in selected(["work"])
-        assert "opencode " in selected(["personal", "opencode"])
-        assert "opencode " in selected(["home-server", "opencode", "radarr"])
-        assert "opencode " not in selected(["home-server", "radarr"])
+        work = selected(["work"])
+        assert "opencode" not in work, work
+        personal = selected(["personal", "opencode"])
+        if "opencode" not in personal:
+            config_result = subprocess.run(
+                [mise, "-C", "/", "config", "ls"],
+                env=env, capture_output=True, text=True, timeout=20
+            )
+            raise AssertionError(
+                "OpenCode module not loaded.\n"
+                f"mise ls: {personal!r}\n"
+                f"mise config ls: {config_result.stdout!r}\n"
+                f"mise config stderr: {config_result.stderr!r}"
+            )
+        assert "opencode" in selected(["home-server", "opencode", "radarr"])
+        assert "opencode" not in selected(["home-server", "radarr"])
 else:
     print("SKIP: real native mise resolution (mise not installed)")
 
