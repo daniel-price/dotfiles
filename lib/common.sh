@@ -31,11 +31,12 @@ confirm() {
         return 1
     fi
     printf '%s [y/N] ' "$1" >&2
-    if ! IFS= read -r answer; then
+    # Read a single keypress without Enter. -s suppresses terminal echo;
+    # -n 1 temporarily switches the terminal to character-at-a-time input.
+    if ! IFS= read -r -s -n 1 answer; then
+        printf '\n' >&2
         return 1
     fi
-    case "$answer" in
-    [yY] | [yY][eE][sS]) return 0 ;;
-    *) return 1 ;;
-    esac
+    printf '\n' >&2
+    [[ "$answer" == [yY] ]]
 }
