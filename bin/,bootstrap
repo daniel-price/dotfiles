@@ -9,6 +9,8 @@ source "$ROOT/scripts/lib/common.sh"
 source "$ROOT/scripts/lib/os.sh"
 # shellcheck source=scripts/lib/mise.sh
 source "$ROOT/scripts/lib/mise.sh"
+# shellcheck source=scripts/lib/nvim.sh
+source "$ROOT/scripts/lib/nvim.sh"
 # shellcheck source=scripts/lib/machine-tools.sh
 source "$ROOT/scripts/lib/machine-tools.sh"
 # shellcheck source=scripts/lib/login-shell.sh
@@ -119,85 +121,40 @@ main() {
     }
 
 
-    # Reconcile the independent, public Neovim config after mise installs nvim.
-    # Never replace a foreign config or discard local commits/changes.
+    # Keep Neovim separate from the dotfiles checkout.
     setup_nvim() {
-        local config="$HOME/.config/nvim"
-        local remote='https://github.com/daniel-price/lazyvim.git'
-        local actual lock_before verify
+        local config="$HOME/.config/nvim" lock_before
 
         if ! "$mise" -C / exec -- nvim --version >/dev/null 2>&1; then
             log 'Neovim is not installed; skipping its configuration.'
             return 0
         fi
 
-        if [[ ! -e "$config" && ! -L "$config" ]]; then
+        if [[ ! -e "$config" ]]; then
             if ! confirm "Clone the public LazyVim configuration into $config?"; then
                 log 'Neovim configuration clone declined.'
                 return 0
             fi
             mkdir -p "$HOME/.config" || return 1
-            git clone --branch main --single-branch "$remote" "$config" ||
+            git clone --branch main --single-branch "$NVIM_CONFIG_REMOTE" "$config" ||
                 { log 'Could not clone the LazyVim configuration.'; return 1; }
         fi
 
-        if [[ -L "$config" || ! -d "$config" ]] ||
-            [[ "$(git -C "$config" rev-parse --show-toplevel 2>/dev/null || :)" != "$(cd "$config" && pwd -P)" ]]; then
-            log "Neovim configuration conflict at $config; refusing to overwrite it."
-            return 1
-        fi
-        actual=$(git -C "$config" remote get-url origin 2>/dev/null) || {
-            log 'Neovim checkout has no origin remote.'
-            return 1
-        }
-        case "$actual" in
-        "$remote" | 'https://github.com/daniel-price/lazyvim') ;;
-        *) log "Unexpected Neovim origin: $actual"; return 1 ;;
-        esac
-        [[ "$(git -C "$config" symbolic-ref --quiet --short HEAD 2>/dev/null || :)" == main ]] ||
-            { log 'Neovim checkout must be on main; leaving it untouched.'; return 1; }
-        [[ -z "$(git -C "$config" status --porcelain --untracked-files=all)" ]] ||
-            { log 'Neovim checkout has uncommitted changes; skipping its entire sync.'; return 1; }
+        nvim_validate_checkout "$config" || return 1
+        nvim_sync_checkout "$config" --allow-offline || return 1
 
-        if git -C "$config" fetch origin main; then
-            if git -C "$config" merge-base --is-ancestor HEAD refs/remotes/origin/main; then
-                git -C "$config" merge --ff-only refs/remotes/origin/main ||
-                    { log 'Could not fast-forward Neovim main.'; return 1; }
-            elif git -C "$config" merge-base --is-ancestor refs/remotes/origin/main HEAD; then
-                log 'Neovim has unpushed local commits; retaining them.'
-            else
-                log 'Neovim main has diverged from origin/main; resolve it manually.'
-                return 1
-            fi
-        else
-            log 'Neovim fetch failed (possibly offline); using the existing clean checkout.'
-        fi
-
-        [[ -f "$config/lazy-lock.json" ]] ||
-            { log 'Neovim lazy-lock.json is missing.'; return 1; }
         lock_before=$(git -C "$config" hash-object lazy-lock.json) || return 1
-
-        # Lazy restore uses the lockfile; sync/update would advance plugins.
-        # The final check also refuses missing lock entries or failed checkouts.
-        verify='lua local ok,err=pcall(function() local cfg=require("lazy.core.config"); local lock=vim.json.decode(table.concat(vim.fn.readfile(vim.fn.stdpath("config").."/lazy-lock.json"),"\n")); for name,p in pairs(cfg.plugins) do if not (p._ and p._.is_local) then local want=lock[name]; assert(want and want.commit, "Plugin missing from lazy-lock.json: "..name); assert(vim.fn.isdirectory(p.dir)==1, "Plugin not installed: "..name); local got=vim.fn.systemlist({"git","-C",p.dir,"rev-parse","HEAD"})[1]; assert(vim.v.shell_error==0 and got==want.commit, "Plugin does not match lockfile: "..name) end end end); if not ok then vim.api.nvim_err_writeln(err); vim.cmd("cquit 1") end'
-        if ! "$mise" -C / exec -- nvim --headless \
-            -c 'Lazy! restore' -c 'Lazy! clean' -c "$verify" -c 'qa!'; then
+        if ! nvim_verify_plugins "$mise" -c 'Lazy! restore' -c 'Lazy! clean'; then
             log 'Neovim plugin restore or lockfile verification failed.'
             return 1
         fi
-        if [[ "$(git -C "$config" hash-object lazy-lock.json)" != "$lock_before" ]]; then
-            log 'Neovim restore unexpectedly changed lazy-lock.json.'
-            return 1
-        fi
+        [[ "$(git -C "$config" hash-object lazy-lock.json)" == "$lock_before" ]] ||
+            { log 'Neovim restore unexpectedly changed lazy-lock.json.'; return 1; }
 
-        # LazyVim owns language-tool and parser declarations. Loading their
-        # plugins triggers their configured install-missing behaviour.
-        if ! "$mise" -C / exec -- nvim --headless \
+        # LazyVim owns its Mason tools and Tree-sitter parser declarations.
+        "$mise" -C / exec -- nvim --headless \
             -c 'lua require("lazy").load({plugins={"mason.nvim","mason-lspconfig.nvim","nvim-treesitter"}})' \
-            -c 'qa!'; then
-            log 'Neovim Mason/Tree-sitter initialisation failed.'
-            return 1
-        fi
+            -c 'qa!' || { log 'Neovim language-tool initialisation failed.'; return 1; }
         log 'Neovim configuration and locked plugins synchronised.'
     }
 

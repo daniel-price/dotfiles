@@ -7,11 +7,12 @@ ROOT=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
 source "$ROOT/scripts/lib/common.sh"
 # shellcheck source=scripts/lib/mise.sh
 source "$ROOT/scripts/lib/mise.sh"
+# shellcheck source=scripts/lib/nvim.sh
+source "$ROOT/scripts/lib/nvim.sh"
 
 main() {
     local config="$HOME/.config/nvim"
-    local remote='https://github.com/daniel-price/lazyvim.git'
-    local mise origin verify changes
+    local mise changes
 
     if [[ "${1:-}" == --help && $# -eq 1 ]]; then
         printf '%s\n' 'Usage: ,nvim-update' \
@@ -21,21 +22,7 @@ main() {
     fi
     [[ $# -eq 0 ]] || die 'Unexpected argument. Use --help for usage.'
 
-    [[ ! -L "$config" && -d "$config" ]] ||
-        die "Expected an ordinary LazyVim checkout at $config."
-    [[ "$(git -C "$config" rev-parse --show-toplevel 2>/dev/null || :)" == "$(cd "$config" && pwd -P)" ]] ||
-        die 'Neovim config is not the expected Git checkout.'
-    origin=$(git -C "$config" remote get-url origin 2>/dev/null) ||
-        die 'Neovim config has no origin remote.'
-    case "$origin" in
-    "$remote" | 'https://github.com/daniel-price/lazyvim') ;;
-    *) die "Unexpected LazyVim origin: $origin" ;;
-    esac
-    [[ "$(git -C "$config" symbolic-ref --quiet --short HEAD 2>/dev/null || :)" == main ]] ||
-        die 'Neovim config must be on main.'
-    [[ -z "$(git -C "$config" status --porcelain --untracked-files=all)" ]] ||
-        die 'Neovim config has uncommitted changes.'
-    [[ -f "$config/lazy-lock.json" ]] || die 'Missing lazy-lock.json.'
+    nvim_validate_checkout "$config" || die "Neovim checkout validation failed."
 
     mise=$(mise_command) || die 'Mise is not installed.'
     export MISE_GLOBAL_CONFIG_FILE="$ROOT/scripts/setup/mise.toml"
@@ -47,14 +34,7 @@ main() {
         return 0
     fi
 
-    git -C "$config" fetch origin main ||
-        die 'Could not fetch the latest LazyVim main.'
-    if git -C "$config" merge-base --is-ancestor HEAD refs/remotes/origin/main; then
-        git -C "$config" merge --ff-only refs/remotes/origin/main ||
-            die 'Could not fast-forward LazyVim main.'
-    elif ! git -C "$config" merge-base --is-ancestor refs/remotes/origin/main HEAD; then
-        die 'LazyVim main is divergent; resolve it before updating.'
-    fi
+    nvim_sync_checkout "$config" || die "Neovim checkout sync failed."
 
     # A failed update or validation restores the previous tracked lockfile and
     # attempts to restore plugins; never push a failed upgrade.
@@ -75,9 +55,7 @@ main() {
         die 'Neovim plugin update failed; nothing pushed.'
     fi
 
-    # Ensure every remotely managed plugin is installed at the exact new SHA.
-    verify='lua local ok,err=pcall(function() local cfg=require("lazy.core.config"); local lock=vim.json.decode(table.concat(vim.fn.readfile(vim.fn.stdpath("config").."/lazy-lock.json"),"\n")); for name,p in pairs(cfg.plugins) do if not (p._ and p._.is_local) then local want=lock[name]; assert(want and want.commit, "Plugin missing from lazy-lock.json: "..name); assert(vim.fn.isdirectory(p.dir)==1, "Plugin not installed: "..name); local got=vim.fn.systemlist({"git","-C",p.dir,"rev-parse","HEAD"})[1]; assert(vim.v.shell_error==0 and got==want.commit, "Plugin does not match lockfile: "..name) end end end); if not ok then vim.api.nvim_err_writeln(err); vim.cmd("cquit 1") end'
-    if ! "$mise" -C / exec -- nvim --headless -c "$verify" -c 'qa!'; then
+    if ! nvim_verify_plugins "$mise"; then
         rollback
         die 'Neovim validation failed; nothing pushed.'
     fi
