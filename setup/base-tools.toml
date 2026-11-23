@@ -1,5 +1,6 @@
 # Single source of truth for Base tool versions, shared by bootstrap and normal mise.
 [tools]
+node = "26.13.1"
 neovim = "0.12.6"
 zellij = "0.46.0"
 zoxide = "0.10.0"
