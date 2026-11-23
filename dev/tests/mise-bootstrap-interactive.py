@@ -225,7 +225,8 @@ esac
                                     stderr=subprocess.STDOUT)
             os.close(slave)
             slave = -1
-            os.write(master, answers.encode())
+            # Send keypresses without Enter; confirmation consumes one key.
+            os.write(master, answers.replace("\n", "").encode())
             out = proc.communicate(timeout=20)[0].decode(errors="replace")
             return subprocess.CompletedProcess([], proc.returncode, out)
         finally:
