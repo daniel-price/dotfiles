@@ -38,6 +38,15 @@ if mise:
         env["MISE_CONFIG_DIR"] = str(config)
         env.pop("XDG_CONFIG_HOME", None)
 
+        # A global config symlink must resolve the original dotfile sources,
+        # not paths relative to ~/.config/mise or raw template expressions.
+        status = subprocess.run(
+            [mise, "-C", "/", "dot", "status", "--json"],
+            env=env, capture_output=True, text=True, timeout=20
+        )
+        assert status.returncode == 0, status.stdout + status.stderr
+        assert str(ROOT / ".config/zsh/zshrc") in status.stdout, status.stdout
+
         def selected(names):
             (config / "miserc.local.toml").write_text(
                 "env = [" + ", ".join(repr(n) for n in names) + "]\n"
