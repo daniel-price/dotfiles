@@ -1,6 +1,6 @@
 [project]
-site_name = "Dotfiles Handbook"
-site_description = "A human-first handbook for my portable development environment."
+site_name = "Dotfiles"
+site_description = "Personal development environment."
 site_url = "https://daniel-price.github.io/dotfiles/"
 repo_url = "https://github.com/daniel-price/dotfiles"
 repo_name = "dotfiles"
@@ -11,7 +11,7 @@ nav = [
   { "Architecture" = [
     "architecture/index.md",
     { "Operating systems" = "architecture/platforms.md" },
-    { "Base and Profiles" = "architecture/configuration.md" },
+    { "Base and modules" = "architecture/configuration.md" },
     { "Secrets and encryption" = "architecture/secrets.md" },
     { "Applications and containers" = "architecture/applications.md" },
     { "Repository layout" = "architecture/repository-layout.md" },
@@ -22,10 +22,10 @@ nav = [
     { "Add a tool" = "guides/add-tool.md" },
     { "Manage a dotfile" = "guides/manage-dotfile.md" },
     { "Manage a secret" = "guides/manage-secret.md" },
-    { "Profiles" = "guides/profiles.md" },
+    { "Mise modules" = "guides/mise-modules.md" },
   ] },
   { "Roadmap" = "roadmap.md" },
-  { "Reference & history (detailed)" = "reference/index.md" },
+  { "Reference & history" = "reference/index.md" },
 ]
 
 [project.theme]
