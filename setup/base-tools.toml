@@ -1,5 +1,12 @@
 # Single source of truth for Base tool versions, shared by bootstrap and normal mise.
 [tools]
+# Language runtimes needed by LazyVim's Mason-managed tools.
+# .NET: csharpier/fantomas; Go: gofumpt/goimports; Ruby: erb formatters;
+# Python: sqlfluff (pip and venv); Node: prettier.
+dotnet = "10.0.404"
+go = "1.27.4"
+python = "3.14.10"
+ruby = "3.4.13"
 node = "26.13.1"
 neovim = "0.12.6"
 zellij = "0.46.0"
