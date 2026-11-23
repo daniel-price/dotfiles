@@ -7,6 +7,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from confirmations import Confirm, Deny, confirmation_keys
+
 ROOT = Path(__file__).resolve().parents[2]
 GIT = shutil.which("git")
 assert GIT, "Git is required for the local updater tests"
@@ -102,7 +104,7 @@ exec "@GIT@" "$@"
             os.close(slave)
             slave = -1
             # Send keypresses without Enter; confirmation consumes one key.
-            os.write(master, answers.replace("\n", "").encode())
+            os.write(master, confirmation_keys(*answers))
             out = p.communicate(timeout=12)[0].decode(errors="replace")
             return p.returncode, out
         finally:
@@ -122,18 +124,18 @@ exec "@GIT@" "$@"
     assert status == 0 and "Fetch declined" in out, out
     status, out = run([script, "--apply", "--require-current"])
     assert status != 0 and "bootstrap will not run" in out, out
-    status, out = run([script, "--apply"], "n\n")
+    status, out = run([script, "--apply"], (Deny(),))
     assert status == 0 and "Fetch declined" in out, out
     assert git("-C", checkout, "rev-parse", "refs/remotes/origin/main") == old
 
-    status, out = run([script, "--apply"], "y\nn\n")
+    status, out = run([script, "--apply"], (Confirm(), Deny()))
     assert status == 0 and "Fast-forward declined" in out, out
     assert git("-C", checkout, "rev-parse", "HEAD") == old
     assert git("-C", checkout, "rev-parse", "refs/remotes/origin/main") == new
-    status, out = run([script, "--apply"], "y\ny\n")
+    status, out = run([script, "--apply"], (Confirm(), Confirm()))
     assert status == 0 and "Fast-forwarded main by 1" in out, out
     assert git("-C", checkout, "rev-parse", "HEAD") == new
-    status, out = run([script, "--apply"], "y\n")
+    status, out = run([script, "--apply"], (Confirm(),))
     assert status == 0 and "already current" in out, out
 
     # The independent updater can switch from a feature branch and fast-forward
@@ -141,7 +143,7 @@ exec "@GIT@" "$@"
     git("-C", checkout, "switch", "-qc", "feature/test")
     feature_head = git("-C", checkout, "rev-parse", "HEAD")
     push("v3")
-    status, out = run([script, "--apply"], "y\ny\n")
+    status, out = run([script, "--apply"], (Confirm(), Confirm()))
     assert status == 0 and "Checkout update complete" in out, out
     assert git("-C", checkout, "branch", "--show-current") == "main"
     assert git("-C", checkout, "rev-parse", "HEAD") == git("-C", seed, "rev-parse", "HEAD")
@@ -154,20 +156,20 @@ exec "@GIT@" "$@"
     (checkout / "scratch").write_text("preserve\n")
     cached = git("-C", checkout, "rev-parse", "refs/remotes/origin/main")
     push("v4")
-    status, out = run([script, "--apply"], "y\ny\n")
+    status, out = run([script, "--apply"], (Confirm(), Confirm()))
     assert status == 0 and "Update skipped" in out, out
     assert git("-C", checkout, "branch", "--show-current") == "feature/test"
     assert git("-C", checkout, "rev-parse", "refs/remotes/origin/main") == cached
     assert (checkout / "scratch").read_text() == "preserve\n"
     (checkout / "scratch").unlink()
 
-    status, out = run([script, "--apply"], "y\nn\n")
+    status, out = run([script, "--apply"], (Confirm(), Deny()))
     assert status == 0 and "Branch switch declined" in out, out
     assert git("-C", checkout, "branch", "--show-current") == "feature/test"
     current = git("-C", checkout, "rev-parse", "HEAD")
-    status, out = run([script, "--apply"], "y\n", {"MOCK_OFFLINE": "1"})
+    status, out = run([script, "--apply"], (Confirm(),), {"MOCK_OFFLINE": "1"})
     assert status == 0 and "Could not fetch origin/main" in out, out
-    status, out = run([script, "--apply"], "y\n", {"MOCK_BAD_ORIGIN": "1"})
+    status, out = run([script, "--apply"], (Confirm(),), {"MOCK_BAD_ORIGIN": "1"})
     assert status != 0 and "Unexpected origin URL" in out, out
     assert git("-C", checkout, "rev-parse", "HEAD") == current
 
@@ -177,12 +179,12 @@ exec "@GIT@" "$@"
     git("-C", checkout, "add", ".")
     git("-C", checkout, "commit", "-qm", "local main change")
     local_head = git("-C", checkout, "rev-parse", "HEAD")
-    status, out = run([script, "--apply"], "y\n")
+    status, out = run([script, "--apply"], (Confirm(),))
     assert status == 0 and "No automatic switch, reset or merge" in out, out
     assert git("-C", checkout, "rev-parse", "HEAD") == local_head
 
     git("-C", checkout, "checkout", "--detach", "-q")
-    status, out = run([script, "--apply"], "y\n")
+    status, out = run([script, "--apply"], (Confirm(),))
     assert status == 0 and "Detached HEAD" in out, out
     assert git("-C", checkout, "rev-parse", "HEAD") == local_head
 
