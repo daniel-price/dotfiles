@@ -83,3 +83,12 @@ run_dotfiles() {
   [ "${#backups[@]}" -eq 1 ]
   [ "$(cat "${backups[0]}")" = original ]
 }
+
+@test "fully applied dotfiles need no changes (including Bash 3.2)" {
+  export FAKE_ROWS
+  FAKE_ROWS=$(printf 'applied\t%s\n' "$HOME/.zshrc")
+
+  run run_dotfiles
+  [ "$status" -eq 0 ]
+  [ ! -s "$ACTION_LOG" ]
+}
