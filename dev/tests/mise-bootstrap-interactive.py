@@ -154,7 +154,7 @@ case "$*" in
         state=differs
       fi
       if [[ "$state" == missing || "$state" == differs ]]; then
-        printf '%s\\n' "$target"
+        printf '%s\\t%s\\n' "$state" "$target"
       fi
     done
     ;;
