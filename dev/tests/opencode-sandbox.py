@@ -73,7 +73,8 @@ case "$1" in -u) echo 1000 ;; -g) echo 1000 ;; *) /usr/bin/id "$@" ;; esac
                                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             os.close(slave)
             slave = -1
-            os.write(master, answers.encode())
+            # Send keypresses without Enter; confirmation consumes one key.
+            os.write(master, answers.replace("\n", "").encode())
             stdout = proc.communicate(timeout=10)[0].decode(errors="replace")
             return subprocess.CompletedProcess(cmd, proc.returncode, stdout)
         finally:
