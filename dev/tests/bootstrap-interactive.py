@@ -93,7 +93,8 @@ printf '%s  %s\n' "$MOCK_SHA256" "$file"
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             os.close(slave)
             slave = -1
-            os.write(master, answers.encode())
+            # Send keypresses without Enter; confirmation consumes one key.
+            os.write(master, answers.replace("\n", "").encode())
             out = process.communicate(timeout=20)[0].decode(errors="replace")
             return process.returncode, out
         finally:
