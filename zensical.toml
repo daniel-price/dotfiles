@@ -4,6 +4,7 @@ site_description = "Personal development environment."
 site_url = "https://daniel-price.github.io/dotfiles/"
 repo_url = "https://github.com/daniel-price/dotfiles"
 repo_name = "dotfiles"
+extra_css = ["stylesheets/extra.css"]
 nav = [
   { "Overview" = "index.md" },
   { "Requirements" = "requirements.md" },
@@ -34,3 +35,6 @@ features = [
   "navigation.path",
   "content.code.copy",
 ]
+
+[project.extra]
+generator = false
