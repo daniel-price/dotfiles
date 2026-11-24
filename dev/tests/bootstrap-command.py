@@ -25,6 +25,7 @@ cat > "$MOCK_CHECKOUT/bin/,bootstrap" <<'BOOTSTRAP'
 #!/usr/bin/env bash
 [[ "$1" == --no-update ]] || exit 17
 printf 'bootstrap ran\\n' >> "$MOCK_BOOTSTRAP_LOG"
+printf '%s\\n' "$*" >> "$MOCK_BOOTSTRAP_LOG"
 BOOTSTRAP
 """)
     (checkout / "setup/bootstrap.sh").write_text("""#!/usr/bin/env bash
@@ -68,7 +69,11 @@ esac
     succeeded = run()
     assert succeeded.returncode == 0, succeeded.stderr
     assert update_log.read_text().splitlines() == ["--apply --require-current"]
-    assert bootstrap_log.read_text().splitlines() == ["bootstrap ran"]
+    assert bootstrap_log.read_text().splitlines() == ["bootstrap ran", "--no-update"]
+
+    verbose = run("--verbose")
+    assert verbose.returncode == 0, verbose.stderr
+    assert bootstrap_log.read_text().splitlines() == ["bootstrap ran", "--no-update --verbose"]
 
     for overrides in (
         {"MOCK_UPDATE_FAIL": "1"},

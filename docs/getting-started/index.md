@@ -15,6 +15,8 @@ bash ~/.dotfiles/bin/,bootstrap --no-update
 ,bootstrap
 ```
 
+Use `,bootstrap --verbose` to show full third-party output. By default, bootstrap summarises installed tools and suppresses routine command output; prompts and failed command diagnostics remain visible.
+
 ## Neovim
 
 Bootstrap syncs the [LazyVim configuration](https://github.com/daniel-price/lazyvim) and restores plugins from its lockfile.

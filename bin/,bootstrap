@@ -23,9 +23,22 @@ main() {
     MISE_INSTALLER_URL="https://github.com/jdx/mise/releases/download/$MISE_VERSION/install.sh"
     MISE_INSTALLER_SHA256='60adf5460b19a791b964c414a2fff9d46990c9f2b1dfc0e4ba8c2b865f882a2b'
 
+    export DOTFILES_VERBOSE=false
+    local -a args=()
+    local arg
+    for arg in "$@"; do
+        if [[ "$arg" == --verbose && "$DOTFILES_VERBOSE" == false ]]; then
+            DOTFILES_VERBOSE=true
+        else
+            args+=("$arg")
+        fi
+    done
+    set -- ${args[@]+"${args[@]}"}
+
     usage() {
-        printf '%s\n' 'Usage: ,bootstrap [--no-update|--help]' \
+        printf '%s\n' 'Usage: ,bootstrap [--verbose] [--no-update|--help]' \
             'Offer approved update, then provision Zsh, pinned tools and optional plugins.' \
+            '--verbose: show full third-party command output.' \
             '--no-update: provision checked-out version without fetching (stage-zero handoff).' \
             'Every missing component requires its own interactive approval.'
     }
@@ -137,7 +150,7 @@ main() {
                 return 0
             fi
             mkdir -p "$HOME/.config" || return 1
-            git clone --branch main --single-branch "$NVIM_CONFIG_REMOTE" "$config" ||
+            run_concise git clone --branch main --single-branch "$NVIM_CONFIG_REMOTE" "$config" ||
                 { log 'Could not clone the LazyVim configuration.'; return 1; }
         fi
 
@@ -145,7 +158,7 @@ main() {
         nvim_sync_checkout "$config" --allow-offline || return 1
 
         lock_before=$(git -C "$config" hash-object lazy-lock.json) || return 1
-        if ! nvim_verify_plugins "$mise" -c 'Lazy! restore' -c 'Lazy! clean'; then
+        if ! run_concise nvim_verify_plugins "$mise" -c 'Lazy! restore' -c 'Lazy! clean'; then
             log 'Neovim plugin restore or lockfile verification failed.'
             return 1
         fi
@@ -154,7 +167,7 @@ main() {
 
         # Allow LazyVim's asynchronous Mason installations to finish before exiting.
         DOTFILES_NVIM_MASON_SCRIPT="$ROOT/lib/nvim-mason.lua" \
-            "$mise" -C / exec -- nvim --headless \
+            run_concise "$mise" -C / exec -- nvim --headless \
             -c 'lua dofile(vim.env.DOTFILES_NVIM_MASON_SCRIPT)' \
             -c 'qa!' || { log 'Neovim language-tool initialisation failed.'; return 1; }
         log 'Neovim configuration and locked plugins synchronised.'
@@ -189,6 +202,9 @@ main() {
             printf "[error] Checkout has uncommitted changes; bootstrap skipped.\\n" >&2
             exit 1
         }
+        if [[ "$DOTFILES_VERBOSE" == true ]]; then
+            exec bash "$root/bin/,bootstrap" --no-update --verbose
+        fi
         exec bash "$root/bin/,bootstrap" --no-update
     ' dotfiles-bootstrap
         ;;
@@ -243,10 +259,11 @@ main() {
 
     # Provision tools first: dotfile status is read through the pinned jq.
     # Iterate via fd 3 to leave terminal stdin available for per-tool approval.
+    local installed=0 unchanged=0 skipped=0
     while IFS= read -r spec <&3; do
         [[ -n "$spec" ]] || continue
-        if "$mise" -C / install --dry-run-code "$spec"; then
-            log "$spec is already installed."
+        if run_concise "$mise" -C / install --dry-run-code "$spec"; then
+            unchanged=$((unchanged + 1))
             continue
         else
             status=$?
@@ -254,12 +271,15 @@ main() {
         [[ "$status" -eq 1 ]] || die "Could not inspect the installed $spec version."
         if confirm "Install missing $spec from the reviewed machine manifest?"; then
             "$mise" -C / install "$spec" || die "mise could not install $spec."
-            "$mise" -C / install --dry-run-code "$spec" ||
+            run_concise "$mise" -C / install --dry-run-code "$spec" ||
                 die "mise did not report $spec installed after the approved command."
+            installed=$((installed + 1))
         else
             log "Skipped $spec installation."
+            skipped=$((skipped + 1))
         fi
     done 3<<<"$tool_specs"
+    log "mise tools: $unchanged already installed, $installed installed, $skipped skipped."
 
 
     # Each configured target is handled independently. A conflict never prevents

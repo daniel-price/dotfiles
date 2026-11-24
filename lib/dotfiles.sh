@@ -114,7 +114,7 @@ apply_reviewed_dotfiles() {
         done
     fi
 
-    if ! "$mise" -C / dot status --missing; then
+    if ! run_concise "$mise" -C / dot status --missing; then
         log 'Some mise-managed dotfiles remain unapplied or conflicting.'
         failed=1
     fi
@@ -129,5 +129,8 @@ apply_reviewed_dotfiles() {
             failed=1
         fi
     done <<<"$rows"
+    if ((failed == 0)); then
+        log "Mise-managed dotfiles verified."
+    fi
     return "$failed"
 }
