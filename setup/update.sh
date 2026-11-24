@@ -159,7 +159,7 @@ main() {
             if ! confirm "Switch from $branch to main and fast-forward by $local_behind commit(s)?"; then
                 skip_update "Branch switch declined; remaining on $branch."
             fi
-            if ! git -C "$ROOT" switch main; then
+            if ! run_concise git -C "$ROOT" switch main; then
                 die 'Could not switch to main; no branch was reset or force-checked out.'
             fi
         fi
@@ -168,7 +168,7 @@ main() {
             # Verify the expected ancestry immediately before moving local main.
             git -C "$ROOT" merge-base --is-ancestor HEAD refs/remotes/origin/main ||
                 die 'Main is no longer an ancestor of origin/main; refusing update.'
-            git -C "$ROOT" merge --ff-only refs/remotes/origin/main ||
+            run_concise git -C "$ROOT" merge --ff-only refs/remotes/origin/main ||
                 die 'Fast-forward failed; no reset or force merge was attempted.'
             log "Fast-forwarded main by $local_behind commit(s)."
         else
@@ -179,12 +179,14 @@ main() {
         if ! confirm "Create local main tracking origin/main and switch from $branch?"; then
             skip_update "Branch switch declined; remaining on $branch."
         fi
-        git -C "$ROOT" switch --track -c main origin/main ||
+        run_concise git -C "$ROOT" switch --track -c main origin/main ||
             die 'Could not create local main; existing branch was preserved.'
         log 'Created local main from the fetched origin/main.'
     fi
 
-    log 'Checkout update complete. Run bootstrap separately to apply this version.'
+    if [[ "$require_current" == false ]]; then
+        log 'Checkout update complete. Run bootstrap separately to apply this version.'
+    fi
 }
 
 main "$@"

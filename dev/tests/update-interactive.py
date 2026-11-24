@@ -127,8 +127,11 @@ exec "@GIT@" "$@"
     assert status == 0 and "Fast-forward declined" in out, out
     assert git("-C", checkout, "rev-parse", "HEAD") == old
     assert git("-C", checkout, "rev-parse", "refs/remotes/origin/main") == new
-    status, out = run([script, "--apply"], (Confirm(), Confirm()))
+    status, out = run([script, "--apply", "--require-current"], (Confirm(), Confirm()),
+                      {"DOTFILES_VERBOSE": "false"})
     assert status == 0 and "Fast-forwarded main by 1" in out, out
+    assert "files changed" not in out and "Updating " not in out, out
+    assert "Current branch:" not in out and "Run bootstrap separately" not in out, out
     assert git("-C", checkout, "rev-parse", "HEAD") == new
     status, out = run([script, "--apply"], (Confirm(),))
     assert status == 0 and "already current" in out, out
@@ -140,6 +143,7 @@ exec "@GIT@" "$@"
     push("v3")
     status, out = run([script, "--apply"], (Confirm(), Confirm()))
     assert status == 0 and "Checkout update complete" in out, out
+    assert "Updating " in out and "Fast-forward" in out, out
     assert git("-C", checkout, "branch", "--show-current") == "main"
     assert git("-C", checkout, "rev-parse", "HEAD") == git("-C", seed, "rev-parse", "HEAD")
     assert git("-C", checkout, "rev-parse", "refs/heads/feature/test") == feature_head
