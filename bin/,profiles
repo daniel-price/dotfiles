@@ -40,18 +40,7 @@ add_environment() {
                 else
                     printf '%s\n' "$line"
                 fi
-            done <<<"${contents%
-        else
-            printf 'env = %s\n%s' "$updated" "$contents"
-        fi
-    } >"$tmp"; then
-        rm -f "$tmp"
-        return 1
-    fi
-    mv -f "$tmp" "$rc" || { rm -f "$tmp"; return 1; }
-}
-
-\n'}"
+            done < <(printf '%s' "$contents")
         else
             printf 'env = %s\n%s' "$updated" "$contents"
         fi
