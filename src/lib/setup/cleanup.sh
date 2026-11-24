@@ -5,17 +5,17 @@ set -euo pipefail
 
 ROOT=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
 
-# shellcheck source=lib/common.sh
-source "$ROOT/lib/common.sh"
-# shellcheck source=lib/mise.sh
-source "$ROOT/lib/mise.sh"
-# shellcheck source=lib/machine-tools.sh
-source "$ROOT/lib/machine-tools.sh"
+# shellcheck source=src/lib/common.sh
+source "$ROOT/src/lib/common.sh"
+# shellcheck source=src/lib/mise.sh
+source "$ROOT/src/lib/mise.sh"
+# shellcheck source=src/lib/machine-tools.sh
+source "$ROOT/src/lib/machine-tools.sh"
 
 main() {
     usage() {
         printf '%s\n' \
-            'Usage: bash setup/cleanup.sh [--apply|--help]' \
+            'Usage: bash src/lib/setup/cleanup.sh [--apply|--help]' \
             'Default: preview removal of mise-managed dotfiles and pinned tools.' \
             '--apply: approve dotfile removal and each pinned tool interactively (defaults to no).' \
             'Never removes system packages, mise, Git, the checkout or private overlays.'
@@ -37,7 +37,7 @@ main() {
     esac
 
     [[ -n "${HOME:-}" && -d "$HOME" ]] || die 'HOME must be an existing directory.'
-    manifest="$ROOT/setup/mise.toml"
+    manifest="$ROOT/src/mise.toml"
     [[ -f "$manifest" && ! -L "$manifest" ]] || die 'Reviewed machine manifest is missing.'
     mise=$(mise_command) || die 'mise is unavailable; no cleanup action was taken.'
     mise_supports_dot "$mise" ||
@@ -52,7 +52,7 @@ main() {
 
     # Validate every declared version before any potentially destructive cleanup.
     # A malformed/missing declaration must not remove even the managed symlink.
-    tool_specs=$(machine_tool_specs "$mise" "$ROOT/setup/base-tools.toml") ||
+    tool_specs=$(machine_tool_specs "$mise" "$ROOT/src/home/.config/mise/base-tools.toml") ||
         die 'Could not read exact pinned machine tool declarations; no cleanup action was taken.'
 
     # Mise discovers targets from the reviewed manifest and removes only entries it

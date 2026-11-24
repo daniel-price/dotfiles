@@ -3,20 +3,20 @@ set -euo pipefail
 
 ROOT=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
 
-# shellcheck source=lib/common.sh
-source "$ROOT/lib/common.sh"
-# shellcheck source=lib/os.sh
-source "$ROOT/lib/os.sh"
-# shellcheck source=lib/mise.sh
-source "$ROOT/lib/mise.sh"
-# shellcheck source=lib/nvim.sh
-source "$ROOT/lib/nvim.sh"
-# shellcheck source=lib/dotfiles.sh
-source "$ROOT/lib/dotfiles.sh"
-# shellcheck source=lib/machine-tools.sh
-source "$ROOT/lib/machine-tools.sh"
-# shellcheck source=lib/login-shell.sh
-source "$ROOT/lib/login-shell.sh"
+# shellcheck source=src/lib/common.sh
+source "$ROOT/src/lib/common.sh"
+# shellcheck source=src/lib/os.sh
+source "$ROOT/src/lib/os.sh"
+# shellcheck source=src/lib/mise.sh
+source "$ROOT/src/lib/mise.sh"
+# shellcheck source=src/lib/nvim.sh
+source "$ROOT/src/lib/nvim.sh"
+# shellcheck source=src/lib/dotfiles.sh
+source "$ROOT/src/lib/dotfiles.sh"
+# shellcheck source=src/lib/machine-tools.sh
+source "$ROOT/src/lib/machine-tools.sh"
+# shellcheck source=src/lib/login-shell.sh
+source "$ROOT/src/lib/login-shell.sh"
 
 main() {
     MISE_VERSION='v2026.11.9'
@@ -166,7 +166,7 @@ main() {
             { log 'Neovim restore unexpectedly changed lazy-lock.json.'; return 1; }
 
         # Allow LazyVim's asynchronous Mason installations to finish before exiting.
-        DOTFILES_NVIM_MASON_SCRIPT="$ROOT/lib/nvim-mason.lua" \
+        DOTFILES_NVIM_MASON_SCRIPT="$ROOT/src/lib/nvim-mason.lua" \
             run_concise "$mise" -C / exec -- nvim --headless \
             -c 'lua dofile(vim.env.DOTFILES_NVIM_MASON_SCRIPT)' \
             -c 'qa!' || { log 'Neovim language-tool initialisation failed.'; return 1; }
@@ -189,7 +189,7 @@ main() {
         DOTFILES_BOOTSTRAP_ROOT="$ROOT" exec bash -c '
         set -euo pipefail
         root=$DOTFILES_BOOTSTRAP_ROOT
-        bash "$root/setup/update.sh" --apply --require-current
+        bash "$root/src/lib/setup/update.sh" --apply --require-current
         [[ "$(git -C "$root" symbolic-ref --quiet --short HEAD)" == main ]] || {
             printf "[error] Checkout is not on main; bootstrap skipped.\\n" >&2
             exit 1
@@ -203,9 +203,9 @@ main() {
             exit 1
         }
         if [[ "$DOTFILES_VERBOSE" == true ]]; then
-            exec bash "$root/bin/,bootstrap" --no-update --verbose
+            exec bash "$root/src/bin/,bootstrap" --no-update --verbose
         fi
-        exec bash "$root/bin/,bootstrap" --no-update
+        exec bash "$root/src/bin/,bootstrap" --no-update
     ' dotfiles-bootstrap
         ;;
     *) die 'Unknown argument. Use --help for usage.' ;;
@@ -231,11 +231,11 @@ main() {
     mise_supports_dot "$mise" || die 'mise 2026.11.9 or newer is required for native machine bootstrap.'
     # Run from / so the checkout's root mise.toml (dev tooling) is never loaded.
     # The single reviewed machine config is the only global config for these calls.
-    export MISE_GLOBAL_CONFIG_FILE="$ROOT/setup/mise.toml"
+    export MISE_GLOBAL_CONFIG_FILE="$ROOT/src/mise.toml"
     [[ -f "$MISE_GLOBAL_CONFIG_FILE" ]] || die 'Missing declarative machine config.'
 
     # Fail closed on unpinned or undeclared entries before package or dotfile setup.
-    tool_specs=$(machine_tool_specs "$mise" "$ROOT/setup/base-tools.toml") ||
+    tool_specs=$(machine_tool_specs "$mise" "$ROOT/src/home/.config/mise/base-tools.toml") ||
         die 'Could not read the reviewed machine tool declarations.'
 
     # Package provisioning is a single reviewed mise operation. On Pop!_OS
@@ -293,11 +293,11 @@ main() {
     # They are consent-gated individually and can be installed even if a dotfile
     # conflict was skipped. Only require that Zsh itself is available.
     if command -v zsh >/dev/null 2>&1 && zsh --version >/dev/null 2>&1; then
-        bash "$ROOT/setup/setup-prompt.sh" --apply ||
+        bash "$ROOT/src/lib/setup/setup-prompt.sh" --apply ||
             die "Optional prompt setup failed; check the preceding error."
-        bash "$ROOT/setup/setup-fonts.sh" --apply ||
+        bash "$ROOT/src/lib/setup/setup-fonts.sh" --apply ||
             die "Optional font setup failed; check the preceding error."
-        bash "$ROOT/setup/setup-autosuggestions.sh" --apply ||
+        bash "$ROOT/src/lib/setup/setup-autosuggestions.sh" --apply ||
             die "Optional autosuggestions setup failed; check the preceding error."
     else
         log 'Skipping optional Zsh components: Zsh is unavailable.'
@@ -311,7 +311,7 @@ main() {
 
     # Desktop keyboard preferences are independent of mise-managed dotfiles.
     # The helper only offers a mapping for a detected supported Linux desktop.
-    bash "$ROOT/setup/keyboard.sh" --apply ||
+    bash "$ROOT/src/lib/setup/keyboard.sh" --apply ||
         die "Keyboard setup failed; check the preceding error."
 
     # Changing the login shell is independent of package and dotfile setup.

@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
 setup() {
-  CURLTIME="$BATS_TEST_DIRNAME/../../../bin/,curltime"
+  CURLTIME="$BATS_TEST_DIRNAME/../../../src/bin/,curltime"
   mkdir -p "$BATS_TEST_TMPDIR/bin"
   export CURL_ARGS="$BATS_TEST_TMPDIR/curl-args"
   export CURL_EXIT=""

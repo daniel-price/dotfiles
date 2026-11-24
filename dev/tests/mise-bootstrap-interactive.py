@@ -11,7 +11,7 @@ from pathlib import Path
 from confirmations import Confirm, Deny, communicate_confirmations
 
 ROOT = Path(__file__).resolve().parents[2]
-SCRIPT = ROOT / "bin" / ",bootstrap"
+SCRIPT = ROOT / "src/bin" / ",bootstrap"
 
 
 def supported():
@@ -193,7 +193,7 @@ esac
     # an extra named-tool fixture when a new tool is added.
     pins = {}
     within_tools = False
-    for item in (ROOT / "setup/base-tools.toml").read_text().splitlines():
+    for item in (ROOT / "src/home/.config/mise/base-tools.toml").read_text().splitlines():
         if item.strip() == "[tools]":
             within_tools = True
             continue
@@ -210,9 +210,9 @@ esac
     env = dict(os.environ, HOME=str(home), PATH=str(bin_dir) + ":/usr/bin:/bin",
                MOCK_STATE=str(state), MOCK_LOG=str(log),
                MOCK_LINUX="1" if platform.system() == "Linux" else "0",
-               MOCK_DOT_SOURCE=str(ROOT / ".config" / "zsh" / "zshrc"),
-               MOCK_ZELLIJ_SOURCE=str(ROOT / ".config" / "zellij" / "config.kdl"),
-               MOCK_GHOSTTY_SOURCE=str(ROOT / ".config" / "ghostty" / "config"),
+               MOCK_DOT_SOURCE=str(ROOT / "src/home/.zshrc"),
+               MOCK_ZELLIJ_SOURCE=str(ROOT / "src/home/.config" / "zellij" / "config.kdl"),
+               MOCK_GHOSTTY_SOURCE=str(ROOT / "src/home/.config" / "ghostty" / "config"),
                MOCK_TOOL_ROWS=tool_rows, MOCK_TOOL_PINS=tool_pins)
 
     def run(*answers):
@@ -258,11 +258,11 @@ esac
         not (state / f"{name}@{version}").exists()
         for name, version in pins.items() if name not in approved_tools
     )
-    assert target.is_symlink() and target.resolve() == (ROOT / ".config/zsh/zshrc").resolve()
-    zellij_target = home / ".config/zellij/config.kdl"
-    assert zellij_target.is_symlink() and zellij_target.resolve() == (ROOT / ".config/zellij/config.kdl").resolve()
-    ghostty_target = home / ".config/ghostty/config"
-    assert ghostty_target.is_symlink() and ghostty_target.resolve() == (ROOT / ".config/ghostty/config").resolve()
+    assert target.is_symlink() and target.resolve() == (ROOT / "src/home/.zshrc").resolve()
+    zellij_target = home / "src/home/.config/zellij/config.kdl"
+    assert zellij_target.is_symlink() and zellij_target.resolve() == (ROOT / "src/home/.config/zellij/config.kdl").resolve()
+    ghostty_target = home / "src/home/.config/ghostty/config"
+    assert ghostty_target.is_symlink() and ghostty_target.resolve() == (ROOT / "src/home/.config/ghostty/config").resolve()
     assert any(line.endswith("bootstrap packages apply --yes") for line in log.read_text().splitlines()), log.read_text()
     assert "Dotfiles: ok" in approved.stdout
     calls = log.read_text().splitlines()
@@ -273,15 +273,15 @@ esac
     ), calls
     assert any(line.endswith(f"install zoxide@{pins['zoxide']}") for line in calls), calls
     assert any(line.endswith(f"install neovim@{pins['neovim']}") for line in calls), calls
-    assert all(line.startswith(str(ROOT / "setup/mise.toml") + "|-C /")
+    assert all(line.startswith(str(ROOT / "src/mise.toml") + "|-C /")
                for line in calls if "bootstrap repos" not in line), calls
     optional_repo_manifests = (
-        str(ROOT / "setup/prompt.toml"),
-        str(ROOT / "setup/autosuggestions.toml"),
+        str(ROOT / "src/lib/setup/prompt.toml"),
+        str(ROOT / "src/lib/setup/autosuggestions.toml"),
     )
     assert all(any(line.startswith(manifest + "|-C /") for manifest in optional_repo_manifests)
                for line in calls if "bootstrap repos" in line), calls
-    assert any(line.startswith(str(ROOT / "setup/autosuggestions.toml") + "|-C / bootstrap repos apply --dry-run")
+    assert any(line.startswith(str(ROOT / "src/lib/setup/autosuggestions.toml") + "|-C / bootstrap repos apply --dry-run")
                for line in calls), calls
     assert any(line.endswith("bootstrap repos apply --dry-run") for line in calls), calls
     assert not any("scripts/dev" in line for line in calls), calls
@@ -318,7 +318,7 @@ esac
     assert (prompt_target / "powerlevel10k.zsh-theme").exists()
     # Font offer is tied to active Zsh prompt config, not a Ghostty executable.
     assert "Download and install 4 missing font" in theme_approved.stdout, theme_approved.stdout
-    assert any(line.startswith(str(ROOT / "setup/prompt.toml") + "|-C / bootstrap repos apply --yes")
+    assert any(line.startswith(str(ROOT / "src/lib/setup/prompt.toml") + "|-C / bootstrap repos apply --yes")
                for line in log.read_text().splitlines()), log.read_text()
     # The second optional plugin has separate consent, and repeated installs are skipped.
     plugin_target = home / ".local/share/dotfiles/zsh-autosuggestions"
@@ -326,7 +326,7 @@ esac
     plugin_approved = run(Deny(), Confirm())
     assert plugin_approved.returncode == 0, plugin_approved.stdout
     assert (plugin_target / "zsh-autosuggestions.zsh").exists()
-    assert any(line.startswith(str(ROOT / "setup/autosuggestions.toml") + "|-C / bootstrap repos apply --yes")
+    assert any(line.startswith(str(ROOT / "src/lib/setup/autosuggestions.toml") + "|-C / bootstrap repos apply --yes")
                for line in log.read_text().splitlines()), log.read_text()
     before_prompt_repeat = sum("bootstrap repos apply --yes" in line for line in log.read_text().splitlines())
     prompt_repeat = run()
@@ -344,7 +344,7 @@ esac
     backups = list(zellij_target.parent.glob("config.kdl.backup-*"))
     assert len(backups) == len(before_backups) + 1, backups
     assert backups[-1].read_text() == "existing default zellij config\n"
-    assert zellij_target.is_symlink() and zellij_target.resolve() == (ROOT / ".config/zellij/config.kdl").resolve()
+    assert zellij_target.is_symlink() and zellij_target.resolve() == (ROOT / "src/home/.config/zellij/config.kdl").resolve()
     run()
     assert len(list(zellij_target.parent.glob("config.kdl.backup-*"))) == len(backups)
 
@@ -359,7 +359,7 @@ esac
     assert "Restored " + str(zellij_target) + " after failed deployment" in failed.stdout
     (state / "fail-dot-apply").unlink()
     zellij_target.unlink()
-    zellij_target.symlink_to(ROOT / ".config/zellij/config.kdl")
+    zellij_target.symlink_to(ROOT / "src/home/.config/zellij/config.kdl")
 
     # Foreign symlinks are left untouched, never forcibly repointed.
     foreign_kdl = base / "foreign.kdl"
@@ -373,7 +373,7 @@ esac
     assert zellij_target.is_symlink() and zellij_target.resolve() == foreign_kdl.resolve()
     assert "Skipped conflicting dotfile" in foreign.stdout
     zellij_target.unlink()
-    zellij_target.symlink_to(ROOT / ".config/zellij/config.kdl")
+    zellij_target.symlink_to(ROOT / "src/home/.config/zellij/config.kdl")
 
     # An unrelated ~/.zshrc must not abort the remaining tool setup.
     target.unlink()

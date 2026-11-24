@@ -9,7 +9,7 @@ mkdir -p "$tmp_dir/nvim" "$tmp_dir/mason"
 typeset -A DOTFILES_Z_BOOKMARKS
 DOTFILES_Z_BOOKMARKS=(nvim-plugins "$tmp_dir/nvim" mason-plugins "$tmp_dir/mason" missing "$tmp_dir/absent")
 DOTFILES_ZSH_AUTOSUGGESTIONS_FILE="$tmp_dir/not-installed"
-source "$root/.config/zsh/autosuggestions.zsh"
+source "$root/src/home/.config/zsh/autosuggestions.zsh"
 check() {
   local input=$1 expected=$2
   local suggestion=''
@@ -36,10 +36,10 @@ typeset -g _DOTFILES_AUTOSUGGESTIONS_LOADED=yes
 _zsh_autosuggest_start() { :; }
 PLUGIN
 DOTFILES_ZSH_AUTOSUGGESTIONS_FILE="$tmp_dir/fake-plugin.zsh"
-source "$root/.config/zsh/autosuggestions.zsh"
+source "$root/src/home/.config/zsh/autosuggestions.zsh"
 [[ "${_DOTFILES_AUTOSUGGESTIONS_LOADED:-}" == yes ]] || exit 1
 [[ "${(j:,:)ZSH_AUTOSUGGEST_STRATEGY}" == dotfiles_bookmarks,history ]] || exit 1
 _DOTFILES_AUTOSUGGESTIONS_LOADED=no
-source "$root/.config/zsh/autosuggestions.zsh"
+source "$root/src/home/.config/zsh/autosuggestions.zsh"
 [[ "$_DOTFILES_AUTOSUGGESTIONS_LOADED" == no ]] || exit 1
 print 'PASS: Bookmark autosuggestion strategy, override and preloaded plugin'

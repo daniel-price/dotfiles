@@ -6,15 +6,15 @@ set -euo pipefail
 
 ROOT=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
 
-# shellcheck source=lib/common.sh
-source "$ROOT/lib/common.sh"
-# shellcheck source=lib/mise.sh
-source "$ROOT/lib/mise.sh"
+# shellcheck source=src/lib/common.sh
+source "$ROOT/src/lib/common.sh"
+# shellcheck source=src/lib/mise.sh
+source "$ROOT/src/lib/mise.sh"
 
 main() {
     usage() {
         printf '%s\n' \
-            'Usage: bash setup/setup-podman.sh [--apply|--dry-run|--help]' \
+            'Usage: bash src/modules/podman/setup-podman.sh [--apply|--dry-run|--help]' \
             'Default: inspect Podman and preview the optional apt package via mise.' \
             '--apply: offer to install missing Podman, then verify rootless mode.' \
             'Never upgrades/removes existing packages or enables system services.'
@@ -41,7 +41,7 @@ main() {
         die 'This optional Podman setup currently supports Linux only.'
     [[ "$(id -u)" != 0 ]] ||
         die 'Run as your normal user, not root or via sudo.'
-    manifest="$ROOT/containers/podman/mise.toml"
+    manifest="$ROOT/src/modules/podman/mise.toml"
     [[ -f "$manifest" && ! -L "$manifest" ]] ||
         die 'The reviewed Podman package manifest is missing or a symlink.'
 

@@ -4,15 +4,15 @@ set -euo pipefail
 
 ROOT=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
 
-# shellcheck source=lib/common.sh
-source "$ROOT/lib/common.sh"
-# shellcheck source=lib/os.sh
-source "$ROOT/lib/os.sh"
+# shellcheck source=src/lib/common.sh
+source "$ROOT/src/lib/common.sh"
+# shellcheck source=src/lib/os.sh
+source "$ROOT/src/lib/os.sh"
 
 main() {
     usage() {
         printf '%s\n' \
-            'Usage: bash setup/setup-fonts.sh [--apply|--help]' \
+            'Usage: bash src/lib/setup/setup-fonts.sh [--apply|--help]' \
             'Preview installation of the four Powerlevel10k MesloLGS Nerd Font faces.' \
             '--apply: explicitly approve downloading and installing missing fonts.' \
             'Existing font files are never overwritten.'

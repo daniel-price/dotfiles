@@ -71,19 +71,19 @@ keybinds clear-defaults=true {
     // doc: binding move:p | Open the interactive command picker (requires atuin and fzf).
     move {
         bind "l" {
-            Run "bash" "-c" "bash \"$HOME/.dotfiles/bin/,copy-last\"" {
+            Run "bash" "-c" "bash \"$HOME/.dotfiles/src/bin/,copy-last\"" {
                 background true
             }
             SwitchToMode "locked"
         }
         bind "a" {
-            Run "bash" "-c" "bash \"$HOME/.dotfiles/bin/,copy-screen\"" {
+            Run "bash" "-c" "bash \"$HOME/.dotfiles/src/bin/,copy-screen\"" {
                 background true
             }
             SwitchToMode "locked"
         }
         bind "p" {
-            Run "bash" "-c" "bash \"$HOME/.dotfiles/bin/,copy-pick\"" {
+            Run "bash" "-c" "bash \"$HOME/.dotfiles/src/bin/,copy-pick\"" {
                 floating true
                 close_on_exit true
                 width "80%"

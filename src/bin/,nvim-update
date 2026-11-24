@@ -3,12 +3,12 @@ set -euo pipefail
 
 ROOT=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
 
-# shellcheck source=lib/common.sh
-source "$ROOT/lib/common.sh"
-# shellcheck source=lib/mise.sh
-source "$ROOT/lib/mise.sh"
-# shellcheck source=lib/nvim.sh
-source "$ROOT/lib/nvim.sh"
+# shellcheck source=src/lib/common.sh
+source "$ROOT/src/lib/common.sh"
+# shellcheck source=src/lib/mise.sh
+source "$ROOT/src/lib/mise.sh"
+# shellcheck source=src/lib/nvim.sh
+source "$ROOT/src/lib/nvim.sh"
 
 main() {
     local config="$HOME/.config/nvim"
@@ -25,7 +25,7 @@ main() {
     nvim_validate_checkout "$config" || die "Neovim checkout validation failed."
 
     mise=$(mise_command) || die 'Mise is not installed.'
-    export MISE_GLOBAL_CONFIG_FILE="$ROOT/setup/mise.toml"
+    export MISE_GLOBAL_CONFIG_FILE="$ROOT/src/mise.toml"
     "$mise" -C / exec -- nvim --version >/dev/null ||
         die 'Pinned Neovim is not installed.'
 

@@ -1,4 +1,6 @@
 [project]
+docs_dir = "../docs"
+site_dir = "../site"
 site_name = "Dotfiles"
 site_description = "Personal development environment."
 site_url = "https://daniel-price.github.io/dotfiles/"

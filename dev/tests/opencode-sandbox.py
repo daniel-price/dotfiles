@@ -10,7 +10,7 @@ from pathlib import Path
 from confirmations import Confirm, Deny, communicate_confirmations
 
 ROOT = Path(__file__).resolve().parents[2]
-SCRIPT = ROOT / "modules" / "opencode" / "bin" / "opencode-sandbox"
+SCRIPT = ROOT / "src/modules" / "opencode" / "bin" / "opencode-sandbox"
 
 with tempfile.TemporaryDirectory(prefix="dotfiles-agent-sandbox-") as scratch:
     base = Path(scratch)
@@ -185,7 +185,7 @@ esac
     assert approved_runtime.returncode == 0, approved_runtime.stdout
     assert "AGENT_MOCK_LAUNCHED" in approved_runtime.stdout
     assert podman.exists()
-    scoped = str(ROOT / "containers/podman/mise.toml")
+    scoped = str(ROOT / "src/modules/podman/mise.toml")
     assert f"{scoped}|-C / bootstrap --only packages --dry-run" in operations()
     assert f"{scoped}|-C / bootstrap --only packages" in operations()
     assert any(line.startswith("run ") for line in operations())

@@ -21,7 +21,7 @@ main() {
     cp "$ROOT/lefthook.yml" .
     cp "$ROOT/dev/scripts/install-hooks.sh" "$ROOT/dev/scripts/run-mise.sh" dev/scripts/
     cp "$ROOT/dev/scripts/format.sh" "$ROOT/dev/scripts/lint.sh" dev/scripts/
-    cp "$ROOT/lib/common.sh" "$ROOT/lib/mise.sh" lib/
+    cp "$ROOT/src/lib/common.sh" "$ROOT/src/lib/mise.sh" src/lib/
     cp "$ROOT/dev/lib/shell-files.sh" dev/lib/
     git init -q
     git config user.name 'Hook test'

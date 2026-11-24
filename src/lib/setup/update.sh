@@ -13,7 +13,7 @@ if [[ "${DOTFILES_UPDATE_SNAPSHOT:-}" == 1 ]]; then
 else
     ROOT=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
     if [[ "${1:-}" == --apply ]]; then
-        snapshot=$(<"$ROOT/setup/update.sh") ||
+        snapshot=$(<"$ROOT/src/lib/setup/update.sh") ||
             {
                 printf '[error] Could not snapshot the updater.\n' >&2
                 exit 1
@@ -23,8 +23,8 @@ else
         exit $?
     fi
 fi
-# shellcheck source=lib/common.sh
-source "$ROOT/lib/common.sh"
+# shellcheck source=src/lib/common.sh
+source "$ROOT/src/lib/common.sh"
 
 main() {
     REMOTE='https://github.com/daniel-price/dotfiles.git'
@@ -43,7 +43,7 @@ main() {
 
     usage() {
         printf '%s\n' \
-            'Usage: bash setup/update.sh [--apply [--require-current]|--help]' \
+            'Usage: bash src/lib/setup/update.sh [--apply [--require-current]|--help]' \
             'Default: inspect the checkout locally without fetching or changing anything.' \
             '--apply: offer to fetch origin/main, then independently approve a safe' \
             'switch to main and/or fast-forward update. No force or automatic stash.' \

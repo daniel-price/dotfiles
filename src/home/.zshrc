@@ -22,14 +22,14 @@ if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
 fi
 
 # Add personal scripts to PATH so they can be run from anywhere.
-_dotfiles_bin="${${(%):-%x}:A:h:h:h}/bin"
+_dotfiles_bin="${${(%):-%x}:A:h:h}/bin"
 if [[ -d "$_dotfiles_bin" && ":$PATH:" != *":$_dotfiles_bin:"* ]]; then
   export PATH="$_dotfiles_bin:$PATH"
 fi
 unset _dotfiles_bin
 
 # Activate mise with native global config and selected machine modules.
-_dotfiles_zsh_dir=${${(%):-%x}:A:h}
+_dotfiles_zsh_dir=${${(%):-%x}:A:h}/.config/zsh
 if (( $+commands[mise] )); then
   eval "$(mise activate zsh)"
 elif [[ -x "$HOME/.local/bin/mise" ]]; then
@@ -79,7 +79,7 @@ unset _dotfiles_zsh_dir
 # doc: inline autosuggestions | Bookmark-first suggestions, then command history.
 # Load only in interactive shells; startup must never install dependencies.
 if [[ -o interactive ]]; then
-  _dotfiles_autosuggestions="${${(%):-%x}:A:h}/autosuggestions.zsh"
+  _dotfiles_autosuggestions="${${(%):-%x}:A:h}/.config/zsh/autosuggestions.zsh"
   if [[ -r "$_dotfiles_autosuggestions" ]]; then
     source "$_dotfiles_autosuggestions"
   fi

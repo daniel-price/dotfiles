@@ -5,10 +5,10 @@ ROOT=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
 
 IFS=$'\n\t'
 
-# shellcheck source=lib/copy_to_clipboard
-source "$ROOT/lib/copy_to_clipboard"
-# shellcheck source=lib/zellij_dump_screen
-source "$ROOT/lib/zellij_dump_screen"
+# shellcheck source=src/lib/copy_to_clipboard
+source "$ROOT/src/lib/copy_to_clipboard"
+# shellcheck source=src/lib/zellij_dump_screen
+source "$ROOT/src/lib/zellij_dump_screen"
 
 main() {
     lines=""

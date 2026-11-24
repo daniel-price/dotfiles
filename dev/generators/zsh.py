@@ -5,7 +5,7 @@ from pathlib import Path
 import re
 
 ROOT = Path(__file__).resolve().parents[2]
-ZSH = ROOT / ".config" / "zsh"
+ZSH = ROOT / "src/home/.config" / "zsh"
 ANNOTATION = re.compile(r"^# doc: (option|prompt|alias) ([^|]+)\| (.+)$")
 ALIAS = re.compile(r"^\s*alias\s+([^=\s]+)='([^']*)'\s*$")
 

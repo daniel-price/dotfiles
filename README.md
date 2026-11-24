@@ -10,7 +10,7 @@ Requires Git, Bash and curl.
 
 ```sh
 git clone https://github.com/daniel-price/dotfiles.git ~/.dotfiles
-bash ~/.dotfiles/bin/,bootstrap --no-update
+bash ~/.dotfiles/src/bin/,bootstrap --no-update
 ```
 
 Update an existing installation: `,bootstrap`.
@@ -21,3 +21,5 @@ Update an existing installation: `,bootstrap`.
 bash dev/scripts/install-dev-tools.sh
 mise -C dev run check
 ```
+
+For a fresh start from an older layout, see [reset an existing installation](docs/getting-started/index.md#reset-an-existing-installation).

@@ -1,8 +1,8 @@
 #!/usr/bin/env bats
 
 setup() {
-  COMMON="$BATS_TEST_DIRNAME/../../../lib/common.sh"
-  DOTFILES="$BATS_TEST_DIRNAME/../../../lib/dotfiles.sh"
+  COMMON="$BATS_TEST_DIRNAME/../../../src/lib/common.sh"
+  DOTFILES="$BATS_TEST_DIRNAME/../../../src/lib/dotfiles.sh"
   export HOME="$BATS_TEST_TMPDIR/home"
   export ACTION_LOG="$BATS_TEST_TMPDIR/actions"
   export FAKE_SOURCE="$BATS_TEST_TMPDIR/source"

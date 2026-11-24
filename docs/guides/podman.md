@@ -1,10 +1,10 @@
 # Podman
 
-Optional Linux runtime, declared in [containers/podman/mise.toml](../../containers/podman/mise.toml).
+Optional Linux runtime, declared in [src/modules/podman/mise.toml](../../src/modules/podman/mise.toml).
 
 ```sh
-bash setup/setup-podman.sh
-bash setup/setup-podman.sh --apply
+bash src/modules/podman/setup-podman.sh
+bash src/modules/podman/setup-podman.sh --apply
 podman info --format '{{.Host.Security.Rootless}}'
 ```
 

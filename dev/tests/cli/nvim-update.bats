@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
 setup() {
-  UPDATE="$BATS_TEST_DIRNAME/../../../bin/,nvim-update"
+  UPDATE="$BATS_TEST_DIRNAME/../../../src/bin/,nvim-update"
   export HOME="$BATS_TEST_TMPDIR/home"
   mkdir -p "$HOME/.config/nvim" "$BATS_TEST_TMPDIR/bin"
   export HOME="$(cd "$HOME" && pwd -P)"

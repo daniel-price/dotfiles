@@ -1,8 +1,8 @@
 #!/usr/bin/env bats
 
 setup() {
-  COMMON="$BATS_TEST_DIRNAME/../../../lib/common.sh"
-  NVIM="$BATS_TEST_DIRNAME/../../../lib/nvim.sh"
+  COMMON="$BATS_TEST_DIRNAME/../../../src/lib/common.sh"
+  NVIM="$BATS_TEST_DIRNAME/../../../src/lib/nvim.sh"
   source_repo="$BATS_TEST_TMPDIR/source"
   remote="$BATS_TEST_TMPDIR/remote.git"
   config="$BATS_TEST_TMPDIR/config"

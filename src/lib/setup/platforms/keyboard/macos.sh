@@ -4,12 +4,12 @@ set -euo pipefail
 
 ROOT=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
 
-# shellcheck source=lib/common.sh
-source "$ROOT/lib/common.sh"
+# shellcheck source=src/lib/common.sh
+source "$ROOT/src/lib/common.sh"
 
 main() {
     [[ "${1:-}" == --apply && $# -eq 1 ]] ||
-        die 'Usage: bash setup/platforms/keyboard/macos.sh --apply'
+        die 'Usage: bash src/lib/setup/platforms/keyboard/macos.sh --apply'
     [[ "$(uname -s)" == Darwin ]] || die 'macOS only.'
     command -v hidutil >/dev/null 2>&1 || die 'macOS hidutil is unavailable.'
 

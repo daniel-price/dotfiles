@@ -6,8 +6,8 @@ set -euo pipefail
 ROOT=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
 
 
-# shellcheck source=lib/common.sh
-source "$ROOT/lib/common.sh"
+# shellcheck source=src/lib/common.sh
+source "$ROOT/src/lib/common.sh"
 
 main() {
     usage() {
@@ -73,7 +73,7 @@ main() {
     repo_root=$(git -C "$project" rev-parse --show-toplevel 2>/dev/null) ||
         die 'Selected project is not a readable Git working tree.'
     [[ "$repo_root" == "$project" ]] || die 'Select exactly the Git repository root.'
-    [[ -f "$ROOT/containers/opencode/Containerfile" ]] || die 'Reviewed Containerfile is missing.'
+    [[ -f "$ROOT/src/modules/opencode/Containerfile" ]] || die 'Reviewed Containerfile is missing.'
 
     log "Workspace: $project (read/write inside the container)."
     log "Base image: $base_image; local image: $image."
@@ -89,7 +89,7 @@ main() {
 
     if ! command -v podman >/dev/null 2>&1; then
         log 'Podman is missing; offering the optional shared container runtime prerequisite.'
-        bash "$ROOT/setup/setup-podman.sh" --apply ||
+        bash "$ROOT/src/modules/podman/setup-podman.sh" --apply ||
             die 'Podman prerequisite setup failed; OpenCode was not launched.'
         command -v podman >/dev/null 2>&1 ||
             die 'Podman was not installed; OpenCode was not launched.'
@@ -113,8 +113,8 @@ main() {
         fi
         podman build --pull=never \
             --build-arg "OPENCODE_IMAGE=$base_image" \
-            --file "$ROOT/containers/opencode/Containerfile" \
-            --tag "$image" "$ROOT/containers/opencode" || die 'OpenCode image build failed.'
+            --file "$ROOT/src/modules/opencode/Containerfile" \
+            --tag "$image" "$ROOT/src/modules/opencode" || die 'OpenCode image build failed.'
     fi
 
     if ! confirm "Run OpenCode on $project with write access and outbound network?"; then

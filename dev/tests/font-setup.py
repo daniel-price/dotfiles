@@ -10,9 +10,9 @@ from pathlib import Path
 from confirmations import Confirm, Deny, communicate_confirmations
 
 ROOT = Path(__file__).resolve().parents[2]
-SCRIPT = ROOT / "setup/setup-fonts.sh"
-GHOSTTY = ROOT / ".config/ghostty/config"
-MANIFEST = ROOT / "setup/mise.toml"
+SCRIPT = ROOT / "src/lib/setup/setup-fonts.sh"
+GHOSTTY = ROOT / "src/home/.config/ghostty/config"
+MANIFEST = ROOT / "src/mise.toml"
 
 assert "font-family = MesloLGS NF" in GHOSTTY.read_text()
 assert '"~/.config/ghostty/config"' in MANIFEST.read_text()

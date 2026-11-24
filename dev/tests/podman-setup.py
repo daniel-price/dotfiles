@@ -9,10 +9,10 @@ from pathlib import Path
 from confirmations import Confirm, Deny, communicate_confirmations
 
 ROOT = Path(__file__).resolve().parents[2]
-SCRIPT = ROOT / "setup/setup-podman.sh"
-MANIFEST = ROOT / "containers/podman/mise.toml"
+SCRIPT = ROOT / "src/modules/podman/setup-podman.sh"
+MANIFEST = ROOT / "src/modules/podman/mise.toml"
 assert '"apt:podman" = { os = "linux" }' in MANIFEST.read_text()
-assert "apt:podman" not in (ROOT / "setup/mise.toml").read_text()
+assert "apt:podman" not in (ROOT / "src/mise.toml").read_text()
 
 with tempfile.TemporaryDirectory(prefix="dotfiles-test-podman-") as tmp:
     base = Path(tmp)

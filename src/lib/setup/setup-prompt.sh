@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 # Optional, consent-gated Powerlevel10k repository installation via mise.
-# The single pinned revision is declared in setup/prompt.toml.
+# The single pinned revision is declared in src/lib/setup/prompt.toml.
 set -euo pipefail
 
 ROOT=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
 
-# shellcheck source=lib/common.sh
-source "$ROOT/lib/common.sh"
-# shellcheck source=lib/mise.sh
-source "$ROOT/lib/mise.sh"
+# shellcheck source=src/lib/common.sh
+source "$ROOT/src/lib/common.sh"
+# shellcheck source=src/lib/mise.sh
+source "$ROOT/src/lib/mise.sh"
 
 main() {
     usage() {
         printf '%s\n' \
-            'Usage: bash setup/setup-prompt.sh [--apply|--help]' \
+            'Usage: bash src/lib/setup/setup-prompt.sh [--apply|--help]' \
             'Default: preview installing the pinned Powerlevel10k Git repository.' \
             '--apply: offer the clone with one terminal confirmation (default No).' \
             'Existing checkouts are never updated, overwritten or removed.'
@@ -36,7 +36,7 @@ main() {
 
     [[ -n "${HOME:-}" && -d "$HOME" ]] || die 'HOME must exist.'
     [[ "$(id -u)" != 0 ]] || die 'Do not install user shell themes as root.'
-    manifest="$ROOT/setup/prompt.toml"
+    manifest="$ROOT/src/lib/setup/prompt.toml"
     [[ -f "$manifest" && ! -L "$manifest" ]] || die 'Reviewed prompt manifest is missing.'
     target="$HOME/.local/share/dotfiles/powerlevel10k"
     command -v git >/dev/null 2>&1 || die 'Git is required to install the prompt theme.'
