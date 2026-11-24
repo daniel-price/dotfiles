@@ -12,7 +12,7 @@ source "$ROOT/lib/common.sh"
 main() {
     usage() {
         printf '%s\n' \
-            'Usage: opencode-sandbox [--project DIR] [--credential-env NAME] [--dry-run|--help]' \
+            'Usage: opencode-sandbox [--profile-dir DIR] [--project DIR] [--credential-env NAME] [--dry-run|--help]' \
             'Run OpenCode in rootless Podman with a single writable Git checkout.' \
             'Dry-run makes no network requests or Podman changes.' \
             'Normal runs separately confirm image pull, build and agent launch.' \
@@ -23,6 +23,8 @@ main() {
     base_image="ghcr.io/anomalyco/opencode:$version"
     # Bump the -rN suffix when changing the Containerfile, to avoid using stale builds.
     image="localhost/dotfiles-opencode-sandbox:$version-r1"
+    shared_image=$image
+    profile_dir=
     project=$PWD
     dry_run=false
     credential_names=()
@@ -32,6 +34,11 @@ main() {
             [[ $# -eq 1 ]] || die 'Help accepts no other arguments.'
             usage
             exit 0
+            ;;
+        --profile-dir)
+            [[ $# -ge 2 && -n "$2" && -z "$profile_dir" ]] || die '--profile-dir requires a single directory.'
+            profile_dir=$2
+            shift 2
             ;;
         --project)
             [[ $# -ge 2 && -n "$2" ]] || die '--project requires a directory.'
@@ -75,6 +82,16 @@ main() {
     [[ "$repo_root" == "$project" ]] || die 'Select exactly the Git repository root.'
     [[ -f "$ROOT/containers/opencode/Containerfile" ]] || die 'Reviewed Containerfile is missing.'
 
+    if [[ -n "$profile_dir" ]]; then
+        profile_dir=$(CDPATH='' cd -- "$profile_dir" && pwd -P) || die 'Could not resolve profile directory.'
+        profile_name=$(basename "$profile_dir")
+        [[ "$profile_name" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]] || die 'Invalid profile directory name.'
+        profile_context="$profile_dir/containers/opencode"
+        [[ -f "$profile_context/Containerfile" ]] || die 'Profile Containerfile is missing.'
+        image="localhost/dotfiles-opencode-$profile_name:$version-r1"
+        log "Profile build context: $profile_context"
+    fi
+
     log "Workspace: $project (read/write inside the container)."
     log "Base image: $base_image; local image: $image."
     log "Container home: ephemeral /tmp; no host home, SSH, Git credentials or sockets mounted."
@@ -99,7 +116,7 @@ main() {
     [[ "$rootless" == true ]] || die 'Podman is not rootless; refusing to launch.'
     [[ -t 0 ]] || die 'An interactive terminal is required to approve each action.'
 
-    if ! podman image exists "$image"; then
+    if ! podman image exists "$shared_image"; then
         if ! podman image exists "$base_image"; then
             if ! confirm "Pull the published OpenCode image $base_image to rootless Podman storage?"; then
                 log 'Declined image pull; no agent launched.'
@@ -107,14 +124,25 @@ main() {
             fi
             podman pull "$base_image" || die 'OpenCode base image download failed.'
         fi
-        if ! confirm "Build $image (adds Git from Alpine packages) with the reviewed Containerfile?"; then
+        if ! confirm "Build $shared_image (adds Git from Alpine packages) with the reviewed Containerfile?"; then
             log 'Declined image build; no agent launched.'
             exit 0
         fi
         podman build --pull=never \
             --build-arg "OPENCODE_IMAGE=$base_image" \
             --file "$ROOT/containers/opencode/Containerfile" \
-            --tag "$image" "$ROOT/containers/opencode" || die 'OpenCode image build failed.'
+            --tag "$shared_image" "$ROOT/containers/opencode" || die 'OpenCode image build failed.'
+    fi
+
+    if [[ -n "$profile_dir" ]] && ! podman image exists "$image"; then
+        if ! confirm "Build $image from $shared_image using $profile_context/Containerfile?"; then
+            log 'Declined profile image build; no agent launched.'
+            exit 0
+        fi
+        podman build --pull=never \
+            --build-arg "OPENCODE_IMAGE=$shared_image" \
+            --file "$profile_context/Containerfile" \
+            --tag "$image" "$profile_context" || die 'Profile image build failed.'
     fi
 
     if ! confirm "Run OpenCode on $project with write access and outbound network?"; then
