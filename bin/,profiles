@@ -14,7 +14,8 @@ main() {
     [[ $# -eq 0 ]] || die 'Unexpected argument. Use --help.'
     [[ -t 0 && -t 1 ]] || die 'An interactive terminal is required.'
     local tool owner repos selected repo name target manifest config_dir rc
-    for tool in gh gum mise python3; do
+    local added=false
+    for tool in git gh gum mise python3; do
         command -v "$tool" >/dev/null || die "$tool is required; run Base bootstrap first."
     done
     config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/mise"
@@ -28,7 +29,7 @@ main() {
     [[ -n "$repos" ]] || { log 'No matching personal profile repositories found.'; return; }
     selected=$(printf '%s\n' "$repos" | gum choose --no-limit --header 'Select personal profiles to add (space to toggle, enter to confirm)') || return 0
     [[ -n "$selected" ]] || return 0
-    while IFS= read -r repo; do
+    while IFS= read -r repo <&3; do
         [[ "$repo" == "$owner/"* && "${repo#*/}" =~ ^\.dotfiles-profile-personal(-[a-z0-9]+)*$ ]] || die 'Invalid selection.'
         grep -Fxq "$repo" <<<"$repos" || die 'Selection was not discovered.'
         name="${repo#*/.dotfiles-profile-}"
@@ -52,7 +53,9 @@ main() {
         mise trust "$manifest" || die 'Trust failed.'
         confirm "Add $name to $rc, preserving existing environments?" || continue
         python3 "$ROOT/lib/profile-selection.py" "$rc" "$name" || die 'Could not update selection.'
-    done <<<"$selected"
+        added=true
+    done 3<<<"$selected"
+    [[ "$added" == true ]] || return 0
 
     mise -C / install --dry-run || die 'Tool preview failed.'
     if confirm 'Install the previewed tools?'; then
