@@ -85,13 +85,15 @@ main() {
     if [[ -z "$branch" ]]; then
         skip_update 'Detached HEAD: update skipped; choose a branch manually.'
     fi
-    log "Current branch: $branch."
+    if [[ "${DOTFILES_VERBOSE:-true}" == true || "$mode" == status || "$branch" != main ]]; then
+        log "Current branch: $branch."
+    fi
 
     changes=$(git -C "$ROOT" status --porcelain --untracked-files=all) ||
         die 'Could not inspect Git worktree and index.'
     if [[ -n "$changes" ]]; then
         log 'Working tree or index has changes (including untracked files).'
-    else
+    elif [[ "${DOTFILES_VERBOSE:-true}" == true || "$mode" == status ]]; then
         log 'Working tree: clean.'
     fi
 
@@ -100,7 +102,9 @@ main() {
             counts=$(git -C "$ROOT" rev-list --left-right --count refs/heads/main...refs/remotes/origin/main) ||
                 die 'Could not compare main with the cached origin/main.'
             read -r local_ahead local_behind <<<"$counts"
-            log "Cached main vs origin/main: ahead $local_ahead, behind $local_behind (may be stale)."
+            if [[ "${DOTFILES_VERBOSE:-true}" == true || "$mode" == status || "$local_ahead" != 0 || "$local_behind" != 0 ]]; then
+                log "Cached main vs origin/main: ahead $local_ahead, behind $local_behind (may be stale)."
+            fi
         else
             log 'No cached origin/main; cannot determine freshness without fetching.'
         fi
@@ -123,7 +127,7 @@ main() {
         skip_update 'Fetch declined; checkout unchanged.'
     fi
 
-    if ! git -C "$ROOT" fetch --no-tags origin refs/heads/main:refs/remotes/origin/main; then
+    if ! run_concise git -C "$ROOT" fetch --no-tags origin refs/heads/main:refs/remotes/origin/main; then
         skip_update 'Could not fetch origin/main; leaving the checkout unchanged (offline bootstrap is still possible).'
     fi
 

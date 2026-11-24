@@ -40,3 +40,23 @@ confirm() {
     printf '\n' >&2
     [[ "$answer" == [yY] ]]
 }
+
+# Only wrap non-interactive operations. Keep diagnostics on failure and warnings
+# on success; never redirect confirmation prompts or package installer input.
+run_concise() {
+    local output status=0
+    if [[ "${DOTFILES_VERBOSE:-true}" == true ]]; then
+        "$@"
+        return $?
+    fi
+    output=$(mktemp "${TMPDIR:-/tmp}/dotfiles-output.XXXXXX") || return 2
+    "$@" >"$output" 2>&1 || status=$?
+    if ((status != 0)); then
+        cat "$output" >&2
+    else
+        grep -Ei '(^|[^[:alnum:]])(warn(ing)?|error|fatal)([^[:alnum:]]|$)' "$output" >&2 || :
+    fi
+    rm -f -- "$output" || :
+    return "$status"
+}
+

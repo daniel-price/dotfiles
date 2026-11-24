@@ -23,3 +23,16 @@ setup() {
   [ "$status" -ne 0 ]
   [[ "$output" == *'Unexpected extra argument'* ]]
 }
+
+@test "concise command output preserves diagnostics and exit status" {
+  run bash -c 'source "$1"; DOTFILES_VERBOSE=false; run_concise bash -c "echo routine; echo WARNING: example; exit 0"' _ "$BATS_TEST_DIRNAME/../../../lib/common.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"WARNING: example"* ]]
+  [[ "$output" != *routine* ]]
+  run bash -c 'source "$1"; DOTFILES_VERBOSE=false; run_concise bash -c "echo failed; exit 7"' _ "$BATS_TEST_DIRNAME/../../../lib/common.sh"
+  [ "$status" -eq 7 ]
+  [[ "$output" == *failed* ]]
+  run bash -c 'source "$1"; DOTFILES_VERBOSE=true; run_concise echo routine' _ "$BATS_TEST_DIRNAME/../../../lib/common.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *routine* ]]
+}
