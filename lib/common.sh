@@ -59,4 +59,3 @@ run_concise() {
     rm -f -- "$output" || :
     return "$status"
 }
-
