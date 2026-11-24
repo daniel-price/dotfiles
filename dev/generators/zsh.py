@@ -12,8 +12,8 @@ ALIAS = re.compile(r"^\s*alias\s+([^=\s]+)='([^']*)'\s*$")
 
 def render() -> str:
     comments: dict[tuple[str, str], str] = {}
-    for filename in ("zshrc", "aliases.zsh"):
-        for line in (ZSH / filename).read_text().splitlines():
+    for source in (ROOT / "src/home/.zshrc", ZSH / "aliases.zsh"):
+        for line in source.read_text().splitlines():
             match = ANNOTATION.fullmatch(line)
             if match:
                 category, name, description = match.groups()
@@ -22,7 +22,7 @@ def render() -> str:
                     raise ValueError(f"Duplicate documentation annotation: {key}")
                 comments[key] = description.strip()
 
-    zshrc = (ZSH / "zshrc").read_text()
+    zshrc = (ROOT / "src/home/.zshrc").read_text()
     aliases = []
     for line in (ZSH / "aliases.zsh").read_text().splitlines():
         match = ALIAS.fullmatch(line)

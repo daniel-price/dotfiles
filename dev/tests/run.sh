@@ -39,6 +39,7 @@ main() {
         fail 'sandbox launcher must be executable and have a reviewed Containerfile'
     bash -n "$ROOT/src/modules/opencode/bin/opencode-sandbox" || fail 'sandbox launcher has invalid Bash syntax'
     [[ -x "$ROOT/src/bin/,bootstrap" ]] || fail ',bootstrap must be executable'
+    bash -n "$ROOT/src/bin/,cleanup" || fail ',cleanup has invalid Bash syntax'
     bash -n "$ROOT/src/bin/,bootstrap" || fail ',bootstrap has invalid Bash syntax'
     # These helpers are also run directly from a shell, not just via Bash in Zellij.
     for helper in ,copy-last ,copy-screen ,copy-pick; do
@@ -269,6 +270,7 @@ MISE
         python3 "$ROOT/dev/tests/mise-bootstrap-interactive.py"
         python3 "$ROOT/dev/tests/login-shell.py"
         python3 "$ROOT/dev/tests/cleanup-interactive.py"
+        python3 "$ROOT/dev/tests/cleanup-reset.py"
         python3 "$ROOT/dev/tests/opencode-sandbox.py"
         python3 "$ROOT/dev/tests/podman-setup.py"
         python3 "$ROOT/dev/tests/prompt-setup.py"

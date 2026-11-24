@@ -12,6 +12,7 @@ COMMANDS = (
     ("Update and bootstrap", "src/bin/,bootstrap"),
     ("Update checkout", "src/lib/setup/update.sh"),
     ("Cleanup", "src/lib/setup/cleanup.sh"),
+    ("Full installation reset", "src/bin/,cleanup"),
     ("Install prompt", "src/lib/setup/setup-prompt.sh"),
     ("Set up Podman", "src/modules/podman/setup-podman.sh"),
     ("Format shell scripts", "dev/scripts/format.sh"),

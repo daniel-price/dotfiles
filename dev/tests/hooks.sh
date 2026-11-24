@@ -16,7 +16,7 @@ main() {
     mkdir "$TEST_ROOT/repo"
     cd "$TEST_ROOT/repo"
     export MISE_TRUSTED_CONFIG_PATHS="$TEST_ROOT/repo"
-    mkdir -p dev/scripts dev/lib lib
+    mkdir -p dev/scripts dev/lib src/lib
     cp "$ROOT/dev/mise.toml" dev/mise.toml
     cp "$ROOT/lefthook.yml" .
     cp "$ROOT/dev/scripts/install-hooks.sh" "$ROOT/dev/scripts/run-mise.sh" dev/scripts/

@@ -1,5 +1,5 @@
 # Reviewed Base bootstrap manifest, selected temporarily to preserve
-# per-operation consent. Normal shells instead load global-mise.toml through
+# per-operation consent. Normal shells instead load home/.config/mise/config.toml through
 # ~/.config/mise/config.toml. Optional modules are selected via miserc.local.toml.
 # Shared tool versions are declared only in src/home/.config/mise/base-tools.toml.
 include = ["./home/.config/mise/base-tools.toml"]
