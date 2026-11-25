@@ -13,4 +13,4 @@
 | `docs/` | Documentation |
 | `.github/` | CI and PR metadata |
 
-Deleting `dev/` and `docs/` must not affect the installed environment. Runtime code must not depend on these directories. Root-level configuration is retained only when required by tooling (for example Lefthook).
+Deleting `dev/` and `docs/` must not affect the installed environment. Runtime code must not depend on these directories. Root-level configuration is retained only when required by tooling (for example Lefthook and Zensical, whose project root must contain the generated site).
