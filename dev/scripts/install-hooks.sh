@@ -3,8 +3,8 @@ set -euo pipefail
 
 ROOT=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
 
-# shellcheck source=lib/common.sh
-source "$ROOT/lib/common.sh"
+# shellcheck source=src/lib/common.sh
+source "$ROOT/src/lib/common.sh"
 
 main() {
     case "${1:-}" in

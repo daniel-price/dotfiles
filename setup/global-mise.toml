@@ -1,6 +1,0 @@
-# Normal global mise config: linked at ~/.config/mise/config.toml by Base bootstrap.
-# Machine-managed packages and dotfile paths stay in setup/mise.toml.
-include = ["./base-tools.toml"]
-
-[settings]
-auto_install = false

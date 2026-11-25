@@ -9,13 +9,13 @@ from pathlib import Path
 from confirmations import Confirm, Deny, communicate_confirmations
 
 ROOT = Path(__file__).resolve().parents[2]
-SCRIPT = ROOT / "setup/setup-autosuggestions.sh"
-MANIFEST = ROOT / "setup/autosuggestions.toml"
+SCRIPT = ROOT / "src/lib/setup/setup-autosuggestions.sh"
+MANIFEST = ROOT / "src/lib/setup/autosuggestions.toml"
 declaration = MANIFEST.read_text()
 assert "[bootstrap.repos]" in declaration
 assert "https://github.com/zsh-users/zsh-autosuggestions.git" in declaration
 assert "e52ee8ca55bcc56a17c828767a3f98f22a68d4eb" in declaration
-assert "zsh-autosuggestions" not in (ROOT / "setup/mise.toml").read_text()
+assert "zsh-autosuggestions" not in (ROOT / "src/mise.toml").read_text()
 
 with tempfile.TemporaryDirectory(prefix="dotfiles-test-autosuggestions-") as scratch:
     base = Path(scratch)

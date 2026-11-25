@@ -9,15 +9,16 @@ ROOT = Path(__file__).resolve().parents[2]
 
 # Deliberate allowlist. Each entry must exit before doing setup, I/O or networking.
 COMMANDS = (
-    ("Update and bootstrap", "bin/,bootstrap"),
-    ("Update checkout", "setup/update.sh"),
-    ("Cleanup", "setup/cleanup.sh"),
-    ("Install prompt", "setup/setup-prompt.sh"),
-    ("Set up Podman", "setup/setup-podman.sh"),
+    ("Update and bootstrap", "src/bin/,bootstrap"),
+    ("Update checkout", "src/lib/setup/update.sh"),
+    ("Cleanup", "src/lib/setup/cleanup.sh"),
+    ("Full installation reset", "src/bin/,cleanup"),
+    ("Install prompt", "src/lib/setup/setup-prompt.sh"),
+    ("Set up Podman", "src/modules/podman/setup-podman.sh"),
     ("Format shell scripts", "dev/scripts/format.sh"),
     ("Lint shell scripts", "dev/scripts/lint.sh"),
     ("Install Git hooks", "dev/scripts/install-hooks.sh"),
-    ("OpenCode sandbox", "modules/opencode/bin/opencode-sandbox"),
+    ("OpenCode sandbox", "src/modules/opencode/bin/opencode-sandbox"),
 )
 
 

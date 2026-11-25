@@ -9,8 +9,8 @@ from pathlib import Path
 from confirmations import Confirm, Deny, communicate_confirmations
 
 ROOT = Path(__file__).resolve().parents[2]
-COMMON = ROOT / "lib/common.sh"
-LIBRARY = ROOT / "lib/login-shell.sh"
+COMMON = ROOT / "src/lib/common.sh"
+LIBRARY = ROOT / "src/lib/login-shell.sh"
 
 with tempfile.TemporaryDirectory(prefix="dotfiles-login-shell-") as temporary:
     root = Path(temporary)

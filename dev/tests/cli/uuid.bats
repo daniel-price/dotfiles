@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
 setup() {
-  UUID="$BATS_TEST_DIRNAME/../../../bin/,uuid"
+  UUID="$BATS_TEST_DIRNAME/../../../src/bin/,uuid"
 }
 
 @test "help comes from argc annotations" {

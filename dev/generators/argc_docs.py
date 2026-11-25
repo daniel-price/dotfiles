@@ -6,7 +6,7 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[2]
 # Each source is reviewed: argc --argc-export reads annotations, not executable code.
-SOURCES = ("bin/,uuid",)
+SOURCES = ("src/bin/,uuid",)
 
 
 def cell(value: object) -> str:

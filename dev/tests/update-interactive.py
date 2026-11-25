@@ -42,21 +42,21 @@ with tempfile.TemporaryDirectory(prefix="dotfiles-update-") as scratch:
     git("--git-dir", bare, "symbolic-ref", "HEAD", "refs/heads/main")
     git("init", "-q", seed)
     git("-C", seed, "checkout", "-q", "-b", "main")
-    (seed / "setup").mkdir(parents=True)
-    (seed / "lib").mkdir()
-    (seed / "bin").mkdir()
-    shutil.copy2(ROOT / "setup/update.sh", seed / "setup/update.sh")
-    shutil.copy2(ROOT / "lib/common.sh", seed / "lib/common.sh")
+    (seed / "src/lib/setup").mkdir(parents=True)
+    (seed / "src/lib").mkdir(exist_ok=True)
+    (seed / "src/bin").mkdir()
+    shutil.copy2(ROOT / "src/lib/setup/update.sh", seed / "src/lib/setup/update.sh")
+    shutil.copy2(ROOT / "src/lib/common.sh", seed / "src/lib/common.sh")
     git("-C", seed, "remote", "add", "origin", bare)
 
     def push(version):
         # The updater itself changes on each push: it must continue running
         # safely while fast-forwarding a checkout that replaces its own file.
-        (seed / "setup/update.sh").write_text(
-            (ROOT / "setup/update.sh").read_text() +
+        (seed / "src/lib/setup/update.sh").write_text(
+            (ROOT / "src/lib/setup/update.sh").read_text() +
             f"\n# synthetic updater revision {version}\n"
         )
-        (seed / "bin/,bootstrap").write_text(
+        (seed / "src/bin/,bootstrap").write_text(
             "#!/usr/bin/env bash\n"
             f"printf '%s\\n' '{version}' >> \"$MOCK_BOOTSTRAP_MARKER\"\n"
         )
@@ -107,7 +107,7 @@ exec "@GIT@" "$@"
             os.close(master)
             os.close(slave)
 
-    script = checkout / "setup/update.sh"
+    script = checkout / "src/lib/setup/update.sh"
     old = git("-C", checkout, "rev-parse", "HEAD")
     push("v2")
     new = git("-C", seed, "rev-parse", "HEAD")
@@ -147,7 +147,7 @@ exec "@GIT@" "$@"
     assert git("-C", checkout, "branch", "--show-current") == "main"
     assert git("-C", checkout, "rev-parse", "HEAD") == git("-C", seed, "rev-parse", "HEAD")
     assert git("-C", checkout, "rev-parse", "refs/heads/feature/test") == feature_head
-    assert "v3" in (checkout / "bin/,bootstrap").read_text()
+    assert "v3" in (checkout / "src/bin/,bootstrap").read_text()
     assert not (base / "bootstrap.log").exists(), "updater must not run provisioning"
 
     # A dirty checkout (including untracked files) must not fetch or switch.

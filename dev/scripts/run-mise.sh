@@ -3,8 +3,8 @@ set -euo pipefail
 
 ROOT=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
 
-# shellcheck source=lib/mise.sh
-source "$ROOT/lib/mise.sh"
+# shellcheck source=src/lib/mise.sh
+source "$ROOT/src/lib/mise.sh"
 
 main() {
     mise=$(mise_command) || {

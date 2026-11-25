@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
 setup() {
-  UNTIL="$BATS_TEST_DIRNAME/../../../bin/,until-failure"
+  UNTIL="$BATS_TEST_DIRNAME/../../../src/bin/,until-failure"
   export ATTEMPTS="$BATS_TEST_TMPDIR/attempts"
 }
 

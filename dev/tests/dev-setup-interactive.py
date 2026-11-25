@@ -15,14 +15,14 @@ with tempfile.TemporaryDirectory(prefix="dotfiles-dev-setup-") as scratch:
     checkout = Path(scratch).resolve() / "checkout"
     home = Path(scratch).resolve() / "home"
     (checkout / "dev" / "scripts").mkdir(parents=True)
-    (checkout / "lib").mkdir()
+    (checkout / "src/lib").mkdir(parents=True)
     (checkout / "dev" / "lib").mkdir()
     (home / ".local" / "bin").mkdir(parents=True)
     for name in ("install-dev-tools.sh", "install-hooks.sh", "run-mise.sh",
                  "format.sh", "lint.sh"):
         shutil.copy2(ROOT / "dev" / "scripts" / name, checkout / "dev" / "scripts" / name)
     for name in ("common.sh", "mise.sh"):
-        shutil.copy2(ROOT / "lib" / name, checkout / "lib" / name)
+        shutil.copy2(ROOT / "src/lib" / name, checkout / "src/lib" / name)
     shutil.copy2(ROOT / "dev/lib/shell-files.sh", checkout / "dev/lib/shell-files.sh")
     (checkout / "dev/mise.toml").write_text("[tools]\n")
     (checkout / "sample.sh").write_text("#!/usr/bin/env bash\nprintf 'sample\\n'\n")

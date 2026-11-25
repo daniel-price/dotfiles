@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
 setup() {
-  REPEAT="$BATS_TEST_DIRNAME/../../../bin/,repeat"
+  REPEAT="$BATS_TEST_DIRNAME/../../../src/bin/,repeat"
   export REPEAT_LOG="$BATS_TEST_TMPDIR/repeat.log"
 }
 

@@ -7,9 +7,9 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-ZSHRC = ROOT / ".config/zsh/zshrc"
-ALIASES = ROOT / ".config/zsh/aliases.zsh"
-PROMPT = ROOT / ".config/zsh/p10k.zsh"
+ZSHRC = ROOT / "src/home/.zshrc"
+ALIASES = ROOT / "src/home/.config/zsh/aliases.zsh"
+PROMPT = ROOT / "src/home/.config/zsh/p10k.zsh"
 
 assert ZSHRC.is_file() and ALIASES.is_file() and PROMPT.is_file()
 assert "POWERLEVEL9K_CONFIG_FILE" in PROMPT.read_text()
