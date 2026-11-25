@@ -115,7 +115,7 @@ esac
         ),
     })
     target = home / ".zshrc"
-    zellij_target = home / "src/home/.config/zellij/config.kdl"
+    zellij_target = home / ".config/zellij/config.kdl"
     zellij_target.parent.mkdir(parents=True)
     zellij_target.symlink_to(ROOT / "src/home/.config/zellij/config.kdl")
 

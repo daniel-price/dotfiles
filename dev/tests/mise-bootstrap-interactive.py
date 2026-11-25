@@ -259,9 +259,9 @@ esac
         for name, version in pins.items() if name not in approved_tools
     )
     assert target.is_symlink() and target.resolve() == (ROOT / "src/home/.zshrc").resolve()
-    zellij_target = home / "src/home/.config/zellij/config.kdl"
+    zellij_target = home / ".config/zellij/config.kdl"
     assert zellij_target.is_symlink() and zellij_target.resolve() == (ROOT / "src/home/.config/zellij/config.kdl").resolve()
-    ghostty_target = home / "src/home/.config/ghostty/config"
+    ghostty_target = home / ".config/ghostty/config"
     assert ghostty_target.is_symlink() and ghostty_target.resolve() == (ROOT / "src/home/.config/ghostty/config").resolve()
     assert any(line.endswith("bootstrap packages apply --yes") for line in log.read_text().splitlines()), log.read_text()
     assert "Dotfiles: ok" in approved.stdout

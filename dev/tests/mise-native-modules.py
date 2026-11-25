@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[2]
 bootstrap = tomllib.loads((ROOT / "src/mise.toml").read_text())
 global_config = tomllib.loads((ROOT / "src/home/.config/mise/config.toml").read_text())
 base_tools = tomllib.loads((ROOT / "src/home/.config/mise/base-tools.toml").read_text())
-opencode = tomllib.loads((ROOT / "setup/config.opencode.toml").read_text())
+opencode = tomllib.loads((ROOT / "src/modules/opencode/config.opencode.toml").read_text())
 
 assert bootstrap["include"] == ["./home/.config/mise/base-tools.toml"]
 assert global_config["include"] == ["./base-tools.toml"]

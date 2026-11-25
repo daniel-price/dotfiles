@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "src/bin/,cleanup"
 
 with tempfile.TemporaryDirectory(prefix="dotfiles-reset-") as scratch:
-    home = Path(scratch)
+    home = Path(scratch).resolve()
     config = home / ".config"
     (config / "git").mkdir(parents=True)
     (config / "zellij").mkdir()
