@@ -54,7 +54,7 @@ run_step() {
             else
                 status=${PIPESTATUS[0]}
             fi
-        elif [[ -t 1 && -t 2 && -n "${DOTFILES_GUM_MISE:-}" ]]; then
+        elif [[ -t 1 && -n "${DOTFILES_GUM_BIN:-}" ]]; then
             marker=$(
                 umask 077
                 mktemp "${TMPDIR:-/tmp}/dotfiles-step-XXXXXX"
@@ -62,8 +62,7 @@ run_step() {
             rm -f -- "$marker"
             # Intentionally expanded in the child Bash, not this parent shell.
             # shellcheck disable=SC2016
-            DOTFILES_STEP_RESULT="$marker" "$DOTFILES_GUM_MISE" -C / exec -- \
-                gum spin --title "$description" -- bash -c '
+            DOTFILES_STEP_RESULT="$marker" "$DOTFILES_GUM_BIN" spin --title "$description" -- bash -c '
                     "$@" >>"$DOTFILES_LOG_FILE" 2>&1
                     result=$?
                     printf "%s\n" "$result" > "$DOTFILES_STEP_RESULT"
@@ -77,14 +76,18 @@ run_step() {
                 }
                 status=$step_status
             else
-                warn 'Gum spinner failed; continuing with plain-text output.'
-                status=0
-                "$@" >>"$DOTFILES_LOG_FILE" 2>&1 || status=$?
+                warn 'Gum spinner did not report command completion; refusing to repeat the operation.'
+                ((status != 0)) || status=1
             fi
             rm -f -- "$marker"
         else
-            info "$description..."
+            if [[ -t 1 ]]; then
+                printf '… %s\r' "$description"
+            fi
             "$@" >>"$DOTFILES_LOG_FILE" 2>&1 || status=$?
+            if [[ -t 1 ]]; then
+                printf '\r\033[K'
+            fi
         fi
     fi
     if ((status == 0)); then
@@ -92,9 +95,6 @@ run_step() {
     else
         printf '✗ %s failed (exit %s).\n' "$description" "$status" >&2
         if [[ "$private" == false ]]; then
-            if [[ "${DOTFILES_VERBOSE:-false}" != true ]]; then
-                tail -n 8 "$DOTFILES_LOG_FILE" >&2 || :
-            fi
             error "Full details: $DOTFILES_LOG_FILE"
         fi
     fi
