@@ -9,12 +9,29 @@ make_temp_dir_physical() {
     (cd "$dir" && pwd -P)
 }
 
+# A bootstrap log is inherited by every setup script. Standalone commands
+# retain their normal output, while bootstrap has a single presentation policy.
 log() {
+    if [[ -n "${DOTFILES_LOG_FILE:-}" ]]; then
+        printf '[info] %s\n' "$*" >>"$DOTFILES_LOG_FILE" || :
+        if [[ "${DOTFILES_VERBOSE:-false}" != true ]]; then
+            return 0
+        fi
+    fi
     printf '[info] %s\n' "$*"
 }
 
+report_error() {
+    if [[ -n "${DOTFILES_LOG_FILE:-}" ]]; then
+        printf '[error] %s\n' "$*" >>"$DOTFILES_LOG_FILE" || :
+        printf '✗ %s (log: %s)\n' "$*" "$DOTFILES_LOG_FILE" >&2
+    else
+        printf '[error] %s\n' "$*" >&2
+    fi
+}
+
 die() {
-    printf '[error] %s\n' "$*" >&2
+    report_error "$@"
     exit 1
 }
 
@@ -23,11 +40,11 @@ die() {
 confirm() {
     local answer
     if [[ $# -ne 1 || -z "${1:-}" ]]; then
-        printf '[error] confirm requires an action description.\n' >&2
+        report_error 'confirm requires an action description.'
         return 1
     fi
     if [[ ! -t 0 ]]; then
-        printf '[info] Declined: confirmation requires interactive stdin.\n' >&2
+        log 'Declined: confirmation requires interactive stdin.'
         return 1
     fi
     printf '%s [y/N] ' "$1" >&2
@@ -45,6 +62,10 @@ confirm() {
 # on success; never redirect confirmation prompts or package installer input.
 run_concise() {
     local output status=0
+    if [[ -n "${DOTFILES_LOG_FILE:-}" && "${DOTFILES_VERBOSE:-false}" != true ]]; then
+        "$@" >>"$DOTFILES_LOG_FILE" 2>&1
+        return $?
+    fi
     if [[ "${DOTFILES_VERBOSE:-true}" == true ]]; then
         if [[ -n "${DOTFILES_LOG_FILE:-}" ]]; then
             "$@" 2>&1 | tee -a "$DOTFILES_LOG_FILE"

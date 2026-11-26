@@ -71,7 +71,9 @@ main() {
         return
     fi
     log "Missing ${#missing[@]} MesloLGS NF font file(s) in $target:"
-    printf '  %s\n' "${missing[@]}"
+    for font in "${missing[@]}"; do
+        log "  $font"
+    done
     log "Source: https://github.com/romkatv/powerlevel10k-media (commit $media_commit)."
 
     if [[ "$mode" == preview ]]; then

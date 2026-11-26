@@ -64,7 +64,7 @@ main() {
     fi
 
     log "Optional pinned Powerlevel10k repository destination: $target"
-    "$mise" -C / bootstrap repos apply --dry-run ||
+    preview_step "$mise" -C / bootstrap repos apply --dry-run ||
         die 'mise could not preview the declared prompt repository checkout.'
     if [[ "$mode" == preview ]]; then
         log 'Preview only; no Git checkout was created. Run --apply to approve.'

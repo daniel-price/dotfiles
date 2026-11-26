@@ -40,8 +40,10 @@ setup() {
   ' _ "$LOGGING"
   [ "$status" -eq 7 ]
   [[ "$output" == *'Broken tool failed (exit 7)'* ]]
-  [[ "$output" == *'expected failure'* ]]
-  [[ "$output" == *'Full details:'* ]]
+  [[ "$output" != *'expected failure'* ]]
+  [[ "$output" == *'Log:'* ]]
+  log=$(find "$STATE/dotfiles/logs" -type f -print -quit)
+  grep -q 'expected failure' "$log"
 }
 
 @test "sensitive steps do not disclose or record command output" {
@@ -90,7 +92,9 @@ setup() {
   ' _ "$LOGGING"
   [ "$status" -eq 9 ]
   [[ "$output" != *previous-step-output* ]]
-  [[ "$output" == *current-failure* ]]
+  [[ "$output" != *current-failure* ]]
+  log=$(find "$STATE/dotfiles/logs" -type f -print -quit)
+  grep -q 'current-failure' "$log"
   [[ "$output" == *'✗ Second'* ]]
 }
 
@@ -173,4 +177,28 @@ SH
   [[ "$output" == *'✓ TTY task'* ]]
   [[ "$output" != *hidden* ]]
   [ "$(grep -c 'TTY task' <<<"$output")" -eq 1 ]
+}
+
+@test "bootstrap logging and previews do not print raw output in quiet mode" {
+  run env XDG_STATE_HOME="$STATE" DOTFILES_VERBOSE=false bash -c '
+    set -euo pipefail
+    source "$1"
+    source "$2"
+    logging_init
+    log "routine info"
+    preview_step bash -c "echo package-plan; echo preview-warning >&2"
+    run_step "Installing packages" bash -c "echo package-output"
+    report_error "example error"
+  ' _ "$BATS_TEST_DIRNAME/../../../src/lib/common.sh" "$LOGGING"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *routine* ]]
+  [[ "$output" != *package-plan* ]]
+  [[ "$output" != *preview-warning* ]]
+  [[ "$output" != *package-output* ]]
+  [[ "$output" == *'✓ Installing packages'* ]]
+  [[ "$output" == *'✗ example error'* ]]
+  log=$(find "$STATE/dotfiles/logs" -type f -print -quit)
+  grep -q 'routine info' "$log"
+  grep -q 'package-plan' "$log"
+  grep -q 'package-output' "$log"
 }

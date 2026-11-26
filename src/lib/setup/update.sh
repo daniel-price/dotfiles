@@ -47,7 +47,7 @@ main() {
     skip_update() {
         log "$1"
         if [[ "$require_current" == true ]]; then
-            die 'Could not verify an approved update; bootstrap will not run.'
+            die "$1 Could not verify an approved update; bootstrap will not run."
         fi
         exit 0
     }

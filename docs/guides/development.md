@@ -46,7 +46,7 @@ provisioning, not a Pop!_OS desktop, macOS, or nested Podman.
 - Bats for standalone CLI tests; Python for PTY integration tests.
 - Argc annotations for supported CLI arguments and completions.
 - Generate references from configuration and CLI metadata.
-- Source `src/lib/logging.sh` and call `run_step "Description" command args...` for non-interactive, non-secret work. Use `info`, `warn` and `error` for contextual messages; keep prompts, sudo and credential operations outside captured steps. Use `run_step --sensitive` only for non-interactive operations whose output must be discarded, even in verbose mode. `run_step` returns the command status; handle expected failures explicitly. `run_provision_step` preserves normal output in standalone setup helpers. Never wrap a pipeline that supplies data to the caller.
+- Source `src/lib/logging.sh` and call `run_step "Description" command args...` for non-interactive, non-secret work. Use `info`, `warn` and `error` for contextual messages; quiet bootstrap writes routine messages and previews only to the log. Keep credential operations outside captured steps; use `run_step --terminal-input` only for reviewed commands whose authentication prompts use the controlling terminal. Use `run_step --sensitive` only for non-interactive operations whose output must be discarded, even in verbose mode. `run_step` returns the command status; handle expected failures explicitly. `run_provision_step` preserves normal output in standalone setup helpers. Never wrap a pipeline that supplies data to the caller.
 
 ## Documentation
 

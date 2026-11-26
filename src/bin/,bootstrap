@@ -181,17 +181,18 @@ main() {
         DOTFILES_BOOTSTRAP_ROOT="$ROOT" exec bash -c '
         set -euo pipefail
         root=$DOTFILES_BOOTSTRAP_ROOT
+        source "$root/src/lib/common.sh"
         bash "$root/src/lib/setup/update.sh" --apply --require-current
         [[ "$(git -C "$root" symbolic-ref --quiet --short HEAD)" == main ]] || {
-            printf "[error] Checkout is not on main; bootstrap skipped.\\n" >&2
+            report_error "Checkout is not on main; bootstrap skipped."
             exit 1
         }
         [[ "$(git -C "$root" rev-parse HEAD)" == "$(git -C "$root" rev-parse refs/remotes/origin/main)" ]] || {
-            printf "[error] Checkout is not at fetched origin/main; bootstrap skipped.\\n" >&2
+            report_error "Checkout is not at fetched origin/main; bootstrap skipped."
             exit 1
         }
         [[ -z "$(git -C "$root" status --porcelain --untracked-files=all)" ]] || {
-            printf "[error] Checkout has uncommitted changes; bootstrap skipped.\\n" >&2
+            report_error "Checkout has uncommitted changes; bootstrap skipped."
             exit 1
         }
         if [[ "$DOTFILES_VERBOSE" == true ]]; then
@@ -228,7 +229,7 @@ main() {
     [[ -f "$MISE_GLOBAL_CONFIG_FILE" ]] || die 'Missing declarative machine config.'
 
     # Fail closed on unpinned or undeclared entries before package or dotfile setup.
-    tool_specs=$(machine_tool_specs "$mise" "$ROOT/src/home/.config/mise/base-tools.toml") ||
+    tool_specs=$(machine_tool_specs "$mise" "$ROOT/src/home/.config/mise/base-tools.toml" 2>>"$DOTFILES_LOG_FILE") ||
         die 'Could not read the reviewed machine tool declarations.'
 
     # Prerequisites: make the pinned cosmetic UI tool available to this Bash process.
@@ -280,10 +281,10 @@ main() {
     if "$mise" -C / bootstrap packages status --missing >/dev/null 2>&1; then
         info 'Reviewed OS packages are already installed.'
     else
-        "$mise" -C / bootstrap packages apply --dry-run ||
+        preview_step "$mise" -C / bootstrap packages apply --dry-run ||
             die 'Could not preview OS package installation.'
-        if confirm 'Install missing OS packages (Zsh and Ghostty; on Linux, Ghostty uses the unofficial mkasberg PPA for future updates)?'; then
-            "$mise" -C / bootstrap packages apply --yes ||
+        if confirm "Install missing OS packages (Zsh, wl-clipboard on Linux, and Ghostty; on Linux, Ghostty uses the unofficial mkasberg PPA for future updates; full plan in $DOTFILES_LOG_FILE)?"; then
+            run_step --terminal-input 'Installing OS packages' "$mise" -C / bootstrap packages apply --yes ||
                 die 'mise could not install the reviewed OS packages.'
             if ! command -v zsh >/dev/null 2>&1 || ! zsh --version >/dev/null 2>&1; then
                 die 'OS package installation finished but zsh is still unavailable.'
@@ -356,19 +357,10 @@ main() {
     offer_default_zsh "$platform" /etc/shells
 
     if [[ "$dotfiles_status" == failed || "$nvim_status" == failed ]]; then
-        error "Bootstrap complete. Dotfiles: $dotfiles_status. Log: $DOTFILES_LOG_FILE"
-    else
-        printf '✓ Bootstrap complete. Dotfiles: %s.\n' "$dotfiles_status"
-    fi
-    if [[ "$dotfiles_status" == failed ]]; then
-        printf '[error] Bootstrap completed with unresolved dotfile conflicts or setup failures.\n' >&2
-    fi
-    if [[ "$nvim_status" == failed ]]; then
-        printf '[error] Bootstrap completed with Neovim setup failure.\n' >&2
-    fi
-    if [[ "$dotfiles_status" == failed || "$nvim_status" == failed ]]; then
+        error "Bootstrap incomplete. Dotfiles: $dotfiles_status; Neovim: $nvim_status."
         return 1
     fi
+    printf '✓ Bootstrap complete. Dotfiles: %s.\n' "$dotfiles_status"
 }
 
 main "$@"
