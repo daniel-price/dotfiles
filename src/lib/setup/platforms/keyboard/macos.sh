@@ -80,6 +80,9 @@ PLIST
         die 'hidutil rejected the Caps Lock mapping.'
     mv -n "$temp" "$agent" || die 'Could not install LaunchAgent.'
     trap - EXIT
+    if [[ -n "${DOTFILES_LOG_FILE:-}" && "${DOTFILES_VERBOSE:-false}" != true ]]; then
+        printf '✓ Mapped Caps Lock to Ctrl\n'
+    fi
     log 'Mapped Caps Lock to Ctrl now; the LaunchAgent reapplies the mapping on future logins.'
 }
 

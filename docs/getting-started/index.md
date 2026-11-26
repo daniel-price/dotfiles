@@ -15,11 +15,11 @@ bash ~/.dotfiles/src/bin/,bootstrap --no-update
 ,bootstrap
 ```
 
-Use `,bootstrap -v` or `,bootstrap --verbose` to stream full command output. By default, non-interactive steps show concise progress and write their detailed output to private logs under `${XDG_STATE_HOME:-~/.local/state}/dotfiles/logs/`. After mise installs the pinned Gum version, eligible steps use a spinner that clears and becomes a tick or cross on the same line. Initial setup works in Bash without Gum or Zsh, and never requires restarting the script. Interactive installation and password prompts remain visible; secret-bearing commands must not use logged steps.
+Use `,bootstrap -v` or `,bootstrap --verbose` to stream full command output. By default, bootstrap displays only task progress, ticks/crosses and interactive prompts. Confirmation prompts begin with `?`. Answered prompts are cleared on supported terminals: approvals give way to progress, while declines remain as a cross labelled `Declined`. Routine messages, package previews and subprocess diagnostics are written to private logs under `${XDG_STATE_HOME:-~/.local/state}/dotfiles/logs/`. After mise installs the pinned Gum version, eligible steps use a spinner that clears and becomes a tick or cross on the same line. Before Gum is installed (or if its renderer fails), the same steps use an animated Bash spinner. Non-TTY execution prints only completed statuses. Ctrl+C cancels the active step rather than triggering a renderer fallback. No shell restart is required. On Linux, sudo authenticates before the OS package installation spinner starts; expired authorisation fails rather than prompting behind the spinner. Homebrew and login-shell changes retain native authentication prompts. Secret-bearing commands must not use logged steps.
 
 ## Neovim
 
-Bootstrap syncs the [LazyVim configuration](https://github.com/daniel-price/lazyvim) and restores plugins from its lockfile. Close running Neovim sessions before bootstrapping. Plugin restoration, Mason tools and Tree-sitter parsers run in one headless session with live progress; the tracked lockfile is not updated by bootstrap.
+Bootstrap syncs the [LazyVim configuration](https://github.com/daniel-price/lazyvim) and restores plugins from its lockfile. Close running Neovim sessions before bootstrapping. Plugin restoration, Mason tools and Tree-sitter parsers run in one headless session with a progress indicator; the tracked lockfile is not updated by bootstrap.
 
 ```sh
 ,nvim-update

@@ -26,10 +26,11 @@ main() {
     MISE_INSTALLER_SHA256='60adf5460b19a791b964c414a2fff9d46990c9f2b1dfc0e4ba8c2b865f882a2b'
 
     export DOTFILES_VERBOSE=false
+    unset DOTFILES_GUM
     local -a args=()
     local arg
     for arg in "$@"; do
-        if [[ ( "$arg" == --verbose || "$arg" == -v ) && "$DOTFILES_VERBOSE" == false ]]; then
+        if [[ "$arg" == --verbose || "$arg" == -v ]]; then
             DOTFILES_VERBOSE=true
         else
             args+=("$arg")
@@ -116,7 +117,7 @@ main() {
             rm -f -- "$installer"
             die 'Mise installer SHA-256 did not match; nothing installed.'
         fi
-        log "Verified mise $MISE_VERSION installer."
+        info "Verified mise $MISE_VERSION installer."
 
         if ! confirm "Install mise $MISE_VERSION at $target? This creates missing parent directories and downloads the verified release binary."; then
             rm -f -- "$installer"
@@ -134,7 +135,7 @@ main() {
             die "Mise was not executable at the expected path: $target"
         [[ "$version" == "${MISE_VERSION#v}" ]] ||
             die "Mise version mismatch: expected ${MISE_VERSION#v}, found $version."
-        log "Installed mise $version at $target."
+        info "Installed mise $version at $target."
     }
 
     # Keep Neovim separate from the dotfiles checkout.
@@ -160,7 +161,7 @@ main() {
         nvim_sync_checkout "$config" --allow-offline || return 1
 
         nvim_bootstrap_plugins "$mise" "$config" "$ROOT/src/lib" || return 1
-        log 'Neovim configuration and locked plugins synchronised.'
+        info 'Neovim configuration and locked plugins synchronised.'
     }
 
     case "${1:-}" in
@@ -180,17 +181,18 @@ main() {
         DOTFILES_BOOTSTRAP_ROOT="$ROOT" exec bash -c '
         set -euo pipefail
         root=$DOTFILES_BOOTSTRAP_ROOT
+        source "$root/src/lib/common.sh"
         bash "$root/src/lib/setup/update.sh" --apply --require-current
         [[ "$(git -C "$root" symbolic-ref --quiet --short HEAD)" == main ]] || {
-            printf "[error] Checkout is not on main; bootstrap skipped.\\n" >&2
+            report_error "Checkout is not on main; bootstrap skipped."
             exit 1
         }
         [[ "$(git -C "$root" rev-parse HEAD)" == "$(git -C "$root" rev-parse refs/remotes/origin/main)" ]] || {
-            printf "[error] Checkout is not at fetched origin/main; bootstrap skipped.\\n" >&2
+            report_error "Checkout is not at fetched origin/main; bootstrap skipped."
             exit 1
         }
         [[ -z "$(git -C "$root" status --porcelain --untracked-files=all)" ]] || {
-            printf "[error] Checkout has uncommitted changes; bootstrap skipped.\\n" >&2
+            report_error "Checkout has uncommitted changes; bootstrap skipped."
             exit 1
         }
         if [[ "$DOTFILES_VERBOSE" == true ]]; then
@@ -204,7 +206,7 @@ main() {
     logging_init || die 'Could not create a private bootstrap log.'
     # shellcheck disable=SC2119
     platform=$(detect_os) || die 'Unsupported platform.'
-    log "Detected platform: $platform."
+    info "Detected platform: $platform."
 
     # Explicit --no-update provisioning can run from an existing feature checkout.
     if command -v git >/dev/null 2>&1 &&
@@ -227,17 +229,18 @@ main() {
     [[ -f "$MISE_GLOBAL_CONFIG_FILE" ]] || die 'Missing declarative machine config.'
 
     # Fail closed on unpinned or undeclared entries before package or dotfile setup.
-    tool_specs=$(machine_tool_specs "$mise" "$ROOT/src/home/.config/mise/base-tools.toml") ||
+    tool_specs=$(machine_tool_specs "$mise" "$ROOT/src/home/.config/mise/base-tools.toml" 2>>"$DOTFILES_LOG_FILE") ||
         die 'Could not read the reviewed machine tool declarations.'
 
-    # Prepare the pinned cosmetic UI tool before provisioning other tools.
+    # Prerequisites: make the pinned cosmetic UI tool available to this Bash process.
     # A failed or declined Gum install never stops the machine setup.
-    local installed=0 unchanged=0 skipped=0 gum_spec='' gum_status
+    local installed=0 unchanged=0 skipped=0 gum_spec='' gum_status gum_ready=false gum_path
     while IFS= read -r spec; do
         case "$spec" in gum@*) gum_spec=$spec ;; esac
     done <<<"$tool_specs"
     if [[ -n "$gum_spec" ]]; then
-        if run_concise "$mise" -C / install --dry-run-code "$gum_spec"; then
+        if "$mise" -C / install --dry-run-code "$gum_spec" >/dev/null 2>&1; then
+            gum_ready=true
             unchanged=$((unchanged + 1))
         else
             gum_status=$?
@@ -245,6 +248,7 @@ main() {
                 if confirm "Install missing $gum_spec for progress indicators?"; then
                     if run_step 'Installing Gum' "$mise" -C / install "$gum_spec" &&
                         run_concise "$mise" -C / install --dry-run-code "$gum_spec"; then
+                        gum_ready=true
                         installed=$((installed + 1))
                     else
                         warn 'Gum installation could not be verified; using text progress.'
@@ -257,23 +261,30 @@ main() {
                 warn "Could not inspect $gum_spec; using text progress."
             fi
         fi
-        # mise exec makes Gum usable right away without Zsh or shell reload.
-        if "$mise" -C / exec -- gum --version >/dev/null 2>&1; then
-            export DOTFILES_GUM_MISE="$mise"
+        # Resolve the executable under the machine manifest now. Optional setup
+        # helpers select other manifests, so do not invoke Gum via mise later.
+        if [[ "$gum_ready" == true ]]; then
+            if gum_path=$("$mise" -C / exec -- sh -c 'command -v gum' 2>/dev/null) && [[ -x "$gum_path" ]]; then
+                export DOTFILES_GUM="$gum_path"
+            else
+                warn 'Gum is not executable; using plain-text progress.'
+            fi
         fi
+    else
+        warn 'No Gum pin found; using plain-text progress.'
     fi
 
+    # Normal provisioning starts here; no shell restart is needed.
     # Package provisioning is a single reviewed mise operation. On Pop!_OS
     # it includes Ghostty's unofficial mkasberg PPA, so always show the preview
     # and require approval before changing packages or APT sources.
     if "$mise" -C / bootstrap packages status --missing >/dev/null 2>&1; then
-        log 'Reviewed OS packages are already installed.'
+        info 'Reviewed OS packages are already installed.'
     else
-        "$mise" -C / bootstrap packages apply --dry-run ||
+        preview_step "$mise" -C / bootstrap packages apply --dry-run ||
             die 'Could not preview OS package installation.'
-        if confirm 'Install missing OS packages (Zsh and Ghostty; on Linux, Ghostty uses the unofficial mkasberg PPA for future updates)?'; then
-            "$mise" -C / bootstrap packages apply --yes ||
-                die 'mise could not install the reviewed OS packages.'
+        if confirm "Install missing OS packages (Zsh, wl-clipboard on Linux, and Ghostty; on Linux, Ghostty uses the unofficial mkasberg PPA for future updates; full plan in $DOTFILES_LOG_FILE)?"; then
+            install_reviewed_packages "$platform" "$mise" || return $?
             if ! command -v zsh >/dev/null 2>&1 || ! zsh --version >/dev/null 2>&1; then
                 die 'OS package installation finished but zsh is still unavailable.'
             fi
@@ -304,7 +315,7 @@ main() {
             skipped=$((skipped + 1))
         fi
     done 3<<<"$tool_specs"
-    log "mise tools: $unchanged already installed, $installed installed, $skipped skipped."
+    printf '✓ mise tools: %s already installed, %s installed, %s skipped.\n' "$unchanged" "$installed" "$skipped"
 
 
     # Each configured target is handled independently. A conflict never prevents
@@ -344,16 +355,11 @@ main() {
     # chsh changes only this user's login account and may ask for a password.
     offer_default_zsh "$platform" /etc/shells
 
-    log "Bootstrap complete. Dotfiles: $dotfiles_status."
-    if [[ "$dotfiles_status" == failed ]]; then
-        printf '[error] Bootstrap completed with unresolved dotfile conflicts or setup failures.\n' >&2
-    fi
-    if [[ "$nvim_status" == failed ]]; then
-        printf '[error] Bootstrap completed with Neovim setup failure.\n' >&2
-    fi
     if [[ "$dotfiles_status" == failed || "$nvim_status" == failed ]]; then
+        error "Bootstrap incomplete. Dotfiles: $dotfiles_status; Neovim: $nvim_status."
         return 1
     fi
+    printf '✓ Bootstrap complete. Dotfiles: %s.\n' "$dotfiles_status"
 }
 
 main "$@"

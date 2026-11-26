@@ -59,6 +59,9 @@ main() {
         chmod --reference="$config" "$temp"
         mv -- "$temp" "$config"
         trap - EXIT
+        if [[ -n "${DOTFILES_LOG_FILE:-}" && "${DOTFILES_VERBOSE:-false}" != true ]]; then
+            printf '✓ Mapped Caps Lock to Ctrl\n'
+        fi
         log 'Saved COSMIC mapping. Log out and back in if the change is not immediate.'
     fi
 }

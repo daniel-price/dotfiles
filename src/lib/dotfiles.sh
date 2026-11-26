@@ -4,10 +4,14 @@
 apply_reviewed_dotfiles() {
     local mise=$1 status_json rows state target backup timestamp suffix
     local failed=0 missing_count=0 conflict_count=0
-    local -a missing=() conflicts=()
+    local -a missing=() conflicts=() apply_step=(run_concise)
+    if declare -F run_provision_step >/dev/null 2>&1 && [[ -n "${DOTFILES_LOG_FILE:-}" ]]; then
+        apply_step=(run_provision_step 'Applying mise-managed dotfile')
+        # These are reviewed Base symlinks, not decrypted secret files.
+    fi
 
     # Mise is the source of truth for declarations and pending changes.
-    status_json=$("$mise" -C / dot status --json) || {
+    status_json=$("$mise" -C / dot status --json 2>>"${DOTFILES_LOG_FILE:-/dev/stderr}") || {
         log 'Could not inspect mise-managed dotfiles.'
         return 1
     }
@@ -15,7 +19,7 @@ apply_reviewed_dotfiles() {
     # after normalising ../ segments, even when an intermediate directory was
     # removed and the symlink no longer resolves.
     rows=$(printf '%s\n' "$status_json" |
-        "$mise" -C / exec -- jq -r '.files[] | [.state, .mode, .target] | @tsv') || {
+        "$mise" -C / exec -- jq -r '.files[] | [.state, .mode, .target] | @tsv' 2>>"${DOTFILES_LOG_FILE:-/dev/stderr}") || {
         log 'Could not read mise dotfile status (jq is required).'
         return 1
     }
@@ -39,14 +43,14 @@ apply_reviewed_dotfiles() {
         fi
 
         if [[ "$state" == source_missing ]]; then
-            printf '[error] Dotfile source missing: %s\n' "$target" >&2
+            report_error "Dotfile source missing: $target"
             failed=1
         elif [[ ! -e "$target" && ! -L "$target" ]]; then
             if run_concise "$mise" -C / dot apply --dry-run "$target"; then
                 missing+=("$target")
                 missing_count=$((missing_count + 1))
             else
-                printf '[error] Dotfile preview failed: %s\n' "$target" >&2
+                report_error "Dotfile preview failed: $target"
                 failed=1
             fi
         elif [[ -f "$target" || -L "$target" ]]; then
@@ -55,11 +59,11 @@ apply_reviewed_dotfiles() {
                 conflicts+=("$target")
                 conflict_count=$((conflict_count + 1))
             else
-                printf '[error] Dotfile conflict could not be previewed: %s\n' "$target" >&2
+                report_error "Dotfile conflict could not be previewed: $target"
                 failed=1
             fi
         else
-            printf '[error] Dotfile is neither a regular file nor a symlink; left untouched: %s\n' "$target" >&2
+            report_error "Dotfile is neither a regular file nor a symlink; left untouched: $target"
             failed=1
         fi
     done <<<"$rows"
@@ -67,8 +71,8 @@ apply_reviewed_dotfiles() {
     if ((missing_count > 0)); then
         if confirm "Apply $missing_count missing mise-managed dotfile(s)?"; then
             for target in "${missing[@]}"; do
-                if ! run_concise "$mise" -C / dot apply --yes "$target"; then
-                    printf '[error] Dotfile apply failed: %s\n' "$target" >&2
+                if ! "${apply_step[@]}" "$mise" -C / dot apply --yes "$target"; then
+                    report_error "Dotfile apply failed: $target"
                     failed=1
                 fi
             done
@@ -95,19 +99,19 @@ apply_reviewed_dotfiles() {
                 backup="$target.backup-$timestamp-$suffix"
             done
             if ! mv -- "$target" "$backup"; then
-                printf '[error] Could not back up dotfile: %s\n' "$target" >&2
+                report_error "Could not back up dotfile: $target"
                 failed=1
                 continue
             fi
             log "Backed up $target to $backup"
-            if ! run_concise "$mise" -C / dot apply --yes "$target"; then
-                printf '[error] Dotfile apply failed: %s\n' "$target" >&2
+            if ! "${apply_step[@]}" "$mise" -C / dot apply --yes "$target"; then
+                report_error "Dotfile apply failed: $target"
                 failed=1
                 if [[ ! -e "$target" && ! -L "$target" ]]; then
                     if mv -- "$backup" "$target"; then
                         log "Restored $target after failed deployment."
                     else
-                        printf '[error] Could not restore dotfile backup: %s\n' "$backup" >&2
+                        report_error "Could not restore dotfile backup: $backup"
                     fi
                 fi
             fi
@@ -125,7 +129,7 @@ apply_reviewed_dotfiles() {
         \~/*) target="$HOME/${target:2}" ;;
         esac
         if [[ -L "$target" && ! -e "$target" ]]; then
-            printf '[error] Mise-managed symlink is still broken: %s\n' "$target" >&2
+            report_error "Mise-managed symlink is still broken: $target"
             failed=1
         fi
     done <<<"$rows"

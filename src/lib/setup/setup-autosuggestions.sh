@@ -7,6 +7,8 @@ ROOT=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
 
 # shellcheck source=src/lib/common.sh
 source "$ROOT/src/lib/common.sh"
+# shellcheck source=src/lib/logging.sh
+source "$ROOT/src/lib/logging.sh"
 # shellcheck source=src/lib/mise.sh
 source "$ROOT/src/lib/mise.sh"
 
@@ -53,7 +55,7 @@ main() {
             ! -f "$target/zsh-autosuggestions.zsh" ]]; then
             log "Preserving conflicting existing plugin path at $target; no clone or update attempted."
         elif "$mise" -C / bootstrap repos status --missing >/dev/null 2>&1; then
-            log 'The pinned zsh-autosuggestions checkout is already present; no changes made.'
+            info 'The pinned zsh-autosuggestions checkout is already present; no changes made.'
         else
             log "Existing zsh-autosuggestions checkout does not match the pinned manifest; preserving it unchanged: $target."
             log 'Review with: mise -C / bootstrap repos status (with the plugin manifest selected).'
@@ -62,7 +64,7 @@ main() {
     fi
 
     log "Optional pinned zsh-autosuggestions repository destination: $target"
-    "$mise" -C / bootstrap repos apply --dry-run ||
+    preview_step "$mise" -C / bootstrap repos apply --dry-run ||
         die 'mise could not preview the declared plugin repository checkout.'
     if [[ "$mode" == preview ]]; then
         log 'Preview only; no Git checkout was created. Run --apply to approve.'
@@ -74,13 +76,13 @@ main() {
     fi
     # --yes here bypasses mise's second interactive prompt, not this explicit
     # review-and-consent step. Only the one declared repository can be touched.
-    "$mise" -C / bootstrap repos apply --yes ||
+    run_provision_step 'Installing Zsh autosuggestions' "$mise" -C / bootstrap repos apply --yes ||
         die 'mise could not install the pinned zsh-autosuggestions checkout.'
     [[ -d "$target/.git" && -f "$target/zsh-autosuggestions.zsh" ]] ||
         die 'The declared zsh-autosuggestions checkout was not installed as expected.'
     "$mise" -C / bootstrap repos status --missing >/dev/null ||
         die 'The installed zsh-autosuggestions checkout does not match its pinned declaration.'
-    log 'zsh-autosuggestions is installed. It loads in new interactive Zsh sessions.'
+    info 'zsh-autosuggestions is installed. It loads in new interactive Zsh sessions.'
 }
 
 main "$@"

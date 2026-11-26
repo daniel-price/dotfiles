@@ -246,13 +246,13 @@ MISE
     chmod +x "$TEST_ROOT/bin/mise"
     # Run twice from elsewhere, with an isolated HOME, on a supported host only.
     if detect_os >/dev/null 2>&1; then
-        output=$(cd "$TEST_ROOT/elsewhere" && HOME="$TEST_ROOT/home" \
+        output=$(cd "$TEST_ROOT/elsewhere" && env HOME="$TEST_ROOT/home" \
             PATH="$TEST_ROOT/bin:$PATH" bash "$ROOT/src/bin/,bootstrap" --no-update)
-        repeated=$(cd "$TEST_ROOT/elsewhere" && HOME="$TEST_ROOT/home" \
+        repeated=$(cd "$TEST_ROOT/elsewhere" && env HOME="$TEST_ROOT/home" \
             PATH="$TEST_ROOT/bin:$PATH" bash "$ROOT/src/bin/,bootstrap" --no-update)
         assert_equal "$output" "$repeated" 'bootstrap repeatability'
-        [[ "$output" == *'Detected platform:'* && "$output" == *'Bootstrap complete.'* &&
-            "$output" == *'Bootstrap complete. Dotfiles:'* ]] || fail 'bootstrap scope unclear'
+        [[ "$output" == *'✓ Bootstrap complete. Dotfiles:'* &&
+            "$output" != *'[info]'* ]] || fail 'bootstrap scope unclear'
     else
         printf 'SKIP: bootstrap host smoke test (unsupported host)\n'
     fi

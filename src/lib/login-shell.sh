@@ -86,11 +86,16 @@ offer_default_zsh() {
         return 0
     fi
     # No username argument: chsh can change only the invoking user's account.
+    # PAM/chsh can emit authentication prompts on stderr. Keep its terminal
+    # streams intact rather than hiding a password prompt in a log.
     chsh -s "$target" || die 'chsh failed; login shell may be unchanged.'
     updated_record=$(login_account_record "$platform" "$username") ||
         die 'Could not verify the login shell after chsh.'
     updated_shell=${updated_record#*$'\n'}
     [[ "$updated_shell" == "$target" ]] ||
         die "chsh returned successfully but account login shell is $updated_shell, not $target."
+    if [[ -n "${DOTFILES_LOG_FILE:-}" && "${DOTFILES_VERBOSE:-false}" != true ]]; then
+        printf '✓ Changed default login shell to Zsh\n'
+    fi
     log "Default login shell changed to $target. Log out and back in to use it."
 }

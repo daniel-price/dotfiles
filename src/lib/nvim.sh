@@ -46,7 +46,12 @@ nvim_validate_checkout() {
 nvim_sync_checkout() {
     local config=$1 allow_offline=${2:-}
 
-    if ! run_concise git -C "$config" fetch origin main; then
+    local -a fetch_step=(run_concise) merge_step=(run_concise)
+    if declare -F run_provision_step >/dev/null 2>&1 && [[ -n "${DOTFILES_LOG_FILE:-}" ]]; then
+        fetch_step=(run_provision_step 'Fetching Neovim configuration')
+        merge_step=(run_provision_step 'Updating Neovim configuration')
+    fi
+    if ! "${fetch_step[@]}" git -C "$config" fetch origin main; then
         if [[ "$allow_offline" == --allow-offline ]]; then
             log 'Neovim fetch failed (possibly offline); using existing clean checkout.'
             return 0
@@ -55,7 +60,7 @@ nvim_sync_checkout() {
         return 1
     fi
 
-    run_concise git -C "$config" merge --ff-only FETCH_HEAD || {
+    "${merge_step[@]}" git -C "$config" merge --ff-only FETCH_HEAD || {
         log 'Neovim main has diverged from origin/main; resolve it manually.'
         return 1
     }

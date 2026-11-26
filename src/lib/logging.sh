@@ -3,17 +3,20 @@
 
 logging_init() {
     local state_dir log_dir
-    if [[ -n "${DOTFILES_LOG_FILE:-}" ]]; then
-        [[ -f "$DOTFILES_LOG_FILE" && ! -L "$DOTFILES_LOG_FILE" && -w "$DOTFILES_LOG_FILE" ]]
-        return $?
-    fi
     state_dir=${XDG_STATE_HOME:-${HOME:?}/.local/state}
     log_dir="$state_dir/dotfiles/logs"
     (
         umask 077
         mkdir -p -- "$log_dir"
     ) || return 1
-    [[ -d "$log_dir" && ! -L "$log_dir" ]] || return 1
+    [[ -d "$log_dir" && ! -L "$log_dir" && -O "$log_dir" ]] || return 1
+    chmod 700 "$log_dir" || return 1
+    if [[ -n "${DOTFILES_LOG_FILE:-}" ]]; then
+        [[ "$DOTFILES_LOG_FILE" == "$log_dir"/bootstrap-* && -f "$DOTFILES_LOG_FILE" &&
+            ! -L "$DOTFILES_LOG_FILE" && -O "$DOTFILES_LOG_FILE" && -w "$DOTFILES_LOG_FILE" ]] || return 1
+        chmod 600 "$DOTFILES_LOG_FILE"
+        return $?
+    fi
     DOTFILES_LOG_FILE=$(
         umask 077
         mktemp "$log_dir/bootstrap-$(date +%Y%m%d-%H%M%S)-XXXXXX"
@@ -21,82 +24,172 @@ logging_init() {
     export DOTFILES_LOG_FILE
 }
 
-info() { printf '[info] %s\n' "$*"; }
-warn() { printf '[warn] %s\n' "$*" >&2; }
-error() { printf '[error] %s\n' "$*" >&2; }
+# Warnings are recorded and shown as nonfatal failures, not raw log lines.
+info() { log "$@"; }
+warn() {
+    if [[ -n "${DOTFILES_LOG_FILE:-}" ]]; then
+        printf '[warn] %s\n' "$*" >>"$DOTFILES_LOG_FILE" || :
+        printf '✗ %s (continuing)\n' "$*" >&2
+    else
+        printf '[warn] %s\n' "$*" >&2
+    fi
+}
+error() { report_error "$@"; }
+
+# Animate in Bash before Gum is installed or if its renderer fails.
+logging_fallback_spin() {
+    local description=$1 worker=$2 index=0
+    local -a frames=(⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏)
+    [[ -t 1 && -t 2 && "${TERM:-dumb}" != dumb ]] || return 0
+    while kill -0 "$worker" 2>/dev/null; do
+        printf '\r\033[2K%s %s' "${frames[index]}" "$description"
+        index=$(((index + 1) % ${#frames[@]}))
+        sleep 0.1
+    done
+    printf '\r\033[2K'
+}
+
+# Start the actual operation exactly once. The renderer observes its lifetime
+# independently of the worker status. Scope job control and traps to this
+# subshell; a cancellation stops the worker's process group, not the caller.
+logging_spin() (
+    local description=$1 worker status=0 gum_status=0
+    shift
+    set -m
+    "$@" </dev/null >>"$DOTFILES_LOG_FILE" 2>&1 &
+    worker=$!
+    set +m
+    cancel_step() {
+        kill -TERM -- "-$worker" 2>/dev/null || kill -TERM "$worker" 2>/dev/null || :
+        wait "$worker" 2>/dev/null || :
+        if [[ -t 1 ]]; then
+            printf '\r\033[2K'
+        fi
+        exit "$1"
+    }
+    trap 'cancel_step 130' INT
+    trap 'cancel_step 143' TERM
+    if [[ -x "${DOTFILES_GUM:-}" ]]; then
+        # shellcheck disable=SC2016
+        if "$DOTFILES_GUM" spin --title "$description" --spinner minidot --padding '0 0' -- bash -c '
+            while kill -0 "$1" 2>/dev/null; do
+                sleep 0.1
+            done
+        ' dotfiles-spin "$worker"; then
+            :
+        else
+            gum_status=$?
+            if ((gum_status == 130 || gum_status == 143)); then
+                cancel_step "$gum_status"
+            fi
+            printf '[warn] Gum spinner failed (exit %s); using Bash spinner.\n' "$gum_status" >>"$DOTFILES_LOG_FILE" || :
+            logging_fallback_spin "$description" "$worker"
+        fi
+    else
+        logging_fallback_spin "$description" "$worker"
+    fi
+    wait "$worker" 2>/dev/null || status=$?
+    if [[ -t 1 && -t 2 && "${TERM:-dumb}" != dumb ]]; then
+        printf '\r\033[2K'
+    fi
+    return "$status"
+)
 
 # Private steps do not log or echo subprocess output, even in verbose mode.
 # Never wrap a command that needs the terminal for input (sudo/chsh/prompts).
 run_step() {
-    local private=false description status=0 marker='' step_status
-    if [[ "${1:-}" == --sensitive ]]; then
+    local private=false terminal_input=false description status=0 line_end=$'\n'
+    local -a pipeline_status
+    case "${1:-}" in
+    --sensitive)
         private=true
         shift
-    fi
+        ;;
+    --terminal-input)
+        # Only for reviewed commands whose authentication uses /dev/tty,
+        # such as sudo. Never run a spinner over an authentication prompt.
+        terminal_input=true
+        shift
+        ;;
+    esac
     description=${1:-}
     [[ -n "$description" && $# -ge 2 ]] || {
-        error 'run_step requires a description and command.'
+        printf '✗ run_step requires a description and command.\n' >&2
         return 2
     }
     shift
     logging_init || {
-        error 'Cannot initialise the private bootstrap log.'
+        printf '✗ Cannot initialise the private bootstrap log.\n' >&2
         return 2
     }
     if [[ "$private" == true ]]; then
-        "$@" >/dev/null 2>&1 || status=$?
+        "$@" </dev/null >/dev/null 2>&1 || status=$?
     else
         printf '\n=== %s: %s ===\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$description" >>"$DOTFILES_LOG_FILE" || return 2
-        if [[ "${DOTFILES_VERBOSE:-false}" == true ]]; then
-            info "$description..."
-            if "$@" 2>&1 | tee -a "$DOTFILES_LOG_FILE"; then
-                status=${PIPESTATUS[0]}
-            else
-                status=${PIPESTATUS[0]}
+        if [[ "$terminal_input" == true ]]; then
+            if [[ -t 1 && "${DOTFILES_VERBOSE:-false}" != true ]]; then
+                printf '… %s\n' "$description"
             fi
-        elif [[ -t 1 && -t 2 && -n "${DOTFILES_GUM_MISE:-}" ]]; then
-            marker=$(
-                umask 077
-                mktemp "${TMPDIR:-/tmp}/dotfiles-step-XXXXXX"
-            ) || return 2
-            rm -f -- "$marker"
-            # Intentionally expanded in the child Bash, not this parent shell.
-            # shellcheck disable=SC2016
-            DOTFILES_STEP_RESULT="$marker" "$DOTFILES_GUM_MISE" -C / exec -- \
-                gum spin --title "$description" -- bash -c '
-                    "$@" >>"$DOTFILES_LOG_FILE" 2>&1
-                    result=$?
-                    printf "%s\n" "$result" > "$DOTFILES_STEP_RESULT"
-                    exit "$result"
-                ' dotfiles-step "$@" || status=$?
-            if [[ -f "$marker" ]]; then
-                step_status=$(<"$marker")
-                [[ "$step_status" =~ ^[0-9]+$ ]] || {
-                    rm -f -- "$marker"
-                    return 2
-                }
-                status=$step_status
+            if [[ "${DOTFILES_VERBOSE:-false}" == true ]]; then
+                if "$@" 2>&1 | tee -a "$DOTFILES_LOG_FILE"; then
+                    pipeline_status=("${PIPESTATUS[@]}")
+                else
+                    pipeline_status=("${PIPESTATUS[@]}")
+                fi
+                status=${pipeline_status[0]}
             else
-                warn 'Gum spinner failed; continuing with plain-text output.'
-                status=0
                 "$@" >>"$DOTFILES_LOG_FILE" 2>&1 || status=$?
             fi
-            rm -f -- "$marker"
+        elif [[ "${DOTFILES_VERBOSE:-false}" == true ]]; then
+            printf '%s\n' "$description"
+            if "$@" </dev/null 2>&1 | tee -a "$DOTFILES_LOG_FILE"; then
+                pipeline_status=("${PIPESTATUS[@]}")
+            else
+                pipeline_status=("${PIPESTATUS[@]}")
+            fi
+            status=${pipeline_status[0]}
+            if ((status == 0 && pipeline_status[1] != 0)); then
+                status=${pipeline_status[1]}
+            fi
+        elif [[ -t 1 && -t 2 && "${TERM:-dumb}" != dumb ]]; then
+            logging_spin "$description" "$@" || status=$?
         else
-            info "$description..."
-            "$@" >>"$DOTFILES_LOG_FILE" 2>&1 || status=$?
+            "$@" </dev/null >>"$DOTFILES_LOG_FILE" 2>&1 || status=$?
         fi
+        printf '[exit %s]\n' "$status" >>"$DOTFILES_LOG_FILE" || warn 'Could not finish writing the step log.'
+    fi
+    # Explicit CRLF also works when terminal ONLCR is disabled.
+    if [[ -t 1 && -t 2 ]]; then
+        line_end=$'\r\n'
     fi
     if ((status == 0)); then
-        printf '✓ %s\n' "$description"
+        printf '✓ %s%s' "$description" "$line_end"
     else
-        error "$description failed (exit $status)."
-        if [[ "$private" == false ]]; then
-            if [[ "${DOTFILES_VERBOSE:-false}" != true ]]; then
-                tail -n 8 "$DOTFILES_LOG_FILE" >&2 || :
-            fi
-            error "Full details: $DOTFILES_LOG_FILE"
+        if [[ "$private" == true ]]; then
+            printf '✗ %s failed (exit %s).%s' "$description" "$status" "$line_end" >&2
+        else
+            printf '✗ %s failed (exit %s). Log: %s%s' "$description" "$status" "$DOTFILES_LOG_FILE" "$line_end" >&2
         fi
     fi
     return "$status"
+}
+
+# Standalone helpers retain their original output unless called by bootstrap.
+run_provision_step() {
+    if [[ -n "${DOTFILES_LOG_FILE:-}" ]]; then
+        run_step "$@"
+    else
+        shift
+        "$@"
+    fi
+}
+
+# Previews remain available for review in the private log; standalone
+# invocations and verbose bootstrap display the original plan.
+preview_step() {
+    if [[ -n "${DOTFILES_LOG_FILE:-}" ]]; then
+        run_concise "$@"
+    else
+        "$@"
+    fi
 }

@@ -6,6 +6,8 @@ ROOT=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
 
 # shellcheck source=src/lib/common.sh
 source "$ROOT/src/lib/common.sh"
+# shellcheck source=src/lib/logging.sh
+source "$ROOT/src/lib/logging.sh"
 # shellcheck source=src/lib/os.sh
 source "$ROOT/src/lib/os.sh"
 
@@ -65,11 +67,13 @@ main() {
     done
 
     if [[ ${#missing[@]} -eq 0 ]]; then
-        log "All four MesloLGS NF font files are already present at $target."
+        info "All four MesloLGS NF font files are already present at $target."
         return
     fi
     log "Missing ${#missing[@]} MesloLGS NF font file(s) in $target:"
-    printf '  %s\n' "${missing[@]}"
+    for font in "${missing[@]}"; do
+        log "  $font"
+    done
     log "Source: https://github.com/romkatv/powerlevel10k-media (commit $media_commit)."
 
     if [[ "$mode" == preview ]]; then
@@ -89,7 +93,7 @@ main() {
     for font in "${missing[@]}"; do
         url="https://raw.githubusercontent.com/romkatv/powerlevel10k-media/$media_commit/${font// /%20}"
         file="$scratch/$font"
-        curl --fail --location --silent --show-error --output "$file" "$url" ||
+        run_provision_step "Downloading $font" curl --fail --location --silent --show-error --output "$file" "$url" ||
             die "Font download failed: $font (no fonts installed)."
         header=$(od -An -tx1 -N4 "$file" | tr -d '[:space:]')
         [[ "$header" == 00010000 || "$header" == 4f54544f ]] ||
@@ -104,7 +108,7 @@ main() {
         mv -- "$scratch/$font" "$file" || die "Could not install font: $font"
     done
     if [[ "$platform" == debian ]] && command -v fc-cache >/dev/null 2>&1; then
-        fc-cache -f "$target" || log 'Font files installed, but fc-cache failed; restart Ghostty if needed.'
+        run_provision_step 'Refreshing font cache' fc-cache -f "$target" || warn 'Font files installed, but fc-cache failed; restart Ghostty if needed.'
     fi
     rm -rf -- "$scratch"
     trap - EXIT

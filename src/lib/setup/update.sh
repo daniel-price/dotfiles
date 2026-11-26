@@ -25,8 +25,19 @@ else
 fi
 # shellcheck source=src/lib/common.sh
 source "$ROOT/src/lib/common.sh"
+# shellcheck source=src/lib/logging.sh
+source "$ROOT/src/lib/logging.sh"
 
 main() {
+    update_step() {
+        if [[ -n "${DOTFILES_LOG_FILE:-}" ]]; then
+            run_step "$@"
+        else
+            shift
+            run_concise "$@"
+        fi
+    }
+
     REMOTE='https://github.com/daniel-price/dotfiles.git'
     mode=status
     require_current=false
@@ -36,7 +47,7 @@ main() {
     skip_update() {
         log "$1"
         if [[ "$require_current" == true ]]; then
-            die 'Could not verify an approved update; bootstrap will not run.'
+            die "$1 Could not verify an approved update; bootstrap will not run."
         fi
         exit 0
     }
@@ -127,7 +138,17 @@ main() {
         skip_update 'Fetch declined; checkout unchanged.'
     fi
 
-    if ! run_concise git -C "$ROOT" fetch --no-tags origin refs/heads/main:refs/remotes/origin/main; then
+    local -a fetch_step=(update_step 'Fetching dotfiles updates')
+    if [[ "$origin" == git@* ]]; then
+        if [[ -n "${DOTFILES_LOG_FILE:-}" ]]; then
+            fetch_step=(run_step --terminal-input 'Fetching dotfiles updates' git)
+        else
+            fetch_step=(git)
+        fi
+    else
+        fetch_step+=(env GIT_TERMINAL_PROMPT=0 git)
+    fi
+    if ! "${fetch_step[@]}" -C "$ROOT" fetch --no-tags origin refs/heads/main:refs/remotes/origin/main; then
         skip_update 'Could not fetch origin/main; leaving the checkout unchanged (offline bootstrap is still possible).'
     fi
 
@@ -159,7 +180,7 @@ main() {
             if ! confirm "Switch from $branch to main and fast-forward by $local_behind commit(s)?"; then
                 skip_update "Branch switch declined; remaining on $branch."
             fi
-            if ! run_concise git -C "$ROOT" switch main; then
+            if ! update_step 'Switching to main' git -C "$ROOT" switch main; then
                 die 'Could not switch to main; no branch was reset or force-checked out.'
             fi
         fi
@@ -168,7 +189,7 @@ main() {
             # Verify the expected ancestry immediately before moving local main.
             git -C "$ROOT" merge-base --is-ancestor HEAD refs/remotes/origin/main ||
                 die 'Main is no longer an ancestor of origin/main; refusing update.'
-            run_concise git -C "$ROOT" merge --ff-only refs/remotes/origin/main ||
+            update_step 'Fast-forwarding main' git -C "$ROOT" merge --ff-only refs/remotes/origin/main ||
                 die 'Fast-forward failed; no reset or force merge was attempted.'
             log "Fast-forwarded main by $local_behind commit(s)."
         else
@@ -179,7 +200,7 @@ main() {
         if ! confirm "Create local main tracking origin/main and switch from $branch?"; then
             skip_update "Branch switch declined; remaining on $branch."
         fi
-        run_concise git -C "$ROOT" switch --track -c main origin/main ||
+        update_step 'Creating local main' git -C "$ROOT" switch --track -c main origin/main ||
             die 'Could not create local main; existing branch was preserved.'
         log 'Created local main from the fetched origin/main.'
     fi

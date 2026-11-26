@@ -40,6 +40,12 @@ with tempfile.TemporaryDirectory(prefix="dotfiles-mise-native-") as scratch:
     log = base / "mise.log"
     log.touch()
 
+    fake_sudo = bin_dir / "sudo"
+    fake_sudo.write_text("""#!/usr/bin/env bash
+[[ "$*" == "-n -v" ]] || exit 90
+""")
+    fake_sudo.chmod(0o755)
+
     fake_zsh = bin_dir / "zsh"
     fake_zsh.write_text("""#!/usr/bin/env bash
 [[ -e "$MOCK_STATE/zsh" ]] || exit 1
@@ -80,14 +86,20 @@ case "$*" in
       [[ -e "$MOCK_STATE/wl-clipboard" ]] || exit 1
     fi
     ;;
-  "bootstrap packages apply --dry-run") exit 0 ;;
+  "bootstrap packages apply --dry-run")
+    echo 'raw package preview'
+    echo 'raw package preview warning' >&2
+    exit 0
+    ;;
   "bootstrap packages apply --yes")
+    echo 'raw package output'
+    echo 'raw package diagnostic' >&2
     touch "$MOCK_STATE/zsh" "$MOCK_STATE/ghostty"
     if [[ "$MOCK_LINUX" == 1 ]]; then
       touch "$MOCK_STATE/wl-clipboard"
     fi
     ;;
-  "bootstrap repos apply --dry-run") exit 0 ;;
+  "bootstrap repos apply --dry-run") echo 'raw repository preview'; exit 0 ;;
   "bootstrap repos apply --yes")
     case "$MISE_GLOBAL_CONFIG_FILE" in
       */autosuggestions.toml)
@@ -207,7 +219,8 @@ esac
     tool_rows = "\n".join(f"{name} {version} (missing)" for name, version in pins.items())
     tool_pins = "\n".join(f"{name}={version}" for name, version in pins.items())
 
-    env = dict(os.environ, HOME=str(home), PATH=str(bin_dir) + ":/usr/bin:/bin",
+    log_dir = home / ".local/state/dotfiles/logs"
+    env = dict(os.environ, HOME=str(home), XDG_STATE_HOME=str(home / ".local/state"), PATH=str(bin_dir) + ":/usr/bin:/bin",
                MOCK_STATE=str(state), MOCK_LOG=str(log),
                MOCK_LINUX="1" if platform.system() == "Linux" else "0",
                MOCK_DOT_SOURCE=str(ROOT / "src/home/.zshrc"),
@@ -216,28 +229,38 @@ esac
                MOCK_TOOL_ROWS=tool_rows, MOCK_TOOL_PINS=tool_pins)
 
     def run(*answers):
+        prior_logs = set(log_dir.glob("bootstrap-*"))
         if not answers:
-            return subprocess.run(["bash", str(SCRIPT), "--no-update"], cwd=base, env=env,
-                                  stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                                  stderr=subprocess.STDOUT, text=True, check=False)
-        master, slave = pty.openpty()
-        try:
-            proc = subprocess.Popen(["bash", str(SCRIPT), "--no-update"], cwd=base, env=env,
-                                    stdin=slave, stdout=subprocess.PIPE,
-                                    stderr=subprocess.STDOUT)
-            out = communicate_confirmations(proc, master, slave, *answers, timeout=20)
-            return subprocess.CompletedProcess([], proc.returncode, out)
-        finally:
-            os.close(master)
-            os.close(slave)
+            result = subprocess.run(["bash", str(SCRIPT), "--no-update"], cwd=base, env=env,
+                                    stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                    stderr=subprocess.STDOUT, text=True, check=False)
+        else:
+            master, slave = pty.openpty()
+            try:
+                proc = subprocess.Popen(["bash", str(SCRIPT), "--no-update"], cwd=base, env=env,
+                                        stdin=slave, stdout=subprocess.PIPE,
+                                        stderr=subprocess.STDOUT)
+                out = communicate_confirmations(proc, master, slave, *answers, timeout=20)
+                result = subprocess.CompletedProcess([], proc.returncode, out)
+            finally:
+                os.close(master)
+                os.close(slave)
+        [run_log] = set(log_dir.glob("bootstrap-*")) - prior_logs
+        result.diagnostics = run_log.read_text()
+        for line in result.stdout.splitlines():
+            if line.strip():
+                assert line.startswith(("✓ ", "✗ ", "… ")) or (line.startswith("? ") and line.rstrip().endswith("[y/N]")), result.stdout
+        return result
 
     target = home / ".zshrc"
 
     # Each component requires its own approval. Declines are safe.
     declined = run(*(Deny() for _ in range(2 + len(pins))))
     assert declined.returncode != 0, declined.stdout
+    assert "✗ Declined: Install missing OS packages" in declined.stdout
+    assert "✗ Declined: Install missing neovim@" in declined.stdout
     assert not list(state.iterdir()), declined.stdout
-    assert "Skipped OS package installation" in declined.stdout and "Skipped neovim" in declined.stdout
+    assert "Skipped OS package installation" in declined.diagnostics and "Skipped neovim" in declined.diagnostics
     assert "Dotfiles: failed" in declined.stdout
     assert not any("dot apply --yes" in line for line in log.read_text().splitlines())
     assert not any("bootstrap packages apply --yes" in line for line in log.read_text().splitlines()), "Declining package consent must never install Ghostty or its PPA"
@@ -266,6 +289,12 @@ esac
     assert ghostty_target.is_symlink() and ghostty_target.resolve() == (ROOT / "src/home/.config/ghostty/config").resolve()
     assert any(line.endswith("bootstrap packages apply --yes") for line in log.read_text().splitlines()), log.read_text()
     assert "Dotfiles: ok" in approved.stdout
+    assert "✗ Declined: Install missing zellij@" in approved.stdout
+    assert "✗ Declined: Install missing neovim@" not in approved.stdout
+    assert "raw package preview" in approved.diagnostics
+    assert "raw package output" in approved.diagnostics
+    assert "raw package diagnostic" in approved.diagnostics
+    assert "raw repository preview" in approved.diagnostics
     calls = log.read_text().splitlines()
     assert any("dot apply --dry-run" in line for line in calls)
     assert sum("dot apply --yes " in line for line in calls) == 3
@@ -299,7 +328,7 @@ esac
     assert not (state / f"zellij@{pins['zellij']}").exists(), repeated.stdout
     for name, version in pins.items():
         if name not in approved_tools:
-            assert f"Skipped {name}@{version}" in repeated.stdout, repeated.stdout
+            assert f"Skipped {name}@{version}" in repeated.diagnostics, repeated.stdout
 
     remaining = [
         (name, version) for name, version in pins.items()
@@ -357,7 +386,7 @@ esac
     assert failed.returncode != 0, failed.stdout
     assert zellij_target.is_file() and not zellij_target.is_symlink()
     assert zellij_target.read_text() == "restore me\n"
-    assert "Restored " + str(zellij_target) + " after failed deployment" in failed.stdout
+    assert "Restored " + str(zellij_target) + " after failed deployment" in failed.diagnostics
     (state / "fail-dot-apply").unlink()
     zellij_target.unlink()
     zellij_target.symlink_to(ROOT / "src/home/.config/zellij/config.kdl")
@@ -372,7 +401,7 @@ esac
     foreign = run(*(Deny() for _ in range(len(pins) + 3)))
     assert foreign.returncode != 0, foreign.stdout
     assert zellij_target.is_symlink() and zellij_target.resolve() == foreign_kdl.resolve()
-    assert "Skipped conflicting dotfile" in foreign.stdout
+    assert "Skipped conflicting dotfile" in foreign.diagnostics
     zellij_target.unlink()
     zellij_target.symlink_to(ROOT / "src/home/.config/zellij/config.kdl")
 
