@@ -19,7 +19,7 @@ Use `,bootstrap -v` or `,bootstrap --verbose` to stream full command output. By 
 
 ## Neovim
 
-Bootstrap syncs the [LazyVim configuration](https://github.com/daniel-price/lazyvim) and restores plugins from its lockfile. Close running Neovim sessions before bootstrapping. Plugin restoration, Mason tools and Tree-sitter parsers run in one headless session with live progress; the tracked lockfile is not updated by bootstrap.
+Bootstrap syncs the [LazyVim configuration](https://github.com/daniel-price/lazyvim) and restores plugins from its lockfile. Close running Neovim sessions before bootstrapping. Plugin restoration, Mason tools and Tree-sitter parsers run in one headless session with a progress indicator; the tracked lockfile is not updated by bootstrap.
 
 ```sh
 ,nvim-update

@@ -70,12 +70,76 @@ setup() {
 }
 
 @test "missing Gum and non-TTY mode use plain progress and still execute" {
-  run env XDG_STATE_HOME="$STATE" DOTFILES_GUM_MISE=/not/a/mise bash -c '
+  run env XDG_STATE_HOME="$STATE" DOTFILES_GUM=/not/a/gum bash -c '
     set -euo pipefail
     source "$1"
     run_step "Noninteractive" bash -c "echo plain command"
   ' _ "$LOGGING"
   [ "$status" -eq 0 ]
-  [[ "$output" == *Noninteractive...* ]]
+  [[ "$output" != *Noninteractive...* ]]
+  [ "$output" = "✓ Noninteractive" ]
   [[ "$output" == *'✓ Noninteractive'* ]]
+}
+
+@test "failure diagnostics exclude previous successful step output" {
+  run env XDG_STATE_HOME="$STATE" bash -c '
+    set -euo pipefail
+    source "$1"
+    run_step "First" echo previous-step-output
+    run_step "Second" bash -c "echo current-failure; exit 9"
+  ' _ "$LOGGING"
+  [ "$status" -eq 9 ]
+  [[ "$output" != *previous-step-output* ]]
+  [[ "$output" == *current-failure* ]]
+  [[ "$output" == *'✗ Second'* ]]
+}
+
+@test "log permissions are private under a permissive umask" {
+  run env XDG_STATE_HOME="$STATE" bash -c '
+    umask 000
+    source "$1"
+    run_step "First" echo example
+    ls -ld "$XDG_STATE_HOME/dotfiles/logs" "$DOTFILES_LOG_FILE"
+  ' _ "$LOGGING"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *drwx------* ]]
+  [[ "$output" == *-rw-------* ]]
+}
+
+@test "spinner failure cannot replay an already started operation" {
+  fake="$BATS_TEST_TMPDIR/gum"
+  cat >"$fake" <<'SH'
+#!/usr/bin/env bash
+exit 23
+SH
+  chmod +x "$fake"
+  counter="$BATS_TEST_TMPDIR/counter"
+  run env XDG_STATE_HOME="$STATE" DOTFILES_GUM="$fake" bash -c '
+    set -euo pipefail
+    source "$1"
+    logging_init
+    logging_spin "Example" bash -c "echo once >> \"\$1\"; exit 7" _ "$2"
+  ' _ "$LOGGING" "$counter"
+  [ "$status" -eq 7 ]
+  [ "$(cat "$counter")" = once ]
+  [[ "$output" == *'Gum spinner failed'* ]]
+}
+
+@test "spinner success does not mask a worker failure" {
+  fake="$BATS_TEST_TMPDIR/gum"
+  cat >"$fake" <<'SH'
+#!/usr/bin/env bash
+while [[ "$1" != -- ]]; do shift; done
+shift
+"$@"
+exit 0
+SH
+  chmod +x "$fake"
+  run env XDG_STATE_HOME="$STATE" DOTFILES_GUM="$fake" bash -c '
+    set -euo pipefail
+    source "$1"
+    logging_init
+    logging_spin "Example" bash -c "exit 17"
+  ' _ "$LOGGING"
+  [ "$status" -eq 17 ]
 }

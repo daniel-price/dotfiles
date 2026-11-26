@@ -7,6 +7,8 @@ ROOT=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
 
 # shellcheck source=src/lib/common.sh
 source "$ROOT/src/lib/common.sh"
+# shellcheck source=src/lib/logging.sh
+source "$ROOT/src/lib/logging.sh"
 # shellcheck source=src/lib/mise.sh
 source "$ROOT/src/lib/mise.sh"
 
@@ -74,7 +76,7 @@ main() {
     fi
     # --yes here bypasses mise's second interactive prompt, not this explicit
     # review-and-consent step. Only the one declared repository can be touched.
-    "$mise" -C / bootstrap repos apply --yes ||
+    run_provision_step 'Installing Zsh autosuggestions' "$mise" -C / bootstrap repos apply --yes ||
         die 'mise could not install the pinned zsh-autosuggestions checkout.'
     [[ -d "$target/.git" && -f "$target/zsh-autosuggestions.zsh" ]] ||
         die 'The declared zsh-autosuggestions checkout was not installed as expected.'

@@ -4,7 +4,10 @@
 apply_reviewed_dotfiles() {
     local mise=$1 status_json rows state target backup timestamp suffix
     local failed=0 missing_count=0 conflict_count=0
-    local -a missing=() conflicts=()
+    local -a missing=() conflicts=() apply_step=(run_concise)
+    if declare -F run_provision_step >/dev/null 2>&1 && [[ -n "${DOTFILES_LOG_FILE:-}" ]]; then
+        apply_step=(run_provision_step 'Applying mise-managed dotfile')
+    fi
 
     # Mise is the source of truth for declarations and pending changes.
     status_json=$("$mise" -C / dot status --json) || {
@@ -67,7 +70,7 @@ apply_reviewed_dotfiles() {
     if ((missing_count > 0)); then
         if confirm "Apply $missing_count missing mise-managed dotfile(s)?"; then
             for target in "${missing[@]}"; do
-                if ! run_concise "$mise" -C / dot apply --yes "$target"; then
+                if ! "${apply_step[@]}" "$mise" -C / dot apply --yes "$target"; then
                     printf '[error] Dotfile apply failed: %s\n' "$target" >&2
                     failed=1
                 fi
@@ -100,7 +103,7 @@ apply_reviewed_dotfiles() {
                 continue
             fi
             log "Backed up $target to $backup"
-            if ! run_concise "$mise" -C / dot apply --yes "$target"; then
+            if ! "${apply_step[@]}" "$mise" -C / dot apply --yes "$target"; then
                 printf '[error] Dotfile apply failed: %s\n' "$target" >&2
                 failed=1
                 if [[ ! -e "$target" && ! -L "$target" ]]; then
