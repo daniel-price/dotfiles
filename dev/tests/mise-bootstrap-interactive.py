@@ -293,6 +293,8 @@ esac
     repeated = run()
     assert repeated.returncode == 0, repeated.stdout
     assert "Dotfiles: ok" in repeated.stdout
+    for label in ("Platform detected:", "mise tools (", "OS packages", "Managed dotfiles", "Bootstrap complete"):
+        assert f"✓ {label}" in repeated.stdout, repeated.stdout
     assert sum("dot apply --yes" in line for line in log.read_text().splitlines()) == dot_before_repeat
     assert sum("bootstrap packages apply --yes" in line for line in log.read_text().splitlines()) == packages_before_repeat
     assert sum(line.endswith(f"install zoxide@{pins['zoxide']}") for line in log.read_text().splitlines()) == zoxide_before_repeat
