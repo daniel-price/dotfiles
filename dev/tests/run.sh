@@ -18,6 +18,7 @@ main() {
     exec </dev/null
 
     TEST_ROOT=$(make_temp_dir_physical dotfiles-test)
+    local bootstrap_test_path="$TEST_ROOT/bin:$PATH"
     trap 'rm -rf -- "$TEST_ROOT"' EXIT
 
     fail() {
@@ -247,9 +248,9 @@ MISE
     # Run twice from elsewhere, with an isolated HOME, on a supported host only.
     if detect_os >/dev/null 2>&1; then
         output=$(cd "$TEST_ROOT/elsewhere" && env HOME="$TEST_ROOT/home" \
-            PATH="$TEST_ROOT/bin:$PATH" bash "$ROOT/src/bin/,bootstrap" --no-update)
+            PATH="$bootstrap_test_path" bash "$ROOT/src/bin/,bootstrap" --no-update)
         repeated=$(cd "$TEST_ROOT/elsewhere" && env HOME="$TEST_ROOT/home" \
-            PATH="$TEST_ROOT/bin:$PATH" bash "$ROOT/src/bin/,bootstrap" --no-update)
+            PATH="$bootstrap_test_path" bash "$ROOT/src/bin/,bootstrap" --no-update)
         assert_equal "$output" "$repeated" 'bootstrap repeatability'
         [[ "$output" == *'✓ Bootstrap complete. Dotfiles:'* &&
             "$output" != *'[info]'* ]] || fail 'bootstrap scope unclear'
