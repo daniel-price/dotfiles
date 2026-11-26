@@ -15,6 +15,32 @@ bash dev/scripts/install-dev-tools.sh
 | `bash dev/scripts/test-bats.sh` | Bats tests |
 | `bash dev/scripts/install-hooks.sh` | Git hooks |
 
+## Manual branch or PR testing
+
+On a machine with [rootless Podman](podman.md):
+
+```sh
+,test-env 107
+,test-env feature/my-change
+```
+
+Each invocation builds or reuses the Ubuntu 24.04 test image, fetches the exact
+public GitHub ref and opens a fresh container as a non-root user. The host home,
+checkout and credentials are not mounted. Only Git, curl, CA certificates and
+sudo are preinstalled. The test account can use sudo; if chsh asks for its
+password, use `dotfiles` (a disposable test credential).
+
+Inside the container:
+
+```sh
+bash src/bin/,bootstrap --no-update
+zsh -l
+```
+
+Use `--no-update` to avoid switching to main. Exit Zsh and then the outer Bash
+shell to remove the container; the reusable image remains. This tests Linux CLI
+provisioning, not a Pop!_OS desktop, macOS, or nested Podman.
+
 ## Conventions
 
 - Bats for standalone CLI tests; Python for PTY integration tests.

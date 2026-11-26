@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
+# shellcheck source=src/lib/common.sh
+source "$ROOT/src/lib/common.sh"
+
+main() {
+    local target ref rootless image=localhost/dotfiles-manual-test:ubuntu-24.04
+    if [[ $# -eq 1 && ( "$1" == --help || "$1" == -h ) ]]; then
+        printf '%s\n' 'Usage: ,test-env BRANCH|PR_NUMBER' \
+            'Fetch a public dotfiles branch or PR into a disposable Ubuntu 24.04 container.' \
+            'Run bootstrap manually with --no-update. Exit the shell to remove the container.'
+        return
+    fi
+    [[ $# -eq 1 ]] || die 'Specify one branch or PR number. See --help.'
+    target=$1
+    if [[ "$target" =~ ^[1-9][0-9]*$ ]]; then
+        ref="refs/pull/$target/head"
+    else
+        [[ "$target" != -* ]] && git check-ref-format "refs/heads/$target" ||
+            die 'Invalid branch name. See --help.'
+        ref="refs/heads/$target"
+    fi
+
+    command -v podman >/dev/null 2>&1 ||
+        die 'Rootless Podman is required; see the Podman setup guide.'
+    rootless=$(podman info --format '{{.Host.Security.Rootless}}') ||
+        die 'Could not inspect Podman.'
+    [[ "$rootless" == true ]] || die 'Rootless Podman is required.'
+
+    log "Preparing an isolated Ubuntu 24.04 environment for $ref."
+    podman build --http-proxy=false --tag "$image" \
+        --file "$ROOT/src/modules/test-env/Containerfile" "$ROOT/src/modules/test-env" ||
+        die 'Could not build the manual test image.'
+
+    # No host checkout, home directory, credentials, sockets or devices are mounted.
+    # The requested ref is data, never interpolated into the shell program.
+    podman run --rm -it --pull=never --http-proxy=false --env "TERM=${TERM:-xterm-256color}" \
+        "$image" bash -c '
+        set -euo pipefail
+        git init --quiet "$HOME/.dotfiles"
+        cd "$HOME/.dotfiles"
+        git remote add origin https://github.com/daniel-price/dotfiles.git
+        git fetch --depth=1 origin "$1"
+        git checkout --quiet --detach FETCH_HEAD
+        printf "\nTesting %s at %s\n" "$1" "$(git rev-parse --short HEAD)"
+        printf "%s\n" "Run: bash src/bin/,bootstrap --no-update" \
+            "After bootstrap, run zsh -l to test your configured shell." \
+            "Exit the outer Bash shell to discard this environment."
+        export PATH="$PWD/src/bin:$PATH"
+        exec bash --noprofile --norc -i
+    ' dotfiles-test "$ref"
+}
+
+main "$@"
