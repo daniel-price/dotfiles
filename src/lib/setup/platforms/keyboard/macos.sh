@@ -58,7 +58,7 @@ PLIST
         [[ -f "$agent" && ! -L "$agent" ]] ||
             die "Existing LaunchAgent is not a regular file: $agent"
         if [[ "$(cat "$agent")" == "$plist" ]]; then
-            log 'macOS Caps Lock LaunchAgent is already installed.'
+            success 'Caps Lock mapping (already installed)'
             exit 0
         fi
         log 'LaunchAgent path is already in use; leaving it unchanged.'
