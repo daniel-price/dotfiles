@@ -46,11 +46,18 @@ confirm() {
 run_concise() {
     local output status=0
     if [[ "${DOTFILES_VERBOSE:-true}" == true ]]; then
+        if [[ -n "${DOTFILES_LOG_FILE:-}" ]]; then
+            "$@" 2>&1 | tee -a "$DOTFILES_LOG_FILE"
+            return "${PIPESTATUS[0]}"
+        fi
         "$@"
         return $?
     fi
     output=$(mktemp "${TMPDIR:-/tmp}/dotfiles-output.XXXXXX") || return 2
     "$@" >"$output" 2>&1 || status=$?
+    if [[ -n "${DOTFILES_LOG_FILE:-}" ]]; then
+        cat "$output" >> "$DOTFILES_LOG_FILE" || :
+    fi
     if ((status != 0)); then
         cat "$output" >&2
     else
