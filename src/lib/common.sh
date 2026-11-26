@@ -10,6 +10,12 @@ make_temp_dir_physical() {
 }
 
 log() {
+    if [[ -n "${DOTFILES_LOG_FILE:-}" ]]; then
+        printf '[info] %s\n' "$*" >>"$DOTFILES_LOG_FILE"
+        if [[ "${DOTFILES_VERBOSE:-false}" != true ]]; then
+            return 0
+        fi
+    fi
     printf '[info] %s\n' "$*"
 }
 
@@ -64,7 +70,9 @@ run_concise() {
         cat "$output" >>"$DOTFILES_LOG_FILE" || :
     fi
     if ((status != 0)); then
-        cat "$output" >&2
+        if [[ -z "${DOTFILES_LOG_FILE:-}" ]]; then
+            cat "$output" >&2
+        fi
     else
         grep -Ei '(^|[^[:alnum:]])(warn(ing)?|error|fatal)([^[:alnum:]]|$)' "$output" >&2 || :
     fi
