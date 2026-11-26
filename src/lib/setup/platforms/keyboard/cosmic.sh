@@ -49,7 +49,7 @@ main() {
         exit 0
     fi
     if [[ "$updated" == "$(cat "$config")"$'\n' ]]; then
-        log 'COSMIC Caps Lock is already mapped to Ctrl.'
+        success 'Caps Lock mapped to Ctrl'
         exit 0
     fi
     if confirm 'Set Caps Lock to act as an additional Ctrl key in COSMIC keyboard settings?'; then
