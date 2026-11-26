@@ -4,8 +4,8 @@ Pop!_OS only. Select the `opencode` [mise module](mise-modules.md).
 
 ```sh
 cd /path/to/personal-git-repo
-opencode-sandbox --dry-run
-opencode-sandbox
+,opencode --dry-run
+,opencode
 ```
 
 The launcher offers to install [Podman](podman.md) if missing.
@@ -13,7 +13,7 @@ The launcher offers to install [Podman](podman.md) if missing.
 ## Credentials
 
 ```sh
-opencode-sandbox --credential-env ANTHROPIC_API_KEY
+,opencode --credential-env ANTHROPIC_API_KEY
 ```
 
 Also supports `OPENAI_API_KEY` and `OPENROUTER_API_KEY`. Authentication inside the container is temporary.

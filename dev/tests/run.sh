@@ -18,6 +18,7 @@ main() {
     exec </dev/null
 
     TEST_ROOT=$(make_temp_dir_physical dotfiles-test)
+    local bootstrap_test_path="$TEST_ROOT/bin:$PATH"
     trap 'rm -rf -- "$TEST_ROOT"' EXIT
 
     fail() {
@@ -34,10 +35,10 @@ main() {
         bash -n "$ROOT/$script"
     done < <(git -C "$ROOT" ls-files -z -- '*.sh')
     printf 'PASS: Bash syntax\n'
-    [[ ! -e "$ROOT/src/bin/opencode-sandbox" && -x "$ROOT/src/modules/opencode/bin/opencode-sandbox" &&
+    [[ ! -e "$ROOT/src/bin/,opencode" && -x "$ROOT/src/modules/opencode/bin/,opencode" &&
         -f "$ROOT/src/modules/opencode/Containerfile" ]] ||
         fail 'sandbox launcher must be executable and have a reviewed Containerfile'
-    bash -n "$ROOT/src/modules/opencode/bin/opencode-sandbox" || fail 'sandbox launcher has invalid Bash syntax'
+    bash -n "$ROOT/src/modules/opencode/bin/,opencode" || fail 'sandbox launcher has invalid Bash syntax'
     [[ -x "$ROOT/src/bin/,bootstrap" ]] || fail ',bootstrap must be executable'
     bash -n "$ROOT/src/bin/,cleanup" || fail ',cleanup has invalid Bash syntax'
     bash -n "$ROOT/src/bin/,bootstrap" || fail ',bootstrap has invalid Bash syntax'
@@ -247,9 +248,9 @@ MISE
     # Run twice from elsewhere, with an isolated HOME, on a supported host only.
     if detect_os >/dev/null 2>&1; then
         output=$(cd "$TEST_ROOT/elsewhere" && env HOME="$TEST_ROOT/home" \
-            PATH="$TEST_ROOT/bin:$PATH" bash "$ROOT/src/bin/,bootstrap" --no-update)
+            PATH="$bootstrap_test_path" bash "$ROOT/src/bin/,bootstrap" --no-update)
         repeated=$(cd "$TEST_ROOT/elsewhere" && env HOME="$TEST_ROOT/home" \
-            PATH="$TEST_ROOT/bin:$PATH" bash "$ROOT/src/bin/,bootstrap" --no-update)
+            PATH="$bootstrap_test_path" bash "$ROOT/src/bin/,bootstrap" --no-update)
         assert_equal "$output" "$repeated" 'bootstrap repeatability'
         [[ "$output" == *'✓ Bootstrap complete. Dotfiles:'* &&
             "$output" != *'[info]'* ]] || fail 'bootstrap scope unclear'

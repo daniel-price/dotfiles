@@ -8,7 +8,7 @@ Select modules in `~/.config/mise/miserc.local.toml`:
 | Personal | `env = ["personal", "opencode"]` |
 | Home server | `env = ["home-server", "opencode"]` |
 
-Only `opencode` has a public optional module. It exposes the sandbox launcher, not native OpenCode.
+Only `opencode` has a public optional module. It exposes the `,opencode` sandbox launcher, not native OpenCode.
 
 ```sh
 mise config

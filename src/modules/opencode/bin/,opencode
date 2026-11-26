@@ -12,7 +12,7 @@ source "$ROOT/src/lib/common.sh"
 main() {
     usage() {
         printf '%s\n' \
-            'Usage: opencode-sandbox [--profile-dir DIR] [--project DIR] [--credential-env NAME] [--dry-run|--help]' \
+            'Usage: ,opencode [--profile-dir DIR] [--project DIR] [--credential-env NAME] [--dry-run|--help]' \
             'Run OpenCode in rootless Podman with a single writable Git checkout.' \
             'Dry-run makes no network requests or Podman changes.' \
             'Normal runs separately confirm image pull, build and agent launch.' \
