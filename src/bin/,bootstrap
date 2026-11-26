@@ -78,7 +78,7 @@ main() {
         if [[ -n "$existing" ]]; then
             version=$(mise_version "$existing") ||
                 die "Found mise at $existing but could not read its version; nothing changed."
-            log "Existing mise $version at $existing; skipped installation and upgrade."
+            success "mise $version"
             return
         fi
 
@@ -87,7 +87,7 @@ main() {
                 die "Mise destination exists but is not a regular file: $target"
             version=$(mise_version "$target") ||
                 die "Found mise destination at $target but could not read its version; nothing changed."
-            log "Existing mise $version at $target; skipped installation and upgrade."
+            success "mise $version"
             return
         fi
         for directory in "$HOME/.local" "$HOME/.local/bin"; do
@@ -160,7 +160,7 @@ main() {
         nvim_sync_checkout "$config" --allow-offline || return 1
 
         nvim_bootstrap_plugins "$mise" "$config" "$ROOT/src/lib" || return 1
-        log 'Neovim configuration and locked plugins synchronised.'
+        return 0
     }
 
     case "${1:-}" in
@@ -204,7 +204,7 @@ main() {
     logging_init || die 'Could not create a private bootstrap log.'
     # shellcheck disable=SC2119
     platform=$(detect_os) || die 'Unsupported platform.'
-    log "Detected platform: $platform."
+    success "Platform detected: $platform"
 
     # Explicit --no-update provisioning can run from an existing feature checkout.
     if command -v git >/dev/null 2>&1 &&
@@ -267,7 +267,7 @@ main() {
     # it includes Ghostty's unofficial mkasberg PPA, so always show the preview
     # and require approval before changing packages or APT sources.
     if "$mise" -C / bootstrap packages status --missing >/dev/null 2>&1; then
-        log 'Reviewed OS packages are already installed.'
+        success 'OS packages'
     else
         "$mise" -C / bootstrap packages apply --dry-run ||
             die 'Could not preview OS package installation.'
@@ -277,6 +277,7 @@ main() {
             if ! command -v zsh >/dev/null 2>&1 || ! zsh --version >/dev/null 2>&1; then
                 die 'OS package installation finished but zsh is still unavailable.'
             fi
+            success 'OS packages'
         else
             log 'Skipped OS package installation.'
         fi
@@ -304,7 +305,11 @@ main() {
             skipped=$((skipped + 1))
         fi
     done 3<<<"$tool_specs"
-    log "mise tools: $unchanged already installed, $installed installed, $skipped skipped."
+    if ((skipped == 0)); then
+        success "mise tools ($((unchanged + installed)) installed)"
+    else
+        log "mise tools: $unchanged already installed, $installed installed, $skipped skipped."
+    fi
 
 
     # Each configured target is handled independently. A conflict never prevents
@@ -344,7 +349,11 @@ main() {
     # chsh changes only this user's login account and may ask for a password.
     offer_default_zsh "$platform" /etc/shells
 
-    log "Bootstrap complete. Dotfiles: $dotfiles_status."
+    if [[ "$dotfiles_status" == ok && "$nvim_status" == ok ]]; then
+        success "Bootstrap complete. Dotfiles: ok"
+    else
+        log "Bootstrap incomplete. Dotfiles: $dotfiles_status."
+    fi
     if [[ "$dotfiles_status" == failed ]]; then
         printf '[error] Bootstrap completed with unresolved dotfile conflicts or setup failures.\n' >&2
     fi
