@@ -130,7 +130,7 @@ apply_reviewed_dotfiles() {
         fi
     done <<<"$rows"
     if ((failed == 0)); then
-        log "Mise-managed dotfiles verified."
+        success 'Managed dotfiles'
     fi
     return "$failed"
 }
