@@ -120,7 +120,7 @@ printf '%s  %s\n' "$MOCK_SHA256" "$file"
                               stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT, text=True)
     assert repeated.returncode == 0, repeated.stdout
-    assert "Existing mise 2026.11.9" in repeated.stdout
+    assert "✓ mise 2026.11.9" in repeated.stdout
     assert log.read_text() == before, log.read_text()
 
     target.write_text("#!/usr/bin/env sh\necho '2026.8.15 fake'\n")
