@@ -137,7 +137,7 @@ main() {
 
     # Keep Neovim separate from the dotfiles checkout.
     setup_nvim() {
-        local config="$HOME/.config/nvim" lock_before
+        local config="$HOME/.config/nvim"
 
         if ! "$mise" -C / exec -- nvim --version >/dev/null 2>&1; then
             log 'Neovim is not installed; skipping its configuration.'
@@ -157,19 +157,7 @@ main() {
         nvim_validate_checkout "$config" || return 1
         nvim_sync_checkout "$config" --allow-offline || return 1
 
-        lock_before=$(git -C "$config" hash-object lazy-lock.json) || return 1
-        if ! run_concise nvim_verify_plugins "$mise" -c 'Lazy! restore' -c 'Lazy! clean'; then
-            log 'Neovim plugin restore or lockfile verification failed.'
-            return 1
-        fi
-        [[ "$(git -C "$config" hash-object lazy-lock.json)" == "$lock_before" ]] ||
-            { log 'Neovim restore unexpectedly changed lazy-lock.json.'; return 1; }
-
-        # Allow LazyVim's asynchronous Mason installations to finish before exiting.
-        DOTFILES_NVIM_MASON_SCRIPT="$ROOT/src/lib/nvim-mason.lua" \
-            run_concise "$mise" -C / exec -- nvim --headless \
-            -c 'lua dofile(vim.env.DOTFILES_NVIM_MASON_SCRIPT)' \
-            -c 'qa!' || { log 'Neovim language-tool initialisation failed.'; return 1; }
+        nvim_bootstrap_plugins "$mise" "$config" "$ROOT/src/lib" || return 1
         log 'Neovim configuration and locked plugins synchronised.'
     }
 
