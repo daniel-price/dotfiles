@@ -65,7 +65,7 @@ main() {
     done
 
     if [[ ${#missing[@]} -eq 0 ]]; then
-        log "All four MesloLGS NF font files are already present at $target."
+        success 'MesloLGS NF fonts (already present)'
         return
     fi
     log "Missing ${#missing[@]} MesloLGS NF font file(s) in $target:"
@@ -108,7 +108,7 @@ main() {
     fi
     rm -rf -- "$scratch"
     trap - EXIT
-    log 'MesloLGS NF installed. Restart Ghostty (or reload its configuration).'
+    success 'MesloLGS NF fonts installed'
 }
 
 main "$@"
