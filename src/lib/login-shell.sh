@@ -94,5 +94,8 @@ offer_default_zsh() {
     updated_shell=${updated_record#*$'\n'}
     [[ "$updated_shell" == "$target" ]] ||
         die "chsh returned successfully but account login shell is $updated_shell, not $target."
+    if [[ -n "${DOTFILES_LOG_FILE:-}" && "${DOTFILES_VERBOSE:-false}" != true ]]; then
+        printf '✓ Changed default login shell to Zsh\n'
+    fi
     log "Default login shell changed to $target. Log out and back in to use it."
 }

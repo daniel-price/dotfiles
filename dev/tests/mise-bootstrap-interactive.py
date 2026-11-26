@@ -257,6 +257,8 @@ esac
     # Each component requires its own approval. Declines are safe.
     declined = run(*(Deny() for _ in range(2 + len(pins))))
     assert declined.returncode != 0, declined.stdout
+    assert "✗ Declined: Install missing OS packages" in declined.stdout
+    assert "✗ Declined: Install missing neovim@" in declined.stdout
     assert not list(state.iterdir()), declined.stdout
     assert "Skipped OS package installation" in declined.diagnostics and "Skipped neovim" in declined.diagnostics
     assert "Dotfiles: failed" in declined.stdout
@@ -287,6 +289,8 @@ esac
     assert ghostty_target.is_symlink() and ghostty_target.resolve() == (ROOT / "src/home/.config/ghostty/config").resolve()
     assert any(line.endswith("bootstrap packages apply --yes") for line in log.read_text().splitlines()), log.read_text()
     assert "Dotfiles: ok" in approved.stdout
+    assert "✗ Declined: Install missing zellij@" in approved.stdout
+    assert "✗ Declined: Install missing neovim@" not in approved.stdout
     assert "raw package preview" in approved.diagnostics
     assert "raw package output" in approved.diagnostics
     assert "raw package diagnostic" in approved.diagnostics

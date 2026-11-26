@@ -299,3 +299,39 @@ SH
   log=$(find "$STATE/dotfiles/logs" -type f -print -quit)
   ! grep -q 'Gum spinner failed' "$log"
 }
+
+@test "confirmation replaces a wrapped prompt and retains declined status" {
+  [[ "$(uname -s)" == Linux ]] || skip "Linux PTY fixture"
+  command -v script >/dev/null || skip "script not installed"
+  runner="$BATS_TEST_TMPDIR/confirm-runner"
+  cat >"$runner" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+stty rows 24 cols 30
+source "$LIB/common.sh"
+source "$LIB/logging.sh"
+logging_init
+# Feed the input from the PTY after read has entered single-character mode.
+if confirm "Install an example component with a long description?"; then
+    printf '✓ Installed example\n'
+fi
+SH
+  chmod +x "$runner"
+  # script's input is supplied by a delayed pipe to avoid racing read -s.
+  for decision in y n; do
+    run bash -c '
+      (sleep 0.3; printf "%s" "$1") | env TERM=xterm XDG_STATE_HOME="$2" \
+        LIB="$3" script -q -e -c "$4" /dev/null
+    ' _ "$decision" "$STATE" "$BATS_TEST_DIRNAME/../../../src/lib" "$runner"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *$'\033[2K'* ]]
+    [[ "$output" == *$'\033[1A'* ]]
+    if [[ "$decision" == y ]]; then
+      [[ "$output" == *'✓ Installed example'* ]]
+      [[ "$output" != *'✗ Declined:'* ]]
+    else
+      [[ "$output" == *'✗ Declined: Install an example component with a long description'* ]]
+      [[ "$output" != *'✓ Installed example'* ]]
+    fi
+  done
+}
