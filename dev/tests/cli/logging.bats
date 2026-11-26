@@ -326,6 +326,7 @@ SH
         LIB="$3" script -q -e -c "$4" /dev/null
     ' _ "$decision" "$STATE" "$BATS_TEST_DIRNAME/../../../src/lib" "$runner"
     [ "$status" -eq 0 ]
+    [[ "$output" == *'? Install an example component with a long description? [y/N] '* ]]
     [[ "$output" == *$'\033[2K'* ]]
     [[ "$output" == *$'\033[1A'* ]]
     if [[ "$decision" == y ]]; then

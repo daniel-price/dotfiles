@@ -47,7 +47,7 @@ confirm() {
         log 'Declined: confirmation requires interactive stdin.' >&2
         return 1
     fi
-    prompt="$1 [y/N] "
+    prompt="? $1 [y/N] "
     # Only rewrite a real terminal during quiet bootstrap. Count explicitly
     # wrapped rows (including the prompt suffix); avoid erasing unrelated text
     # if the terminal size is unknown or the prompt contains control characters.

@@ -249,7 +249,7 @@ esac
         result.diagnostics = run_log.read_text()
         for line in result.stdout.splitlines():
             if line.strip():
-                assert line.startswith(("✓ ", "✗ ", "… ")) or line.rstrip().endswith("[y/N]"), result.stdout
+                assert line.startswith(("✓ ", "✗ ", "… ")) or (line.startswith("? ") and line.rstrip().endswith("[y/N]")), result.stdout
         return result
 
     target = home / ".zshrc"
