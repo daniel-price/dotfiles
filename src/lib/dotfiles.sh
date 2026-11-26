@@ -42,7 +42,7 @@ apply_reviewed_dotfiles() {
             printf '[error] Dotfile source missing: %s\n' "$target" >&2
             failed=1
         elif [[ ! -e "$target" && ! -L "$target" ]]; then
-            if "$mise" -C / dot apply --dry-run "$target"; then
+            if run_concise "$mise" -C / dot apply --dry-run "$target"; then
                 missing+=("$target")
                 missing_count=$((missing_count + 1))
             else
@@ -51,7 +51,7 @@ apply_reviewed_dotfiles() {
             fi
         elif [[ -f "$target" || -L "$target" ]]; then
             # Even a foreign symlink is a conflict: mise may repoint it without --force.
-            if "$mise" -C / dot apply --dry-run --force "$target"; then
+            if run_concise "$mise" -C / dot apply --dry-run --force "$target"; then
                 conflicts+=("$target")
                 conflict_count=$((conflict_count + 1))
             else
@@ -67,7 +67,7 @@ apply_reviewed_dotfiles() {
     if ((missing_count > 0)); then
         if confirm "Apply $missing_count missing mise-managed dotfile(s)?"; then
             for target in "${missing[@]}"; do
-                if ! "$mise" -C / dot apply --yes "$target"; then
+                if ! run_concise "$mise" -C / dot apply --yes "$target"; then
                     printf '[error] Dotfile apply failed: %s\n' "$target" >&2
                     failed=1
                 fi
@@ -100,7 +100,7 @@ apply_reviewed_dotfiles() {
                 continue
             fi
             log "Backed up $target to $backup"
-            if ! "$mise" -C / dot apply --yes "$target"; then
+            if ! run_concise "$mise" -C / dot apply --yes "$target"; then
                 printf '[error] Dotfile apply failed: %s\n' "$target" >&2
                 failed=1
                 if [[ ! -e "$target" && ! -L "$target" ]]; then
