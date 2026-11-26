@@ -101,7 +101,7 @@ offer_default_zsh "$TEST_PLATFORM" "$TEST_SHELLS"
     assert log.read_text().strip() == f"-s {zsh_path}"
 
     repeated = run()
-    assert repeated.returncode == 0 and "already the default" in repeated.stdout
+    assert repeated.returncode == 0 and "✓ Default login shell: Zsh" in repeated.stdout
     assert log.read_text().splitlines() == [f"-s {zsh_path}"]
 
     # macOS uses dscl rather than getent.
