@@ -54,3 +54,42 @@ mise_supports_dot() {
     fi
     return 1
 }
+
+# Called only after the explicit package-install confirmation. APT invokes sudo
+# via PATH (see the mise package preview). Authenticate on the original terminal
+# before starting Gum, then disallow later password prompts during the step.
+# The wrapper is private, temporary and scoped to this one approved invocation.
+install_reviewed_packages() (
+    local platform=$1 mise=$2 sudo_path scratch
+    if [[ "$platform" != debian ]]; then
+        # Homebrew may invoke its own authentication UI; do not hide it.
+        run_step --terminal-input 'Installing OS packages' "$mise" -C / bootstrap packages apply --yes
+        return $?
+    fi
+
+    sudo_path=$(type -P sudo) || {
+        error 'sudo is required to install the reviewed OS packages.'
+        return 1
+    }
+    if ! "$sudo_path" -n -v >/dev/null 2>&1; then
+        "$sudo_path" -v || {
+            error 'Could not authenticate for OS package installation.'
+            return 1
+        }
+    fi
+
+    scratch=$(make_temp_dir_physical dotfiles-package-sudo) || {
+        error 'Could not create the temporary noninteractive sudo wrapper.'
+        return 1
+    }
+    trap 'rm -rf -- "$scratch"' EXIT
+    cat >"$scratch/sudo" <<'SUDO' || return 1
+#!/usr/bin/env bash
+exec "$DOTFILES_PACKAGE_SUDO" -n "$@"
+SUDO
+    chmod 700 "$scratch/sudo" || return 1
+
+    export DOTFILES_PACKAGE_SUDO="$sudo_path"
+    export PATH="$scratch:$PATH"
+    run_step 'Installing OS packages' "$mise" -C / bootstrap packages apply --yes
+)

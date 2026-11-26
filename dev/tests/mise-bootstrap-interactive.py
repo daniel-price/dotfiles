@@ -40,6 +40,12 @@ with tempfile.TemporaryDirectory(prefix="dotfiles-mise-native-") as scratch:
     log = base / "mise.log"
     log.touch()
 
+    fake_sudo = bin_dir / "sudo"
+    fake_sudo.write_text("""#!/usr/bin/env bash
+[[ "$*" == "-n -v" ]] || exit 90
+""")
+    fake_sudo.chmod(0o755)
+
     fake_zsh = bin_dir / "zsh"
     fake_zsh.write_text("""#!/usr/bin/env bash
 [[ -e "$MOCK_STATE/zsh" ]] || exit 1

@@ -284,8 +284,7 @@ main() {
         preview_step "$mise" -C / bootstrap packages apply --dry-run ||
             die 'Could not preview OS package installation.'
         if confirm "Install missing OS packages (Zsh, wl-clipboard on Linux, and Ghostty; on Linux, Ghostty uses the unofficial mkasberg PPA for future updates; full plan in $DOTFILES_LOG_FILE)?"; then
-            run_step --terminal-input 'Installing OS packages' "$mise" -C / bootstrap packages apply --yes ||
-                die 'mise could not install the reviewed OS packages.'
+            install_reviewed_packages "$platform" "$mise" || return $?
             if ! command -v zsh >/dev/null 2>&1 || ! zsh --version >/dev/null 2>&1; then
                 die 'OS package installation finished but zsh is still unavailable.'
             fi

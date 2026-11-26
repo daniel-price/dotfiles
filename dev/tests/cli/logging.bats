@@ -202,3 +202,57 @@ SH
   grep -q 'package-plan' "$log"
   grep -q 'package-output' "$log"
 }
+
+@test "approved APT installation uses Gum after authenticating and never prompts in the spinner" {
+  [[ "$(uname -s)" == Linux ]] || skip "Linux PTY fixture"
+  command -v script >/dev/null || skip "script not installed"
+  bin="$BATS_TEST_TMPDIR/bin"
+  mkdir "$bin"
+  cat >"$bin/sudo" <<'SH'
+#!/usr/bin/env bash
+printf 'sudo %s\n' "$*" >>"$TRACE"
+[[ "$1" == -n ]] || exit 91
+shift
+if [[ "$1" == -v ]]; then exit 0; fi
+"$@"
+SH
+  cat >"$bin/mise" <<'SH'
+#!/usr/bin/env bash
+printf 'mise %s\n' "$*" >>"$TRACE"
+[[ "$*" == '-C / bootstrap packages apply --yes' ]] || exit 92
+sudo bash -c 'sleep 0.2; echo raw-package-output'
+SH
+  cat >"$bin/gum" <<'SH'
+#!/usr/bin/env bash
+[[ "$1" == spin && "$2" == --title ]] || exit 93
+printf 'spinner %s\n' "$3" >>"$TRACE"
+shift 4
+"$@"
+SH
+  chmod +x "$bin/"*
+  runner="$BATS_TEST_TMPDIR/runner"
+  cat >"$runner" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+source "$LIB/common.sh"
+source "$LIB/logging.sh"
+source "$LIB/mise.sh"
+logging_init
+install_reviewed_packages debian mise
+SH
+  chmod +x "$runner"
+  run env TERM=xterm XDG_STATE_HOME="$STATE" DOTFILES_GUM="$bin/gum" \
+    PATH="$bin:$PATH" LIB="$BATS_TEST_DIRNAME/../../../src/lib" \
+    TRACE="$BATS_TEST_TMPDIR/trace" script -q -e -c "$runner" /dev/null
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'✓ Installing OS packages'* ]]
+  [[ "$output" != *'… Installing OS packages'* ]]
+  [[ "$output" != *raw-package-output* ]]
+  [ "$(grep -c 'Installing OS packages' <<<"$output")" -eq 1 ]
+  [ "$(head -n 1 "$BATS_TEST_TMPDIR/trace")" = 'sudo -n -v' ]
+  grep -qx 'spinner Installing OS packages' "$BATS_TEST_TMPDIR/trace"
+  grep -q '^sudo -n bash -c ' "$BATS_TEST_TMPDIR/trace"
+  [ "$(grep -c '^mise ' "$BATS_TEST_TMPDIR/trace")" -eq 1 ]
+  log=$(find "$STATE/dotfiles/logs" -type f -print -quit)
+  grep -q 'raw-package-output' "$log"
+}
