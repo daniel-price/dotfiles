@@ -47,6 +47,7 @@ with tempfile.TemporaryDirectory(prefix="dotfiles-update-") as scratch:
     (seed / "src/bin").mkdir()
     shutil.copy2(ROOT / "src/lib/setup/update.sh", seed / "src/lib/setup/update.sh")
     shutil.copy2(ROOT / "src/lib/common.sh", seed / "src/lib/common.sh")
+    shutil.copy2(ROOT / "src/lib/logging.sh", seed / "src/lib/logging.sh")
     git("-C", seed, "remote", "add", "origin", bare)
 
     def push(version):
