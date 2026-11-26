@@ -90,7 +90,7 @@ run_step() {
     if ((status == 0)); then
         printf '✓ %s\n' "$description"
     else
-        error "$description failed (exit $status)."
+        printf '✗ %s failed (exit %s).\n' "$description" "$status" >&2
         if [[ "$private" == false ]]; then
             if [[ "${DOTFILES_VERBOSE:-false}" != true ]]; then
                 tail -n 8 "$DOTFILES_LOG_FILE" >&2 || :
