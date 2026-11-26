@@ -60,6 +60,8 @@ run_step() {
                 mktemp "${TMPDIR:-/tmp}/dotfiles-step-XXXXXX"
             ) || return 2
             rm -f -- "$marker"
+            # Intentionally expanded in the child Bash, not this parent shell.
+            # shellcheck disable=SC2016
             DOTFILES_STEP_RESULT="$marker" "$DOTFILES_GUM_MISE" -C / exec -- \
                 gum spin --title "$description" -- bash -c '
                     "$@" >>"$DOTFILES_LOG_FILE" 2>&1
