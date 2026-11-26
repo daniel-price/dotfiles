@@ -149,7 +149,7 @@ main() {
 
         if [[ "$branch" == main ]]; then
             if [[ "$local_behind" -eq 0 ]]; then
-                log 'main is already current with fetched origin/main.'
+                success 'Dotfiles repository up to date'
                 exit 0
             fi
             if ! confirm "Fast-forward local main by $local_behind commit(s)?"; then
@@ -170,7 +170,7 @@ main() {
                 die 'Main is no longer an ancestor of origin/main; refusing update.'
             run_concise git -C "$ROOT" merge --ff-only refs/remotes/origin/main ||
                 die 'Fast-forward failed; no reset or force merge was attempted.'
-            log "Fast-forwarded main by $local_behind commit(s)."
+            success "Dotfiles repository updated ($local_behind commits)"
         else
             log 'Switched to up-to-date main.'
         fi
