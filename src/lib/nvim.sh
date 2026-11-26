@@ -79,17 +79,24 @@ nvim_bootstrap_plugins() (
     cp "$config/lazy-lock.json" "$scratch/original.json" || return 1
     cp "$scratch/original.json" "$scratch/lock.json" || return 1
 
-    log 'Restoring locked Neovim plugins and installing language tools (progress follows).'
-    DOTFILES_NVIM_CONFIG="$config" \
-        DOTFILES_NVIM_LOCK="$scratch/lock.json" \
-        DOTFILES_NVIM_ORIGINAL="$scratch/original.json" \
-        DOTFILES_NVIM_SUCCESS="$scratch/success" \
-        DOTFILES_NVIM_MASON_SCRIPT="$lib_dir/nvim-mason.lua" \
-        DOTFILES_NVIM_BOOTSTRAP_SCRIPT="$lib_dir/nvim-bootstrap.lua" \
-        XDG_CACHE_HOME="$scratch/cache" \
-        "$mise" -C / exec -- nvim --headless \
-        --cmd 'lua dofile(vim.env.DOTFILES_NVIM_BOOTSTRAP_SCRIPT)' \
-        -c 'lua DotfilesNvimFinish()' -c 'qa!' || status=$?
+    local -a nvim_command=(
+        env DOTFILES_NVIM_CONFIG="$config"
+        DOTFILES_NVIM_LOCK="$scratch/lock.json"
+        DOTFILES_NVIM_ORIGINAL="$scratch/original.json"
+        DOTFILES_NVIM_SUCCESS="$scratch/success"
+        DOTFILES_NVIM_MASON_SCRIPT="$lib_dir/nvim-mason.lua"
+        DOTFILES_NVIM_BOOTSTRAP_SCRIPT="$lib_dir/nvim-bootstrap.lua"
+        XDG_CACHE_HOME="$scratch/cache"
+        "$mise" -C / exec -- nvim --headless
+        --cmd 'lua dofile(vim.env.DOTFILES_NVIM_BOOTSTRAP_SCRIPT)'
+        -c 'lua DotfilesNvimFinish()' -c 'qa!'
+    )
+    if declare -F run_step >/dev/null 2>&1; then
+        run_step 'Restoring Neovim plugins and language tools' "${nvim_command[@]}" || status=$?
+    else
+        log 'Restoring locked Neovim plugins and installing language tools (progress follows).'
+        "${nvim_command[@]}" || status=$?
+    fi
 
     if ! cmp -s "$scratch/original.json" "$config/lazy-lock.json"; then
         # The checkout was clean before this operation. Do not leave an
