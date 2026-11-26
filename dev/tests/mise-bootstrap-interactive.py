@@ -245,9 +245,10 @@ esac
     # Tool approvals precede the independent dotfile-application consent.
     # Generate tool approvals from the manifest so adding a tool doesn't
     # silently approve it or hang an interactive test waiting for input.
-    approved_tools = {"neovim", "zoxide"}
-    answers = [Confirm()] + [
-        Confirm() if name in approved_tools else Deny() for name in pins
+    approved_tools = {"neovim", "zoxide", "gum"}
+    # Gum is offered first, before OS packages and the remaining machine tools.
+    answers = [Confirm(), Confirm()] + [
+        Confirm() if name in approved_tools else Deny() for name in pins if name != "gum"
     ]
     approved = run(*answers, Confirm(), Deny(), Deny(), Deny())
     assert approved.returncode == 0, approved.stdout
