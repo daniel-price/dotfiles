@@ -44,7 +44,7 @@ confirm() {
         return 1
     fi
     if [[ ! -t 0 ]]; then
-        log 'Declined: confirmation requires interactive stdin.'
+        log 'Declined: confirmation requires interactive stdin.' >&2
         return 1
     fi
     printf '%s [y/N] ' "$1" >&2

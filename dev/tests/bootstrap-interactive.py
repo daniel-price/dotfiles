@@ -83,7 +83,8 @@ printf '%s  %s\n' "$MOCK_SHA256" "$file"
 """)
         helper.chmod(0o755)
 
-    env = dict(os.environ, HOME=str(home),
+    log_dir = home / ".local/state/dotfiles/logs"
+    env = dict(os.environ, HOME=str(home), XDG_STATE_HOME=str(home / ".local/state"),
                PATH=str(bin_dir) + ":/usr/bin:/bin", MOCK_LOG=str(log),
                MOCK_SHA256="60adf5460b19a791b964c414a2fff9d46990c9f2b1dfc0e4ba8c2b865f882a2b")
 
@@ -102,7 +103,8 @@ printf '%s  %s\n' "$MOCK_SHA256" "$file"
     target = home / ".local" / "bin" / "mise"
     refused = run_tty(Deny())
     assert refused[0] == 0 and not target.exists(), refused
-    assert "later provisioning was skipped" in refused[1], refused
+    assert "later provisioning was skipped" in next(log_dir.iterdir()).read_text(), refused
+    assert "[info]" not in refused[1], refused
     assert log.read_text() == "", log.read_text()
 
     env["MOCK_SHA256"] = "mismatch"
@@ -116,11 +118,14 @@ printf '%s  %s\n' "$MOCK_SHA256" "$file"
     assert target.exists(), accepted
     assert "installer:v2026.11.9:" in log.read_text(), log.read_text()
     before = log.read_text()
+    prior_logs = set(log_dir.iterdir())
     repeated = subprocess.run(["bash", str(SCRIPT), "--no-update"], cwd=temp, env=env,
                               stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT, text=True)
     assert repeated.returncode == 0, repeated.stdout
-    assert "Existing mise 2026.11.9" in repeated.stdout
+    [repeat_log] = set(log_dir.iterdir()) - prior_logs
+    assert "Existing mise 2026.11.9" in repeat_log.read_text()
+    assert "[info]" not in repeated.stdout
     assert log.read_text() == before, log.read_text()
 
     target.write_text("#!/usr/bin/env sh\necho '2026.8.15 fake'\n")

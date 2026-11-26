@@ -89,6 +89,9 @@ run_step() {
     else
         printf '\n=== %s: %s ===\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$description" >>"$DOTFILES_LOG_FILE" || return 2
         if [[ "$terminal_input" == true ]]; then
+            if [[ -t 1 && "${DOTFILES_VERBOSE:-false}" != true ]]; then
+                printf '… %s\n' "$description"
+            fi
             if [[ "${DOTFILES_VERBOSE:-false}" == true ]]; then
                 if "$@" 2>&1 | tee -a "$DOTFILES_LOG_FILE"; then
                     pipeline_status=("${PIPESTATUS[@]}")

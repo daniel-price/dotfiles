@@ -15,7 +15,7 @@ bash ~/.dotfiles/src/bin/,bootstrap --no-update
 ,bootstrap
 ```
 
-Use `,bootstrap -v` or `,bootstrap --verbose` to stream full command output. By default, bootstrap displays only task progress, ticks/crosses and interactive prompts. Routine messages, package previews and subprocess diagnostics are written to private logs under `${XDG_STATE_HOME:-~/.local/state}/dotfiles/logs/`. After mise installs the pinned Gum version, eligible steps use a spinner that clears and becomes a tick or cross on the same line. Initial setup works in Bash without Gum or Zsh, and never requires restarting the script. Interactive installation and password prompts remain visible; secret-bearing commands must not use logged steps.
+Use `,bootstrap -v` or `,bootstrap --verbose` to stream full command output. By default, bootstrap displays only task progress, ticks/crosses and interactive prompts. Routine messages, package previews and subprocess diagnostics are written to private logs under `${XDG_STATE_HOME:-~/.local/state}/dotfiles/logs/`. After mise installs the pinned Gum version, eligible steps use a spinner that clears and becomes a tick or cross on the same line. Initial setup works in Bash without Gum or Zsh, and never requires restarting the script. Interactive installation and password prompts remain visible; login-shell changes may also emit their native authentication messages.  secret-bearing commands must not use logged steps.
 
 ## Neovim
 

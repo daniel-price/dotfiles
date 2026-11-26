@@ -140,7 +140,11 @@ main() {
 
     local -a fetch_step=(update_step 'Fetching dotfiles updates')
     if [[ "$origin" == git@* ]]; then
-        fetch_step=(git)
+        if [[ -n "${DOTFILES_LOG_FILE:-}" ]]; then
+            fetch_step=(run_step --terminal-input 'Fetching dotfiles updates' git)
+        else
+            fetch_step=(git)
+        fi
     else
         fetch_step+=(env GIT_TERMINAL_PROMPT=0 git)
     fi
