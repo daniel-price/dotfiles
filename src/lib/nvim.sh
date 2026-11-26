@@ -70,7 +70,6 @@ nvim_verify_plugins() {
     "$mise" -C / exec -- nvim --headless "$@" -c "$verify" -c 'qa!'
 }
 
-
 # Work with a private copy of the reviewed lockfile and a clean parser download
 # cache. No startup or plugin operation may replace the canonical lockfile.
 nvim_bootstrap_plugins() (
