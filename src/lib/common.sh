@@ -57,7 +57,7 @@ confirm() {
             read -r height width <<<"$terminal_size"
             if [[ "$height" =~ ^[0-9]+$ && "$width" =~ ^[0-9]+$ ]] &&
                 ((height > 0 && width > 0)); then
-                rows=$(( (${#prompt} - 1) / width ))
+                rows=$(((${#prompt} - 1) / width))
                 if ((rows < height)); then
                     clear_prompt=true
                 fi
