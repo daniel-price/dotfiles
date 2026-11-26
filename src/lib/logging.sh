@@ -71,7 +71,7 @@ logging_spin() (
     trap 'cancel_step 143' TERM
     if [[ -x "${DOTFILES_GUM:-}" ]]; then
         # shellcheck disable=SC2016
-        if "$DOTFILES_GUM" spin --title "$description" --spinner dot -- bash -c '
+        if "$DOTFILES_GUM" spin --title "$description" --spinner minidot --padding '0 0' -- bash -c '
             while kill -0 "$1" 2>/dev/null; do
                 sleep 0.1
             done
@@ -89,13 +89,228 @@ logging_spin() (
         logging_fallback_spin "$description" "$worker"
     fi
     wait "$worker" 2>/dev/null || status=$?
+    # Gum's renderer may leave the cursor at the end of a padded line.
+    # Reset the current line before emitting the permanent result.
+    if [[ -t 1 && -t 2 && "${TERM:-dumb}" != dumb ]]; then
+        printf '\r\033[2K'
+    fi
     return "$status"
 )
 
 # Private steps do not log or echo subprocess output, even in verbose mode.
 # Never wrap a command that needs the terminal for input (sudo/chsh/prompts).
 run_step() {
-    local private=false terminal_input=false description status=0
+    local private=false terminal_input=false description status=0 line_end=
+    local -a pipeline_status
+    case "${1:-}" in
+    --sensitive)
+        private=true
+        shift
+        ;;
+    --terminal-input)
+        # Only for reviewed commands whose authentication uses /dev/tty,
+        # such as sudo. Never run a spinner over an authentication prompt.
+        terminal_input=true
+        shift
+        ;;
+    esac
+    description=${1:-}
+    [[ -n "$description" && $# -ge 2 ]] || {
+        printf '✗ run_step requires a description and command.\n' >&2
+        return 2
+    }
+    shift
+    logging_init || {
+        printf '✗ Cannot initialise the private bootstrap log.\n' >&2
+        return 2
+    }
+    if [[ "$private" == true ]]; then
+        "$@" </dev/null >/dev/null 2>&1 || status=$?
+    else
+        printf '\n=== %s: %s ===\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$description" >>"$DOTFILES_LOG_FILE" || return 2
+        if [[ "$terminal_input" == true ]]; then
+            if [[ -t 1 && "${DOTFILES_VERBOSE:-false}" != true ]]; then
+                printf '… %s\n' "$description"
+            fi
+            if [[ "${DOTFILES_VERBOSE:-false}" == true ]]; then
+                if "$@" 2>&1 | tee -a "$DOTFILES_LOG_FILE"; then
+                    pipeline_status=("${PIPESTATUS[@]}")
+                else
+                    pipeline_status=("${PIPESTATUS[@]}")
+                fi
+                status=${pipeline_status[0]}
+            else
+                "$@" >>"$DOTFILES_LOG_FILE" 2>&1 || status=$?
+            fi
+        elif [[ "${DOTFILES_VERBOSE:-false}" == true ]]; then
+            printf '%s\n' "$description"
+            if "$@" </dev/null 2>&1 | tee -a "$DOTFILES_LOG_FILE"; then
+                pipeline_status=("${PIPESTATUS[@]}")
+            else
+                pipeline_status=("${PIPESTATUS[@]}")
+            fi
+            status=${pipeline_status[0]}
+            if ((status == 0 && pipeline_status[1] != 0)); then
+                status=${pipeline_status[1]}
+            fi
+        elif [[ -t 1 && -t 2 && "${TERM:-dumb}" != dumb ]]; then
+            logging_spin "$description" "$@" || status=$?
+        else
+            "$@" </dev/null >>"$DOTFILES_LOG_FILE" 2>&1 || status=$?
+        fi
+        printf '[exit %s]\n' "$status" >>"$DOTFILES_LOG_FILE" || warn 'Could not finish writing the step log.'
+    fi
+    # Explicit CRLF on a terminal also works when the renderer leaves
+    # automatic newline translation (ONLCR) disabled.
+    if [[ -t 1 && -t 2 ]]; then
+        line_end=
+    return "$status"
+}
+
+# Standalone helpers retain their original output unless called by bootstrap.
+run_provision_step() {
+    if [[ -n "${DOTFILES_LOG_FILE:-}" ]]; then
+        run_step "$@"
+    else
+        shift
+        "$@"
+    fi
+}
+
+# Previews remain available for review in the private log; standalone
+# invocations and verbose bootstrap display the original plan.
+preview_step() {
+    if [[ -n "${DOTFILES_LOG_FILE:-}" ]]; then
+        run_concise "$@"
+    else
+        "$@"
+    fi
+}
+\n'
+    local -a pipeline_status
+    case "${1:-}" in
+    --sensitive)
+        private=true
+        shift
+        ;;
+    --terminal-input)
+        # Only for reviewed commands whose authentication uses /dev/tty,
+        # such as sudo. Never run a spinner over an authentication prompt.
+        terminal_input=true
+        shift
+        ;;
+    esac
+    description=${1:-}
+    [[ -n "$description" && $# -ge 2 ]] || {
+        printf '✗ run_step requires a description and command.\n' >&2
+        return 2
+    }
+    shift
+    logging_init || {
+        printf '✗ Cannot initialise the private bootstrap log.\n' >&2
+        return 2
+    }
+    if [[ "$private" == true ]]; then
+        "$@" </dev/null >/dev/null 2>&1 || status=$?
+    else
+        printf '\n=== %s: %s ===\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$description" >>"$DOTFILES_LOG_FILE" || return 2
+        if [[ "$terminal_input" == true ]]; then
+            if [[ -t 1 && "${DOTFILES_VERBOSE:-false}" != true ]]; then
+                printf '… %s\n' "$description"
+            fi
+            if [[ "${DOTFILES_VERBOSE:-false}" == true ]]; then
+                if "$@" 2>&1 | tee -a "$DOTFILES_LOG_FILE"; then
+                    pipeline_status=("${PIPESTATUS[@]}")
+                else
+                    pipeline_status=("${PIPESTATUS[@]}")
+                fi
+                status=${pipeline_status[0]}
+            else
+                "$@" >>"$DOTFILES_LOG_FILE" 2>&1 || status=$?
+            fi
+        elif [[ "${DOTFILES_VERBOSE:-false}" == true ]]; then
+            printf '%s\n' "$description"
+            if "$@" </dev/null 2>&1 | tee -a "$DOTFILES_LOG_FILE"; then
+                pipeline_status=("${PIPESTATUS[@]}")
+            else
+                pipeline_status=("${PIPESTATUS[@]}")
+            fi
+            status=${pipeline_status[0]}
+            if ((status == 0 && pipeline_status[1] != 0)); then
+                status=${pipeline_status[1]}
+            fi
+        elif [[ -t 1 && -t 2 && "${TERM:-dumb}" != dumb ]]; then
+            logging_spin "$description" "$@" || status=$?
+        else
+            "$@" </dev/null >>"$DOTFILES_LOG_FILE" 2>&1 || status=$?
+        fi
+        printf '[exit %s]\n' "$status" >>"$DOTFILES_LOG_FILE" || warn 'Could not finish writing the step log.'
+    fi
+    if ((status == 0)); then
+        printf '✓ %s\n' "$description"
+    else
+        if [[ "$private" == true ]]; then
+            printf '✗ %s failed (exit %s).\n' "$description" "$status" >&2
+        else
+            printf '✗ %s failed (exit %s). Log: %s\n' "$description" "$status" "$DOTFILES_LOG_FILE" >&2
+        fi
+    fi
+    return "$status"
+}
+
+# Standalone helpers retain their original output unless called by bootstrap.
+run_provision_step() {
+    if [[ -n "${DOTFILES_LOG_FILE:-}" ]]; then
+        run_step "$@"
+    else
+        shift
+        "$@"
+    fi
+}
+
+# Previews remain available for review in the private log; standalone
+# invocations and verbose bootstrap display the original plan.
+preview_step() {
+    if [[ -n "${DOTFILES_LOG_FILE:-}" ]]; then
+        run_concise "$@"
+    else
+        "$@"
+    fi
+}
+\r\n'
+    fi
+    if ((status == 0)); then
+        printf '✓ %s%s' "$description" "$line_end"
+    else
+        if [[ "$private" == true ]]; then
+            printf '✗ %s failed (exit %s).%s' "$description" "$status" "$line_end" >&2
+        else
+            printf '✗ %s failed (exit %s). Log: %s%s' "$description" "$status" "$DOTFILES_LOG_FILE" "$line_end" >&2
+        fi
+    fi
+    return "$status"
+}
+
+# Standalone helpers retain their original output unless called by bootstrap.
+run_provision_step() {
+    if [[ -n "${DOTFILES_LOG_FILE:-}" ]]; then
+        run_step "$@"
+    else
+        shift
+        "$@"
+    fi
+}
+
+# Previews remain available for review in the private log; standalone
+# invocations and verbose bootstrap display the original plan.
+preview_step() {
+    if [[ -n "${DOTFILES_LOG_FILE:-}" ]]; then
+        run_concise "$@"
+    else
+        "$@"
+    fi
+}
+\n'
     local -a pipeline_status
     case "${1:-}" in
     --sensitive)

@@ -159,7 +159,8 @@ SH
 #!/usr/bin/env bash
 [[ "$1" == spin && "$2" == --title ]] || exit 5
 printf '%s\n' "$3" >"$SPINNER_TRACE"
-shift 6
+[[ "$4" == --spinner && "$5" == minidot && "$6" == --padding && "$7" == "0 0" ]] || exit 94
+shift 8
 "$@"
 SH
   chmod +x "$fake"
@@ -228,7 +229,8 @@ SH
 #!/usr/bin/env bash
 [[ "$1" == spin && "$2" == --title ]] || exit 93
 printf 'spinner %s\n' "$3" >>"$TRACE"
-shift 6
+[[ "$4" == --spinner && "$5" == minidot && "$6" == --padding && "$7" == "0 0" ]] || exit 94
+shift 8
 "$@"
 SH
   chmod +x "$bin/"*
@@ -334,4 +336,34 @@ SH
       [[ "$output" != *'✓ Installed example'* ]]
     fi
   done
+}
+
+@test "spinner cleanup and final newline reset the cursor with terminal ONLCR disabled" {
+  [[ "$(uname -s)" == Linux ]] || skip "Linux PTY fixture"
+  command -v script >/dev/null || skip "script not installed"
+  fake="$BATS_TEST_TMPDIR/gum"
+  cat >"$fake" <<'SH'
+#!/usr/bin/env bash
+# Emulate a renderer leaving its cursor at the end of a padded line.
+printf '⠋ %s          ' "$3"
+while [[ "$1" != -- ]]; do shift; done
+shift
+"$@"
+SH
+  chmod +x "$fake"
+  runner="$BATS_TEST_TMPDIR/runner"
+  cat >"$runner" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+stty -onlcr
+source "$LOGGING"
+run_step "Installing first" sleep 0.2
+run_step "Installing second" sleep 0.2
+SH
+  chmod +x "$runner"
+  run env TERM=xterm XDG_STATE_HOME="$STATE" DOTFILES_GUM="$fake" \
+    LOGGING="$LOGGING" script -q -e -c "$runner" /dev/null
+  [ "$status" -eq 0 ]
+  [[ "$output" == *$'\r\033[2K✓ Installing first\r\n⠋ Installing second'* ]]
+  [[ "$output" == *$'\r\033[2K✓ Installing second\r'* ]]
 }
