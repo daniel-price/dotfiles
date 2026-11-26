@@ -72,6 +72,7 @@ cli_page = cli.render()
 assert "## Update and bootstrap" in cli_page
 assert "Usage: ,bootstrap" in cli_page
 assert "## OpenCode sandbox" in cli_page
+assert "Usage: ,opencode " in cli_page
 assert "ANTHROPIC_API_KEY" in cli_page
 assert "## Cleanup" in cli_page
 assert "No secrets" not in cli_page

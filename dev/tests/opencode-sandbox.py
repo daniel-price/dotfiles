@@ -10,7 +10,7 @@ from pathlib import Path
 from confirmations import Confirm, Deny, communicate_confirmations
 
 ROOT = Path(__file__).resolve().parents[2]
-SCRIPT = ROOT / "src/modules" / "opencode" / "bin" / "opencode-sandbox"
+SCRIPT = ROOT / "src/modules" / "opencode" / "bin" / ",opencode"
 
 with tempfile.TemporaryDirectory(prefix="dotfiles-agent-sandbox-") as scratch:
     base = Path(scratch)

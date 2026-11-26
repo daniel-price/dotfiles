@@ -18,8 +18,8 @@ assert "tools" not in opencode and "bootstrap" not in opencode
 assert opencode == {"env": {"_": {"path": ["~/.dotfiles/src/modules/opencode/bin"]}}}
 assert "opencode" not in base_tools["tools"]
 assert "opencode" not in tomllib.loads((ROOT / "dev/mise.toml").read_text()).get("tools", {})
-assert not (ROOT / "src/bin/opencode-sandbox").exists(), "Base bin/ must not expose OpenCode"
-launcher = ROOT / "src/modules/opencode/bin/opencode-sandbox"
+assert not (ROOT / "src/bin/,opencode").exists(), "Base bin/ must not expose OpenCode"
+launcher = ROOT / "src/modules/opencode/bin/,opencode"
 assert launcher.is_file() and launcher.stat().st_mode & 0o111, "Sandbox launcher must be executable"
 assert (ROOT / "src/modules/opencode/Containerfile").is_file()
 assert "src/modules/opencode/bin" not in (ROOT / "src/home/.zshrc").read_text()
