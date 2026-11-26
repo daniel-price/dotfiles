@@ -56,7 +56,7 @@ run_concise() {
     output=$(mktemp "${TMPDIR:-/tmp}/dotfiles-output.XXXXXX") || return 2
     "$@" >"$output" 2>&1 || status=$?
     if [[ -n "${DOTFILES_LOG_FILE:-}" ]]; then
-        cat "$output" >> "$DOTFILES_LOG_FILE" || :
+        cat "$output" >>"$DOTFILES_LOG_FILE" || :
     fi
     if ((status != 0)); then
         cat "$output" >&2
