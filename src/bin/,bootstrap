@@ -135,7 +135,7 @@ main() {
             die "Mise was not executable at the expected path: $target"
         [[ "$version" == "${MISE_VERSION#v}" ]] ||
             die "Mise version mismatch: expected ${MISE_VERSION#v}, found $version."
-        log "Installed mise $version at $target."
+        info "Installed mise $version at $target."
     }
 
     # Keep Neovim separate from the dotfiles checkout.
@@ -263,12 +263,14 @@ main() {
         # Resolve the executable under the machine manifest now. Optional setup
         # helpers select other manifests, so do not invoke Gum via mise later.
         if [[ "$gum_ready" == true ]]; then
-            if gum_path=$("$mise" -C / exec -- sh -c 'command -v gum') && [[ -x "$gum_path" ]]; then
+            if gum_path=$("$mise" -C / exec -- sh -c 'command -v gum' 2>/dev/null) && [[ -x "$gum_path" ]]; then
                 export DOTFILES_GUM="$gum_path"
             else
                 warn 'Gum is not executable; using plain-text progress.'
             fi
         fi
+    else
+        warn 'No Gum pin found; using plain-text progress.'
     fi
 
     # Normal provisioning starts here; no shell restart is needed.

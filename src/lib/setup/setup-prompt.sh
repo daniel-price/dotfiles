@@ -55,7 +55,7 @@ main() {
             ! -f "$target/powerlevel10k.zsh-theme" ]]; then
             log "Preserving conflicting existing prompt path at $target; no clone or update attempted."
         elif "$mise" -C / bootstrap repos status --missing >/dev/null 2>&1; then
-            log 'The pinned Powerlevel10k checkout is already present; no changes made.'
+            info 'The pinned Powerlevel10k checkout is already present; no changes made.'
         else
             log "Existing Powerlevel10k checkout does not match the pinned manifest; preserving it unchanged: $target."
             log 'Review with: mise -C / bootstrap repos status (with the prompt manifest selected).'
@@ -82,7 +82,7 @@ main() {
         die 'The declared Powerlevel10k checkout was not installed as expected.'
     "$mise" -C / bootstrap repos status --missing >/dev/null ||
         die 'The installed Powerlevel10k checkout does not match its pinned declaration.'
-    log 'Powerlevel10k is installed. Its original prompt config activates in new Zsh sessions.'
+    info 'Powerlevel10k is installed. Its original prompt config activates in new Zsh sessions.'
 }
 
 main "$@"

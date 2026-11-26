@@ -129,7 +129,13 @@ main() {
         skip_update 'Fetch declined; checkout unchanged.'
     fi
 
-    if ! run_provision_step 'Fetching dotfiles updates' git -C "$ROOT" fetch --no-tags origin refs/heads/main:refs/remotes/origin/main; then
+    local -a fetch_step=(run_provision_step 'Fetching dotfiles updates')
+    if [[ "$origin" == git@* ]]; then
+        fetch_step=(git)
+    else
+        fetch_step+=(env GIT_TERMINAL_PROMPT=0 git)
+    fi
+    if ! "${fetch_step[@]}" -C "$ROOT" fetch --no-tags origin refs/heads/main:refs/remotes/origin/main; then
         skip_update 'Could not fetch origin/main; leaving the checkout unchanged (offline bootstrap is still possible).'
     fi
 

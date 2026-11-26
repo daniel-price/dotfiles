@@ -143,3 +143,34 @@ SH
   ' _ "$LOGGING"
   [ "$status" -eq 17 ]
 }
+
+@test "a terminal uses the available spinner and prints one permanent result" {
+  # util-linux script allocates a PTY; macOS has a different CLI.
+  [[ "$(uname -s)" == Linux ]] || skip "Linux PTY fixture"
+  command -v script >/dev/null || skip "script not installed"
+  fake="$BATS_TEST_TMPDIR/gum"
+  cat >"$fake" <<'SH'
+#!/usr/bin/env bash
+[[ "$1" == spin && "$2" == --title ]] || exit 5
+printf '%s\n' "$3" >"$SPINNER_TRACE"
+shift 4
+"$@"
+SH
+  chmod +x "$fake"
+  runner="$BATS_TEST_TMPDIR/runner"
+  cat >"$runner" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+source "$LOGGING"
+run_step "TTY task" bash -c "sleep 0.2; echo hidden"
+SH
+  chmod +x "$runner"
+  run env TERM=xterm XDG_STATE_HOME="$STATE" DOTFILES_GUM="$fake" \
+    LOGGING="$LOGGING" SPINNER_TRACE="$BATS_TEST_TMPDIR/spinner" \
+    script -q -e -c "$runner" /dev/null
+  [ "$status" -eq 0 ]
+  [ "$(cat "$BATS_TEST_TMPDIR/spinner")" = "TTY task" ]
+  [[ "$output" == *'✓ TTY task'* ]]
+  [[ "$output" != *hidden* ]]
+  [ "$(grep -c 'TTY task' <<<"$output")" -eq 1 ]
+}

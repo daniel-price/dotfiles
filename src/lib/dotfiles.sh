@@ -7,6 +7,7 @@ apply_reviewed_dotfiles() {
     local -a missing=() conflicts=() apply_step=(run_concise)
     if declare -F run_provision_step >/dev/null 2>&1 && [[ -n "${DOTFILES_LOG_FILE:-}" ]]; then
         apply_step=(run_provision_step 'Applying mise-managed dotfile')
+        # These are reviewed Base symlinks, not decrypted secret files.
     fi
 
     # Mise is the source of truth for declarations and pending changes.

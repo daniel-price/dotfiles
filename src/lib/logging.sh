@@ -60,7 +60,7 @@ logging_spin() {
 # Private steps do not log or echo subprocess output, even in verbose mode.
 # Never wrap a command that needs the terminal for input (sudo/chsh/prompts).
 run_step() {
-    local private=false description status=0 offset
+    local private=false description status=0 offset plain_progress=false
     local -a pipeline_status
     if [[ "${1:-}" == --sensitive ]]; then
         private=true
@@ -95,9 +95,16 @@ run_step() {
         elif [[ -t 1 && -t 2 && -x "${DOTFILES_GUM:-}" && "${TERM:-dumb}" != dumb ]]; then
             logging_spin "$description" "$@" || status=$?
         else
+            if [[ -t 1 && -t 2 && "${TERM:-dumb}" != dumb ]]; then
+                printf '%s...' "$description"
+                plain_progress=true
+            fi
             "$@" </dev/null >>"$DOTFILES_LOG_FILE" 2>&1 || status=$?
         fi
         printf '[exit %s]\n' "$status" >>"$DOTFILES_LOG_FILE" || warn 'Could not finish writing the step log.'
+    fi
+    if [[ "$plain_progress" == true ]]; then
+        printf '\r\033[2K'
     fi
     if ((status == 0)); then
         printf '✓ %s\n' "$description"
