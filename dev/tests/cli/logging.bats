@@ -126,7 +126,9 @@ SH
   ' _ "$LOGGING" "$counter"
   [ "$status" -eq 7 ]
   [ "$(cat "$counter")" = once ]
-  [[ "$output" == *'Gum spinner failed'* ]]
+  [[ "$output" != *'Gum spinner failed'* ]]
+  log=$(find "$STATE/dotfiles/logs" -type f -print -quit)
+  grep -q 'Gum spinner failed (exit 23)' "$log"
 }
 
 @test "spinner success does not mask a worker failure" {
@@ -157,7 +159,7 @@ SH
 #!/usr/bin/env bash
 [[ "$1" == spin && "$2" == --title ]] || exit 5
 printf '%s\n' "$3" >"$SPINNER_TRACE"
-shift 4
+shift 6
 "$@"
 SH
   chmod +x "$fake"
@@ -226,7 +228,7 @@ SH
 #!/usr/bin/env bash
 [[ "$1" == spin && "$2" == --title ]] || exit 93
 printf 'spinner %s\n' "$3" >>"$TRACE"
-shift 4
+shift 6
 "$@"
 SH
   chmod +x "$bin/"*
@@ -255,4 +257,45 @@ SH
   [ "$(grep -c '^mise ' "$BATS_TEST_TMPDIR/trace")" -eq 1 ]
   log=$(find "$STATE/dotfiles/logs" -type f -print -quit)
   grep -q 'raw-package-output' "$log"
+}
+
+@test "fresh bootstrap uses an animated spinner before Gum is installed" {
+  [[ "$(uname -s)" == Linux ]] || skip "Linux PTY fixture"
+  command -v script >/dev/null || skip "script not installed"
+  runner="$BATS_TEST_TMPDIR/runner"
+  cat >"$runner" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+source "$LOGGING"
+run_step "Installing mise" bash -c "sleep 0.4; echo private-output"
+SH
+  chmod +x "$runner"
+  run env TERM=xterm XDG_STATE_HOME="$STATE" DOTFILES_GUM=/not/installed \
+    LOGGING="$LOGGING" script -q -e -c "$runner" /dev/null
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'⠋ Installing mise'* ]]
+  [[ "$output" == *'⠙ Installing mise'* ]]
+  [[ "$output" == *'✓ Installing mise'* ]]
+  [[ "$output" != *private-output* ]]
+}
+
+@test "Gum cancellation stops the worker without falling back or replaying it" {
+  fake="$BATS_TEST_TMPDIR/gum"
+  cat >"$fake" <<'SH'
+#!/usr/bin/env bash
+sleep 0.2
+exit 130
+SH
+  chmod +x "$fake"
+  counter="$BATS_TEST_TMPDIR/counter"
+  run env XDG_STATE_HOME="$STATE" DOTFILES_GUM="$fake" bash -c '
+    set -euo pipefail
+    source "$1"
+    logging_init
+    logging_spin "Example" bash -c "echo start >> \"\$1\"; sleep 2; echo finished >> \"\$1\"" _ "$2"
+  ' _ "$LOGGING" "$counter"
+  [ "$status" -eq 130 ]
+  [ "$(cat "$counter")" = start ]
+  log=$(find "$STATE/dotfiles/logs" -type f -print -quit)
+  ! grep -q 'Gum spinner failed' "$log"
 }

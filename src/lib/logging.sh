@@ -36,31 +36,66 @@ warn() {
 }
 error() { report_error "$@"; }
 
-# Run the actual command exactly once, independently of the cosmetic spinner.
-# The parent waits for the command, never for Gum's interpretation of its status.
-# Gum only observes the worker's lifetime; it does not own the provisioning work.
-logging_spin() {
-    local description=$1 worker status=0
+# Animate in Bash before Gum is installed or if its renderer fails.
+logging_fallback_spin() {
+    local description=$1 worker=$2 index=0
+    local -a frames=(⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏)
+    [[ -t 1 && -t 2 && "${TERM:-dumb}" != dumb ]] || return 0
+    while kill -0 "$worker" 2>/dev/null; do
+        printf '\r\033[2K%s %s' "${frames[index]}" "$description"
+        index=$(((index + 1) % ${#frames[@]}))
+        sleep 0.1
+    done
+    printf '\r\033[2K'
+}
+
+# Start the actual operation exactly once. The renderer observes its lifetime
+# independently of the worker status. Scope job control and traps to this
+# subshell; a cancellation stops the worker's process group, not the caller.
+logging_spin() (
+    local description=$1 worker status=0 gum_status=0
     shift
+    set -m
     "$@" </dev/null >>"$DOTFILES_LOG_FILE" 2>&1 &
     worker=$!
-    # shellcheck disable=SC2016
-    if ! "$DOTFILES_GUM" spin --title "$description" -- bash -c '
-        while kill -0 "$1" 2>/dev/null; do
-            sleep 0.1
-        done
-    ' dotfiles-spin "$worker"; then
-        unset DOTFILES_GUM
-        warn 'Gum spinner failed; using plain-text progress.'
+    set +m
+    cancel_step() {
+        kill -TERM -- "-$worker" 2>/dev/null || kill -TERM "$worker" 2>/dev/null || :
+        wait "$worker" 2>/dev/null || :
+        if [[ -t 1 ]]; then
+            printf '\r\033[2K'
+        fi
+        exit "$1"
+    }
+    trap 'cancel_step 130' INT
+    trap 'cancel_step 143' TERM
+    if [[ -x "${DOTFILES_GUM:-}" ]]; then
+        # shellcheck disable=SC2016
+        if "$DOTFILES_GUM" spin --title "$description" --spinner dot -- bash -c '
+            while kill -0 "$1" 2>/dev/null; do
+                sleep 0.1
+            done
+        ' dotfiles-spin "$worker"; then
+            :
+        else
+            gum_status=$?
+            if ((gum_status == 130 || gum_status == 143)); then
+                cancel_step "$gum_status"
+            fi
+            printf '[warn] Gum spinner failed (exit %s); using Bash spinner.\n' "$gum_status" >>"$DOTFILES_LOG_FILE" || :
+            logging_fallback_spin "$description" "$worker"
+        fi
+    else
+        logging_fallback_spin "$description" "$worker"
     fi
-    wait "$worker" || status=$?
+    wait "$worker" 2>/dev/null || status=$?
     return "$status"
-}
+)
 
 # Private steps do not log or echo subprocess output, even in verbose mode.
 # Never wrap a command that needs the terminal for input (sudo/chsh/prompts).
 run_step() {
-    local private=false terminal_input=false description status=0 plain_progress=false
+    local private=false terminal_input=false description status=0
     local -a pipeline_status
     case "${1:-}" in
     --sensitive)
@@ -113,19 +148,12 @@ run_step() {
             if ((status == 0 && pipeline_status[1] != 0)); then
                 status=${pipeline_status[1]}
             fi
-        elif [[ -t 1 && -t 2 && -x "${DOTFILES_GUM:-}" && "${TERM:-dumb}" != dumb ]]; then
+        elif [[ -t 1 && -t 2 && "${TERM:-dumb}" != dumb ]]; then
             logging_spin "$description" "$@" || status=$?
         else
-            if [[ -t 1 && -t 2 && "${TERM:-dumb}" != dumb ]]; then
-                printf '… %s' "$description"
-                plain_progress=true
-            fi
             "$@" </dev/null >>"$DOTFILES_LOG_FILE" 2>&1 || status=$?
         fi
         printf '[exit %s]\n' "$status" >>"$DOTFILES_LOG_FILE" || warn 'Could not finish writing the step log.'
-    fi
-    if [[ "$plain_progress" == true ]]; then
-        printf '\r\033[2K'
     fi
     if ((status == 0)); then
         printf '✓ %s\n' "$description"
