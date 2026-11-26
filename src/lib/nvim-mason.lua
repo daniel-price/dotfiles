@@ -37,13 +37,21 @@ local function pending()
 end
 
 local idle_since
+local last_progress = vim.uv.now()
 local finished = vim.wait(600000, function()
   if registry_error or not all_packages then
     return registry_error ~= nil
   end
 
+  local remaining = pending()
+  if vim.uv.now() - last_progress >= 10000 then
+    io.stderr:write("[nvim] Mason waiting for: " .. (#remaining > 0 and table.concat(remaining, ", ") or "active installations") .. "\n")
+    io.stderr:flush()
+    last_progress = vim.uv.now()
+  end
+
   -- A failed package is settled, not a reason to cancel the remaining installs.
-  if #pending() > 0 then
+  if #remaining > 0 then
     idle_since = nil
     return false
   end
