@@ -75,7 +75,7 @@ offer_default_zsh() {
     fi
     if [[ "$current_shell" == "$target" ]] ||
         [[ -x "$current_shell" && "$current_shell" -ef "$target" ]]; then
-        log "Zsh is already the default login shell ($current_shell)."
+        success "Default login shell: Zsh ($current_shell)"
         return 0
     fi
     command -v chsh >/dev/null 2>&1 ||
