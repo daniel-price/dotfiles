@@ -76,6 +76,6 @@ setup() {
     run_step "Noninteractive" bash -c "echo plain command"
   ' _ "$LOGGING"
   [ "$status" -eq 0 ]
-  [[ "$output" == *'Noninteractive...' * || "$output" == *'Noninteractive...' * ]]
+  [[ "$output" == *Noninteractive...* ]]
   [[ "$output" == *'✓ Noninteractive'* ]]
 }
