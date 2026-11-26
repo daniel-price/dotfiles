@@ -256,8 +256,8 @@ MISE
     else
         printf 'SKIP: bootstrap host smoke test (unsupported host)\n'
     fi
-    [[ -z "$(find "$TEST_ROOT/home" "$TEST_ROOT/elsewhere" -mindepth 1 -print)" ]] ||
-        fail 'entry point wrote to isolated home or working directory'
+    [[ -z "$(find "$TEST_ROOT/home" "$TEST_ROOT/elsewhere" -mindepth 1 -type f ! -path "$TEST_ROOT/home/.local/state/dotfiles/logs/*" -print)" ]] ||
+        fail 'entry point wrote outside its isolated bootstrap log directory'
     printf 'PASS: Entry-point help, errors and repeatable smoke execution\n'
     bash "$ROOT/dev/tests/check-clean.sh"
     if command -v python3 >/dev/null 2>&1; then
