@@ -89,7 +89,6 @@ exec "$DOTFILES_PACKAGE_SUDO" -n "$@"
 SUDO
     chmod 700 "$scratch/sudo" || return 1
 
-    export DOTFILES_PACKAGE_SUDO="$sudo_path"
-    export PATH="$scratch:$PATH"
-    run_step 'Installing OS packages' "$mise" -C / bootstrap packages apply --yes
+    run_step 'Installing OS packages' env DOTFILES_PACKAGE_SUDO="$sudo_path" \
+        PATH="$scratch:$PATH" "$mise" -C / bootstrap packages apply --yes
 )
