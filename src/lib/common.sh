@@ -13,6 +13,11 @@ log() {
     printf '[info] %s\n' "$*"
 }
 
+# Completed setup stages share the same status format as run_step.
+success() {
+    printf '✓ %s\n' "$*"
+}
+
 die() {
     printf '[error] %s\n' "$*" >&2
     exit 1
