@@ -3,14 +3,14 @@ set -euo pipefail
 
 ROOT=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
 
-# shellcheck source=lib/common.sh
-source "$ROOT/lib/common.sh"
-# shellcheck source=lib/mise.sh
-source "$ROOT/lib/mise.sh"
-# shellcheck source=lib/machine-tools.sh
-source "$ROOT/lib/machine-tools.sh"
-# shellcheck source=lib/os.sh
-source "$ROOT/lib/os.sh"
+# shellcheck source=src/lib/common.sh
+source "$ROOT/src/lib/common.sh"
+# shellcheck source=src/lib/mise.sh
+source "$ROOT/src/lib/mise.sh"
+# shellcheck source=src/lib/machine-tools.sh
+source "$ROOT/src/lib/machine-tools.sh"
+# shellcheck source=src/lib/os.sh
+source "$ROOT/src/lib/os.sh"
 
 main() {
     # The suite must never consume the caller's terminal input. Tests that need
@@ -34,56 +34,57 @@ main() {
         bash -n "$ROOT/$script"
     done < <(git -C "$ROOT" ls-files -z -- '*.sh')
     printf 'PASS: Bash syntax\n'
-    [[ ! -e "$ROOT/bin/opencode-sandbox" && -x "$ROOT/modules/opencode/bin/opencode-sandbox" &&
-        -f "$ROOT/containers/opencode/Containerfile" ]] ||
+    [[ ! -e "$ROOT/src/bin/opencode-sandbox" && -x "$ROOT/src/modules/opencode/bin/opencode-sandbox" &&
+        -f "$ROOT/src/modules/opencode/Containerfile" ]] ||
         fail 'sandbox launcher must be executable and have a reviewed Containerfile'
-    bash -n "$ROOT/modules/opencode/bin/opencode-sandbox" || fail 'sandbox launcher has invalid Bash syntax'
-    [[ -x "$ROOT/bin/,bootstrap" ]] || fail ',bootstrap must be executable'
-    bash -n "$ROOT/bin/,bootstrap" || fail ',bootstrap has invalid Bash syntax'
+    bash -n "$ROOT/src/modules/opencode/bin/opencode-sandbox" || fail 'sandbox launcher has invalid Bash syntax'
+    [[ -x "$ROOT/src/bin/,bootstrap" ]] || fail ',bootstrap must be executable'
+    bash -n "$ROOT/src/bin/,cleanup" || fail ',cleanup has invalid Bash syntax'
+    bash -n "$ROOT/src/bin/,bootstrap" || fail ',bootstrap has invalid Bash syntax'
     # These helpers are also run directly from a shell, not just via Bash in Zellij.
     for helper in ,copy-last ,copy-screen ,copy-pick; do
-        [[ -x "$ROOT/bin/$helper" ]] || fail "copy helper is not executable: $helper"
-        bash -n "$ROOT/bin/$helper" || fail "copy helper has invalid Bash syntax: $helper"
+        [[ -x "$ROOT/src/bin/$helper" ]] || fail "copy helper is not executable: $helper"
+        bash -n "$ROOT/src/bin/$helper" || fail "copy helper has invalid Bash syntax: $helper"
     done
     printf 'PASS: Executable Zellij copy helper entry points\n'
     # Portable commands must be executable and valid independently of Zsh.
     for helper in ,vv ,uuid ,wt; do
-        [[ -x "$ROOT/bin/$helper" ]] || fail "comma command is not executable: $helper"
-        bash -n "$ROOT/bin/$helper" || fail "invalid Bash syntax: $helper"
+        [[ -x "$ROOT/src/bin/$helper" ]] || fail "comma command is not executable: $helper"
+        bash -n "$ROOT/src/bin/$helper" || fail "invalid Bash syntax: $helper"
     done
-    uuid=$("$ROOT/bin/,uuid" --lowercase --no-hyphens) || fail ',uuid failed'
+    uuid=$("$ROOT/src/bin/,uuid" --lowercase --no-hyphens) || fail ',uuid failed'
     [[ "$uuid" =~ ^[0-9a-f]{32}$ ]] || fail ',uuid did not produce a compact lowercase UUID'
-    uuid_help=$("$ROOT/bin/,uuid" --help 2>&1) || fail ',uuid help failed'
+    uuid_help=$("$ROOT/src/bin/,uuid" --help 2>&1) || fail ',uuid help failed'
     [[ "$uuid_help" == *--lowercase* && "$uuid_help" == *--no-hyphens* ]] || fail ",uuid help missing expected flags: $uuid_help"
-    [[ -f "$ROOT/.config/zsh/functions/cdWorktree" ]] || fail 'missing cdWorktree function'
+    [[ -f "$ROOT/src/home/.config/zsh/functions/cdWorktree" ]] || fail 'missing cdWorktree function'
     for helper in ,mason-plugins ,nvim-plugins ,wt; do
-        [[ ! -e "$ROOT/.config/zsh/functions/$helper" ]] || fail "obsolete comma function remains: $helper"
+        [[ ! -e "$ROOT/src/home/.config/zsh/functions/$helper" ]] || fail "obsolete comma function remains: $helper"
     done
     for helper in cdNvimPlugins cdMasonPlugins; do
-        if grep -q "^alias $helper=" "$ROOT/.config/zsh/aliases.zsh"; then
+        if grep -q "^alias $helper=" "$ROOT/src/home/.config/zsh/aliases.zsh"; then
             fail "obsolete navigation alias remains: $helper"
         fi
     done
     if command -v zsh >/dev/null 2>&1; then
-        for helper in "$ROOT"/.config/zsh/functions/*; do
+        for helper in "$ROOT"/src/home/.config/zsh/functions/*; do
             zsh -n "$helper" || fail "invalid autoload function: $helper"
         done
     fi
     git init -q "$TEST_ROOT/worktree-source"
     git -C "$TEST_ROOT/worktree-source" -c user.name=Test -c user.email=test@example.invalid \
         commit -q --allow-empty -m initial || fail 'failed to create worktree test fixture'
-    worktree_path=$(cd "$TEST_ROOT/worktree-source" && "$ROOT/bin/,wt" feature/test) || fail ',wt failed'
+    worktree_path=$(cd "$TEST_ROOT/worktree-source" && "$ROOT/src/bin/,wt" feature/test) || fail ',wt failed'
     assert_equal "$TEST_ROOT/worktree-source-wt-feature-test" "$worktree_path" ',wt prints destination'
     [[ -d "$worktree_path" ]] || fail ',wt did not create the worktree'
     [[ "$(git -C "$worktree_path" branch --show-current)" == feature/test ]] || fail 'wrong worktree branch'
-    if (cd "$TEST_ROOT/worktree-source" && "$ROOT/bin/,wt" feature/test) >"$TEST_ROOT/out" 2>"$TEST_ROOT/err"; then
+    if (cd "$TEST_ROOT/worktree-source" && "$ROOT/src/bin/,wt" feature/test) >"$TEST_ROOT/out" 2>"$TEST_ROOT/err"; then
         fail ',wt accepted duplicate branch'
     fi
     [[ ! -s "$TEST_ROOT/out" ]] || fail ',wt printed path on failure'
     if command -v zsh >/dev/null 2>&1; then
         ROOT="$ROOT" TEST_ROOT="$TEST_ROOT" zsh -fc '
-      fpath=("$ROOT/.config/zsh/functions" $fpath)
-      export PATH="$ROOT/bin:$PATH"
+      fpath=("$ROOT/src/home/.config/zsh/functions" $fpath)
+      export PATH="$ROOT/src/bin:$PATH"
       autoload -Uz cdWorktree
       cd "$TEST_ROOT/worktree-source" || exit
       cdWorktree feature/test || exit
@@ -97,15 +98,15 @@ main() {
 
     printf 'PASS: Executable OpenCode launcher syntax and layout\n'
     if command -v zsh >/dev/null 2>&1; then
-        zsh -n "$ROOT/.config/zsh/zshrc" || fail 'reviewed zsh file has invalid syntax'
-        zsh -n "$ROOT/.config/zsh/aliases.zsh" || fail 'reviewed zsh aliases have invalid syntax'
-        zsh -n "$ROOT/.config/zsh/zoxide-bookmarks.zsh" || fail 'zoxide bookmarks have invalid syntax'
-        zsh -n "$ROOT/.config/zsh/completions.zsh" || fail 'zoxide completions have invalid syntax'
+        zsh -n "$ROOT/src/home/.zshrc" || fail 'reviewed zsh file has invalid syntax'
+        zsh -n "$ROOT/src/home/.config/zsh/aliases.zsh" || fail 'reviewed zsh aliases have invalid syntax'
+        zsh -n "$ROOT/src/home/.config/zsh/zoxide-bookmarks.zsh" || fail 'zoxide bookmarks have invalid syntax'
+        zsh -n "$ROOT/src/home/.config/zsh/completions.zsh" || fail 'zoxide completions have invalid syntax'
         mkdir -p "$TEST_ROOT/data/nvim/lazy" "$TEST_ROOT/data/nvim/mason/packages"
         ROOT="$ROOT" TEST_ROOT="$TEST_ROOT" zsh -fc '
       export XDG_DATA_HOME="$TEST_ROOT/data"
       __zoxide_z() { [[ "$1" == fallback ]] || return 1; }
-      source "$ROOT/.config/zsh/zoxide-bookmarks.zsh" || exit
+      source "$ROOT/src/home/.config/zsh/zoxide-bookmarks.zsh" || exit
       z nvim-plugins || { print -u2 "nvim-plugins bookmark failed"; exit 1; }
       [[ "$(pwd -P)" == "$(cd "$TEST_ROOT/data/nvim/lazy" && pwd -P)" ]] ||
         { print -u2 "nvim-plugins path mismatch: $PWD"; exit 1; }
@@ -118,28 +119,28 @@ main() {
         exit 1
       fi
     ' || fail 'zoxide bookmarks navigation or fallback failed'
-        zsh -n "$ROOT/.config/zsh/p10k.zsh" || fail 'reviewed p10k config has invalid syntax'
-        zsh -n "$ROOT/.config/zsh/autosuggestions.zsh" || fail 'autosuggestion config has invalid syntax'
+        zsh -n "$ROOT/src/home/.config/zsh/p10k.zsh" || fail 'reviewed p10k config has invalid syntax'
+        zsh -n "$ROOT/src/home/.config/zsh/autosuggestions.zsh" || fail 'autosuggestion config has invalid syntax'
         zsh "$ROOT/dev/tests/zoxide-autosuggestions.zsh" || fail 'bookmark autosuggestions tests failed'
         printf 'PASS: Reviewed zsh syntax\n'
     else
         printf 'SKIP: Reviewed zsh syntax (zsh not found)\n'
     fi
 
-    [[ ! -e "$ROOT/setup/bootstrap.sh" ]] || fail "obsolete bootstrap script should not remain"
-    [[ ! -e "$ROOT/setup/apply-private-overlay.sh" &&
+    [[ ! -e "$ROOT/src/lib/setup/bootstrap.sh" ]] || fail "obsolete bootstrap script should not remain"
+    [[ ! -e "$ROOT/src/lib/setup/apply-private-overlay.sh" &&
         ! -e "$ROOT/dev/tests/tool-overlay-interactive.py" ]] ||
         fail 'obsolete directory-link POC must not remain'
     for moved in cleanup update; do
         [[ ! -e "$ROOT/scripts/$moved.sh" ]] || fail "obsolete setup path remains: $moved"
-        [[ -x "$ROOT/setup/$moved.sh" ]] || fail "setup script is not executable: $moved"
+        [[ -x "$ROOT/src/lib/setup/$moved.sh" ]] || fail "setup script is not executable: $moved"
     done
     for moved in format lint install-hooks install-dev-tools install-docs-deps build-docs check-clean; do
         [[ ! -e "$ROOT/scripts/$moved.sh" ]] || fail "obsolete dev path remains: $moved"
         [[ -x "$ROOT/dev/scripts/$moved.sh" ]] || fail "development script is not executable: $moved"
     done
-    [[ ! -e "$ROOT/scripts/update.sh" && ! -e "$ROOT/setup/provision-tool.sh" &&
-        ! -e "$ROOT/setup/deploy-zsh-config.sh" && ! -e "$ROOT/setup/deploy-zellij-config.sh" ]] ||
+    [[ ! -e "$ROOT/scripts/update.sh" && ! -e "$ROOT/src/lib/setup/provision-tool.sh" &&
+        ! -e "$ROOT/src/lib/setup/deploy-zsh-config.sh" && ! -e "$ROOT/src/lib/setup/deploy-zellij-config.sh" ]] ||
         fail 'obsolete setup placeholders should not remain'
     [[ ! -d "$ROOT/scripts" ]] || fail "obsolete scripts/ directory remains"
     [[ ! -e "$ROOT/get-started.sh" ]] || fail "obsolete stage-zero installer should not remain"
@@ -150,7 +151,7 @@ main() {
     # This must not accidentally include the root checkout's developer tools.
     # Resolve mise as setup does: it may be installed outside the current PATH.
     if mise=$(mise_command); then
-        machine_config="$ROOT/setup/mise.toml"
+        machine_config="$ROOT/src/mise.toml"
         MISE_GLOBAL_CONFIG_FILE="$machine_config" "$mise" -C / config ls >/dev/null ||
             fail 'mise could not parse the machine-only manifest'
         tool_listing=$(MISE_GLOBAL_CONFIG_FILE="$machine_config" "$mise" -C / ls --current) ||
@@ -162,7 +163,7 @@ main() {
         # Exercise the real mise CLI (rather than just synthetic fixtures) to
         # ensure the shared enumerator handles requested-but-missing versions.
         machine_specs=$(MISE_GLOBAL_CONFIG_FILE="$machine_config" \
-            machine_tool_specs "$mise" "$ROOT/setup/base-tools.toml") ||
+            machine_tool_specs "$mise" "$ROOT/src/home/.config/mise/base-tools.toml") ||
             fail 'machine tool enumerator could not read the reviewed mise config'
         [[ -n "$machine_specs" ]] || fail 'machine tool inventory is unexpectedly empty'
         [[ "$machine_specs" != *lefthook* && "$machine_specs" != *shellcheck* ]] ||
@@ -246,17 +247,17 @@ MISE
     # Run twice from elsewhere, with an isolated HOME, on a supported host only.
     if detect_os >/dev/null 2>&1; then
         output=$(cd "$TEST_ROOT/elsewhere" && HOME="$TEST_ROOT/home" \
-            PATH="$TEST_ROOT/bin:$PATH" bash "$ROOT/bin/,bootstrap" --no-update)
+            PATH="$TEST_ROOT/bin:$PATH" bash "$ROOT/src/bin/,bootstrap" --no-update)
         repeated=$(cd "$TEST_ROOT/elsewhere" && HOME="$TEST_ROOT/home" \
-            PATH="$TEST_ROOT/bin:$PATH" bash "$ROOT/bin/,bootstrap" --no-update)
+            PATH="$TEST_ROOT/bin:$PATH" bash "$ROOT/src/bin/,bootstrap" --no-update)
         assert_equal "$output" "$repeated" 'bootstrap repeatability'
         [[ "$output" == *'Detected platform:'* && "$output" == *'Bootstrap complete.'* &&
             "$output" == *'Bootstrap complete. Dotfiles:'* ]] || fail 'bootstrap scope unclear'
     else
         printf 'SKIP: bootstrap host smoke test (unsupported host)\n'
     fi
-    [[ -z "$(find "$TEST_ROOT/home" "$TEST_ROOT/elsewhere" -mindepth 1 -print)" ]] ||
-        fail 'entry point wrote to isolated home or working directory'
+    [[ -z "$(find "$TEST_ROOT/home" "$TEST_ROOT/elsewhere" -mindepth 1 -type f ! -path "$TEST_ROOT/home/.local/state/dotfiles/logs/*" -print)" ]] ||
+        fail 'entry point wrote outside its isolated bootstrap log directory'
     printf 'PASS: Entry-point help, errors and repeatable smoke execution\n'
     bash "$ROOT/dev/tests/check-clean.sh"
     if command -v python3 >/dev/null 2>&1; then
@@ -269,6 +270,7 @@ MISE
         python3 "$ROOT/dev/tests/mise-bootstrap-interactive.py"
         python3 "$ROOT/dev/tests/login-shell.py"
         python3 "$ROOT/dev/tests/cleanup-interactive.py"
+        python3 "$ROOT/dev/tests/cleanup-reset.py"
         python3 "$ROOT/dev/tests/opencode-sandbox.py"
         python3 "$ROOT/dev/tests/podman-setup.py"
         python3 "$ROOT/dev/tests/prompt-setup.py"

@@ -1,5 +1,0 @@
-# Optional OpenCode sandbox launcher; never install OpenCode on the host.
-# The canonical checkout path is ~/.dotfiles (see Getting started).
-# Podman remains opt-in and is offered by the launcher on first use.
-[env]
-_.path = ["~/.dotfiles/modules/opencode/bin"]

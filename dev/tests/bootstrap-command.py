@@ -7,28 +7,28 @@ import subprocess
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
-LAUNCHER = ROOT / "bin/,bootstrap"
+LAUNCHER = ROOT / "src/bin/,bootstrap"
 
 with tempfile.TemporaryDirectory(prefix="dotfiles-bootstrap-command-") as scratch:
     base = Path(scratch)
     checkout = base / "checkout"
-    (checkout / "bin").mkdir(parents=True)
-    (checkout / "setup").mkdir(parents=True)
-    (checkout / "lib").mkdir(parents=True)
-    for library in ("common.sh", "os.sh", "mise.sh", "nvim.sh", "dotfiles.sh", "machine-tools.sh", "login-shell.sh"):
-        (checkout / "lib" / library).write_text((ROOT / "lib" / library).read_text())
-    (checkout / "bin/,bootstrap").write_text(LAUNCHER.read_text())
-    (checkout / "setup/update.sh").write_text("""#!/usr/bin/env bash
+    (checkout / "src/bin").mkdir(parents=True)
+    (checkout / "src/lib/setup").mkdir(parents=True)
+    (checkout / "src/lib").mkdir(parents=True, exist_ok=True)
+    for library in ("common.sh", "logging.sh", "os.sh", "mise.sh", "nvim.sh", "dotfiles.sh", "machine-tools.sh", "login-shell.sh"):
+        (checkout / "src/lib" / library).write_text((ROOT / "src/lib" / library).read_text())
+    (checkout / "src/bin/,bootstrap").write_text(LAUNCHER.read_text())
+    (checkout / "src/lib/setup/update.sh").write_text("""#!/usr/bin/env bash
 printf '%s\\n' "$*" >> "$MOCK_UPDATE_LOG"
 [[ "${MOCK_UPDATE_FAIL:-0}" == 0 ]] || exit 1
-cat > "$MOCK_CHECKOUT/bin/,bootstrap" <<'BOOTSTRAP'
+cat > "$MOCK_CHECKOUT/src/bin/,bootstrap" <<'BOOTSTRAP'
 #!/usr/bin/env bash
 [[ "$1" == --no-update ]] || exit 17
 printf 'bootstrap ran\\n' >> "$MOCK_BOOTSTRAP_LOG"
 printf '%s\\n' "$*" >> "$MOCK_BOOTSTRAP_LOG"
 BOOTSTRAP
 """)
-    (checkout / "setup/bootstrap.sh").write_text("""#!/usr/bin/env bash
+    (checkout / "src/lib/setup/bootstrap.sh").write_text("""#!/usr/bin/env bash
 printf 'bootstrap ran\\n' >> "$MOCK_BOOTSTRAP_LOG"
 """)
     bin_dir = base / "mock-bin"
@@ -47,7 +47,9 @@ esac
     git.chmod(0o755)
     update_log = base / "update.log"
     bootstrap_log = base / "bootstrap.log"
-    env = dict(os.environ, PATH=str(bin_dir) + os.pathsep + os.environ["PATH"],
+    test_home = base / "home"
+    test_home.mkdir()
+    env = dict(os.environ, HOME=str(test_home), PATH=str(bin_dir) + os.pathsep + os.environ["PATH"],
                MOCK_CHECKOUT=str(checkout),
                MOCK_UPDATE_LOG=str(update_log), MOCK_BOOTSTRAP_LOG=str(bootstrap_log))
     env.pop("DOTFILES_BOOTSTRAP_SNAPSHOT", None)
@@ -56,8 +58,8 @@ esac
     def run(*args, **overrides):
         update_log.unlink(missing_ok=True)
         bootstrap_log.unlink(missing_ok=True)
-        (checkout / "bin/,bootstrap").write_text(LAUNCHER.read_text())
-        return subprocess.run(["bash", str(checkout / "bin/,bootstrap"), *args],
+        (checkout / "src/bin/,bootstrap").write_text(LAUNCHER.read_text())
+        return subprocess.run(["bash", str(checkout / "src/bin/,bootstrap"), *args],
                               env={**env, **overrides}, cwd=base,
                               stdin=subprocess.DEVNULL, capture_output=True,
                               text=True, timeout=10)

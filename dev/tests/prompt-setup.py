@@ -9,13 +9,13 @@ from pathlib import Path
 from confirmations import Confirm, Deny, communicate_confirmations
 
 ROOT = Path(__file__).resolve().parents[2]
-SCRIPT = ROOT / "setup/setup-prompt.sh"
-MANIFEST = ROOT / "setup/prompt.toml"
+SCRIPT = ROOT / "src/lib/setup/setup-prompt.sh"
+MANIFEST = ROOT / "src/lib/setup/prompt.toml"
 declaration = MANIFEST.read_text()
 assert "[bootstrap.repos]" in declaration
 assert "https://github.com/romkatv/powerlevel10k.git" in declaration
 assert "35833ea15f14b71dbcebc7e54c104d8d56ca5268" in declaration
-assert "powerlevel10k" not in (ROOT / "setup/mise.toml").read_text()
+assert "powerlevel10k" not in (ROOT / "src/mise.toml").read_text()
 
 with tempfile.TemporaryDirectory(prefix="dotfiles-test-prompt-") as scratch:
     base = Path(scratch)

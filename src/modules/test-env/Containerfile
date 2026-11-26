@@ -1,0 +1,14 @@
+FROM docker.io/library/ubuntu:24.04
+
+# Only the prerequisites for a manually invoked bootstrap, not its managed tools.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates curl git sudo \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --create-home --shell /bin/bash tester \
+    && printf '%s\n' 'tester ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/tester \
+    && chmod 0440 /etc/sudoers.d/tester \
+    && printf '%s\n' 'tester:dotfiles' | chpasswd
+
+USER tester
+ENV HOME=/home/tester
+WORKDIR /home/tester

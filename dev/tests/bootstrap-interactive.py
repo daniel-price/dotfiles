@@ -10,7 +10,7 @@ from pathlib import Path
 from confirmations import Confirm, Deny, communicate_confirmations
 
 ROOT = Path(__file__).resolve().parents[2]
-SCRIPT = ROOT / "bin" / ",bootstrap"
+SCRIPT = ROOT / "src/bin" / ",bootstrap"
 
 
 def supported_host():

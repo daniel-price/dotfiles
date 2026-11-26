@@ -10,10 +10,10 @@ from pathlib import Path
 from confirmations import Confirm, Deny, communicate_confirmations
 
 ROOT = Path(__file__).resolve().parents[2]
-SCRIPT = ROOT / "setup" / "cleanup.sh"
-SOURCE = ROOT / ".config" / "zsh" / "zshrc"
-MANIFEST = ROOT / "setup" / "mise.toml"
-BASE_TOOLS = ROOT / "setup" / "base-tools.toml"
+SCRIPT = ROOT / "src/lib/setup/cleanup.sh"
+SOURCE = ROOT / "src/home/.zshrc"
+MANIFEST = ROOT / "src/mise.toml"
+BASE_TOOLS = ROOT / "src/home/.config/mise/base-tools.toml"
 
 
 def declared_tools():
@@ -106,7 +106,7 @@ esac
         "MOCK_LOG": str(log),
         "MOCK_STATE": str(state),
         "MOCK_DOT_SOURCE": str(SOURCE),
-        "MOCK_ZELLIJ_SOURCE": str(ROOT / ".config/zellij/config.kdl"),
+        "MOCK_ZELLIJ_SOURCE": str(ROOT / "src/home/.config/zellij/config.kdl"),
         "MOCK_TOOL_ROWS": "\n".join(
             f"{name} {version} (missing)" for name, version in pins.items()
         ),
@@ -117,7 +117,7 @@ esac
     target = home / ".zshrc"
     zellij_target = home / ".config/zellij/config.kdl"
     zellij_target.parent.mkdir(parents=True)
-    zellij_target.symlink_to(ROOT / ".config/zellij/config.kdl")
+    zellij_target.symlink_to(ROOT / "src/home/.config/zellij/config.kdl")
 
     def run_quiet(args, input_text=None, overrides=None):
         return subprocess.run(

@@ -53,12 +53,8 @@ and are **not** evidence that a feature already exists.
   Add contextual `|| die "Action failed ..."` messages for important operations,
   particularly writes and user-approved changes. Preserve failure exit status
   where callers depend on it, and avoid masking failures during cleanup.
-- **Layout:** `setup/` is for machine setup, `dev/scripts/` is for
-  maintaining this checkout, and `lib/` provides internal shared helpers.
-  Put eventual everyday shell commands in `bin/` only when they exist. `.config/`
-  holds intended user dotfiles. Keep `bin/,bootstrap` as the sole bootstrap
-  implementation and entry documentation/tool configuration at the root.
-- **Cleanup:** default to dry-run; remove only explicitly eligible targets after terminal confirmation. Never use `mise implode`, system package prune, forceful dotfile removal or automatic deletion of selected Profile configurations. Tool installations can be shared across projects.
+- **Layout:** `src/` contains all runtime code and configuration. `src/home/` mirrors the user's home directory; `src/bin/` holds public commands, `src/lib/` internal helpers, `src/lib/setup/` machine provisioning, and `src/modules/` optional capabilities with their container and config files. `src/mise.toml` is the machine bootstrap manifest. `dev/` contains repo-only tooling and `docs/` documentation; neither is a runtime dependency. Keep root tool files only when discovery requires it.
+- **Cleanup:** preview by default, require explicit terminal approval, remove only known owned paths or explicitly approved shared tool versions. Preserve unrelated files, private repositories and credentials; never use `mise implode` or a system package prune. The standalone `src/bin/,cleanup` handles reset across layouts, including broken legacy links.
 - **Docs:** user-facing guidance should be accurate, concise and task-oriented.
   Keep guides command-first: prerequisites, commands and essential caveats only.
   Do not repeat safeguards, inventories or implementation details. Store dense

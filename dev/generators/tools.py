@@ -10,9 +10,9 @@ def markdown(value: object) -> str:
     return str(value).replace("|", r"\|").replace("\n", " ")
 
 
-def render(machine: Path = ROOT / "setup/base-tools.toml",
+def render(machine: Path = ROOT / "src/home/.config/mise/base-tools.toml",
            development: Path = ROOT / "dev/mise.toml",
-           bootstrap: Path = ROOT / "setup/mise.toml") -> str:
+           bootstrap: Path = ROOT / "src/mise.toml") -> str:
     manifests = [
         ("Machine tools", machine),
         ("Repository development tools", development),

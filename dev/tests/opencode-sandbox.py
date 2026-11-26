@@ -10,7 +10,7 @@ from pathlib import Path
 from confirmations import Confirm, Deny, communicate_confirmations
 
 ROOT = Path(__file__).resolve().parents[2]
-SCRIPT = ROOT / "modules" / "opencode" / "bin" / "opencode-sandbox"
+SCRIPT = ROOT / "src/modules" / "opencode" / "bin" / "opencode-sandbox"
 
 with tempfile.TemporaryDirectory(prefix="dotfiles-agent-sandbox-") as scratch:
     base = Path(scratch)
@@ -36,12 +36,19 @@ case "$1" in
     [[ "$2" == exists ]] || exit 30
     case "$3" in
       ghcr.io/*) [[ -e "$MOCK_STATE/base" ]] ;;
-      localhost/*) [[ -e "$MOCK_STATE/local" ]] ;;
+      localhost/dotfiles-opencode-sandbox:*) [[ -e "$MOCK_STATE/local" ]] ;;
+      localhost/*) [[ -e "$MOCK_STATE/profile" ]] ;;
       *) exit 31 ;;
     esac
     ;;
   pull) touch "$MOCK_STATE/base" ;;
-  build) touch "$MOCK_STATE/local" ;;
+  build)
+    if [[ "$*" == *"--tag localhost/dotfiles-opencode-sandbox:"* ]]; then
+      touch "$MOCK_STATE/local"
+    else
+      touch "$MOCK_STATE/profile"
+    fi
+    ;;
   run) printf '%s\\n' 'AGENT_MOCK_LAUNCHED' ;;
   *) exit 32 ;;
 esac
@@ -145,6 +152,39 @@ case "$1" in -u) echo 1000 ;; -g) echo 1000 ;; *) /usr/bin/id "$@" ;; esac
     assert not any(line.startswith(("pull ", "build ")) for line in operations())
     assert sum(line.startswith("run ") for line in operations()) == 1
 
+    # Profiles extend the shared image without changing the runtime mount policy.
+    profile = base / "personal"
+    context = profile / "containers" / "opencode"
+    context.mkdir(parents=True)
+    (context / "Containerfile").write_text("ARG OPENCODE_IMAGE\nFROM ${OPENCODE_IMAGE}\n")
+    log.write_text("")
+    args = ["--profile-dir", str(profile)]
+    assert run(["--profile-dir", str(sibling), "--dry-run"]).returncode != 0
+    preview = run([*args, "--dry-run"])
+    assert preview.returncode == 0 and "dotfiles-opencode-personal:" in preview.stdout
+    assert not operations(), operations()
+
+    declined_profile = run(args, answers=(Deny(),))
+    assert declined_profile.returncode == 0 and "Declined profile image build" in declined_profile.stdout
+    assert not (state / "profile").exists()
+    assert not any(line.startswith(("build ", "run ")) for line in operations())
+
+    log.write_text("")
+    approved_profile = run(args, answers=(Confirm(), Confirm()))
+    assert approved_profile.returncode == 0, approved_profile.stdout
+    calls = operations()
+    build = next(line for line in calls if line.startswith("build "))
+    assert "--build-arg OPENCODE_IMAGE=localhost/dotfiles-opencode-sandbox:" in build, build
+    launch = next(line for line in calls if line.startswith("run "))
+    assert "localhost/dotfiles-opencode-personal:" in launch, launch
+    assert launch.count("--volume ") == 1 and f"--volume {project.resolve()}:/workspace:rw" in launch
+    assert str(profile) not in launch
+
+    log.write_text("")
+    repeated_profile = run(args, answers=(Confirm(),))
+    assert repeated_profile.returncode == 0 and "AGENT_MOCK_LAUNCHED" in repeated_profile.stdout
+    assert not any(line.startswith(("pull ", "build ")) for line in operations())
+
     # Missing runtime is offered through the reusable mise-backed prerequisite,
     # not an inline apt command or a silent Podman installation.
     podman_template = bin_dir / "podman-template"
@@ -185,7 +225,7 @@ esac
     assert approved_runtime.returncode == 0, approved_runtime.stdout
     assert "AGENT_MOCK_LAUNCHED" in approved_runtime.stdout
     assert podman.exists()
-    scoped = str(ROOT / "containers/podman/mise.toml")
+    scoped = str(ROOT / "src/modules/podman/mise.toml")
     assert f"{scoped}|-C / bootstrap --only packages --dry-run" in operations()
     assert f"{scoped}|-C / bootstrap --only packages" in operations()
     assert any(line.startswith("run ") for line in operations())

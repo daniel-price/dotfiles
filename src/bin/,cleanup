@@ -1,0 +1,329 @@
+#!/usr/bin/env bash
+# Standalone reset for the old and current layouts; deliberately requires no checkout.
+set -euo pipefail
+
+info() { printf '[info] %s\n' "$*"; }
+warn() { printf '[warn] %s\n' "$*" >&2; }
+die() { printf '[error] %s\n' "$*" >&2; exit 1; }
+
+usage() {
+    printf '%s\n' 'Usage: ,cleanup [--apply] [--remove-checkout] [--login-shell /absolute/path]' \
+        'Preview by default; --apply requires a terminal and individual approval.' \
+        'Removes known dotfiles, optional components and approved shared tool versions.' \
+        '--remove-checkout: also offer to delete a clean, pushed ~/.dotfiles checkout.' \
+        '--login-shell: optionally change back to a shell you explicitly select.' \
+        'Does not purge system packages, unrelated files, credentials or dirty repositories.'
+}
+
+# No realpath dependency: legacy targets can be broken, including intermediate
+# components removed during a layout migration.
+normalize() {
+    awk -v p="$1" 'BEGIN {
+        n=split(p,a,"/"); d=0
+        for(i=1;i<=n;i++) {
+            if(a[i]=="" || a[i]==".") continue
+            if(a[i]=="..") { if(d>0) d--; continue }
+            s[++d]=a[i]
+        }
+        for(i=1;i<=d;i++) printf "/%s",s[i]
+        if(!d) printf "/"
+    }'
+}
+
+# Never traverse symlink parents, or touch a path outside the selected HOME.
+safe_path() {
+    local path=$1 parent
+    [[ "$path" == "$home/"* && "$(normalize "$path")" == "$path" ]] || return 1
+    parent=$(dirname "$path")
+    while [[ "$parent" != "$home" ]]; do
+        [[ ! -L "$parent" ]] || return 1
+        parent=$(dirname "$parent")
+    done
+}
+
+approve() {
+    local answer
+    info "$*"
+    [[ "$apply" == true ]] || return 1
+    printf 'Proceed? [y/N] '
+    IFS= read -r -n 1 answer || answer=''
+    printf '\n'
+    [[ "$answer" == y || "$answer" == Y ]]
+}
+
+# Exact targets only, including links broken by the directory move.
+remove_link() {
+    local path=$1 actual expected
+    shift
+    safe_path "$path" || { warn "Unsafe path, left untouched: $path"; return; }
+    [[ -e "$path" || -L "$path" ]] || return 0
+    if [[ ! -L "$path" ]]; then
+        warn "Existing non-symlink, left untouched: $path"
+        return
+    fi
+    actual=$(readlink "$path")
+    [[ "$actual" == /* ]] || actual="$(dirname "$path")/$actual"
+    actual=$(normalize "$actual")
+    for expected in "$@"; do
+        if [[ "$actual" == "$checkout/$expected" ]]; then
+            if approve "Remove managed link $path -> $actual"; then rm -- "$path"; fi
+            return
+        fi
+    done
+    warn "Unrelated symlink, left untouched: $path -> $actual"
+}
+
+# A specific regular file or data directory may predate dotfiles. Always ask
+# separately; never follow symlinks or clear a shared parent directory.
+remove_artifact() {
+    local path=$1
+    safe_path "$path" || { warn "Unsafe path, left untouched: $path"; return; }
+    [[ -e "$path" || -L "$path" ]] || return 0
+    if [[ -L "$path" ]]; then
+        warn "Unexpected symlink, left untouched: $path"
+        return
+    fi
+    if approve "Remove $path (may contain pre-existing or personal data)"; then
+        if [[ -d "$path" ]]; then rm -rf -- "$path"; else rm -- "$path"; fi
+    fi
+}
+
+# Check the remote and protect local/ignored files, unpushed commits and
+# additional worktrees. No network or remote changes are performed.
+remove_repo() {
+    local path=$1 origin_pattern=$2 origin status ref
+    safe_path "$path" || { warn "Unsafe checkout path: $path"; return; }
+    [[ -e "$path" || -L "$path" ]] || return 0
+    if [[ -L "$path" || ! -d "$path/.git" ]]; then
+        warn "Not a regular Git checkout, left untouched: $path"
+        return
+    fi
+    origin=$(git -C "$path" remote get-url origin 2>/dev/null) || origin=''
+    if [[ ! "$origin" =~ $origin_pattern ]]; then
+        warn "Unrecognised checkout, left untouched: $path"
+        return
+    fi
+    status=$(git -C "$path" status --porcelain --untracked-files=all --ignored) || die "Cannot inspect $path"
+    if [[ -n "$status" ]]; then
+        warn "Local or ignored files present; back up or clean manually: $path"
+        return
+    fi
+    if [[ $(git -C "$path" worktree list --porcelain | grep -c '^worktree ') != 1 ]]; then
+        warn "Additional worktrees present; left untouched: $path"
+        return
+    fi
+    if [[ -z "$(git -C "$path" for-each-ref --contains=HEAD --format='%(refname)' refs/remotes/origin)" ]]; then
+        warn "HEAD is not known to be pushed; left untouched: $path"
+        return
+    fi
+    while IFS= read -r ref; do
+        [[ -n "$ref" ]] || continue
+        if [[ -z "$(git -C "$path" for-each-ref --contains="$ref" --format='%(refname)' refs/remotes/origin)" ]]; then
+            warn "Local branch or tag not known to be pushed; left untouched: $path ($ref)"
+            return
+        fi
+    done < <(git -C "$path" for-each-ref --format='%(refname)' refs/heads refs/tags)
+    if [[ -n "$(git -C "$path" stash list)" ]]; then
+        warn "Stashes present; left untouched: $path"
+        return
+    fi
+    if approve "Delete clean checkout $path"; then rm -rf -- "$path"; fi
+}
+
+# Optional dependency checkouts are pinned detached HEADs. Validate the exact
+# origin and commit before offering removal; never delete a modified checkout.
+remove_plugin() {
+    local path=$1 remote=$2 pin=$3 origin
+    safe_path "$path" || { warn "Unsafe plugin path: $path"; return; }
+    [[ -e "$path" || -L "$path" ]] || return 0
+    if [[ -L "$path" || ! -d "$path/.git" ]]; then warn "Non-Git plugin path: $path"; return; fi
+    origin=$(git -C "$path" remote get-url origin 2>/dev/null) || origin=''
+    if [[ "$origin" != "$remote" && "$origin" != "${remote%.git}" ]] ||
+        [[ "$(git -C "$path" rev-parse HEAD)" != "$pin" ]] ||
+        [[ -n "$(git -C "$path" status --porcelain --untracked-files=all --ignored)" ]] ||
+        [[ -n "$(git -C "$path" stash list)" ]] ||
+        [[ $(git -C "$path" worktree list --porcelain | grep -c '^worktree ') != 1 ]] ||
+        [[ -n "$(git -C "$path" for-each-ref --format='%(refname)' refs/heads)" ]]; then
+        # Some installs keep a local branch; use the normal pushed-checkout check.
+        if [[ "$origin" == "$remote" || "$origin" == "${remote%.git}" ]]; then
+            local pattern="^${remote%.git}(\\.git)?$"
+            remove_repo "$path" "$pattern"
+        else
+            warn "Unrecognised plugin checkout: $path"
+        fi
+        return
+    fi
+    if approve "Delete pinned plugin checkout $path"; then rm -rf -- "$path"; fi
+}
+
+# Derive the versions from the installed checkout's committed manifest.
+# Do not use the user's active mise configuration or execute profile code.
+remove_tools() {
+    local manifest='' spec mise empty status
+    if [[ -d "$checkout/.git" && ! -L "$checkout" ]] &&
+        [[ "$(git -C "$checkout" remote get-url origin 2>/dev/null || :)" =~ ^(https://github\.com/|git@github\.com:)daniel-price/dotfiles(\.git)?$ ]]; then
+        manifest=$(git -C "$checkout" show HEAD:src/home/.config/mise/base-tools.toml 2>/dev/null ||
+            git -C "$checkout" show HEAD:setup/base-tools.toml 2>/dev/null || :)
+    fi
+    if [[ -z "$manifest" ]]; then
+        warn 'No recognised committed tool manifest; shared mise tools must be reviewed manually.'
+        return
+    fi
+    mise=$(command -v mise || :)
+    if [[ -x "$home/.local/bin/mise" && ! -L "$home/.local/bin/mise" ]]; then mise="$home/.local/bin/mise"; fi
+    [[ -n "$mise" ]] || { info 'Mise not installed; skipping tool removal.'; return; }
+    # The manifest contains only literal pinned versions in [tools].
+    while IFS= read -r spec; do
+        [[ -n "$spec" ]] || continue
+        if [[ "$apply" == false ]]; then
+            info "Review shared mise version for uninstall: $spec"
+            continue
+        fi
+        if approve "Uninstall pinned shared mise version $spec (other projects may use it)"; then
+            empty=$(mktemp -d)
+            : > "$empty/config.toml"
+            status=0
+            MISE_GLOBAL_CONFIG_FILE="$empty/config.toml" MISE_ENV= "$mise" -C / uninstall --dry-run-code "$spec" || status=$?
+            if [[ "$status" == 1 ]]; then
+                MISE_GLOBAL_CONFIG_FILE="$empty/config.toml" MISE_ENV= "$mise" -C / uninstall --yes "$spec" || status=2
+            fi
+            rm -f "$empty/config.toml"
+            rmdir "$empty"
+            [[ "$status" == 0 || "$status" == 1 ]] || die "Could not inspect or uninstall $spec"
+        fi
+    done < <(printf '%s\n' "$manifest" | awk '
+        /^\[tools\]$/ { tools=1; next }
+        /^\[/ { tools=0 }
+        tools && /^[a-zA-Z0-9_-]+[[:space:]]*=[[:space:]]*"[0-9][0-9A-Za-z._+-]*"[[:space:]]*$/ {
+            split($0,a,"="); gsub(/[[:space:]]/,"",a[1]); gsub(/[[:space:]"]/,"",a[2]); print a[1] "@" a[2]
+        }')
+}
+
+main() {
+    local home checkout apply=false remove_checkout=false login_shell='' config data cache state font path profile current
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+        -h|--help) usage; return ;;
+        --apply) apply=true ;;
+        --remove-checkout) remove_checkout=true ;;
+        --login-shell)
+            [[ $# -ge 2 ]] || die 'Missing login shell path'
+            login_shell=$2; shift ;;
+        *) die "Unknown option: $1" ;;
+        esac
+        shift
+    done
+    [[ -n "${HOME:-}" && -d "$HOME" ]] || die 'HOME must exist'
+    home=$(cd "$HOME" && pwd -P)
+    [[ "$home" != / ]] || die 'Refusing filesystem root'
+    if [[ "$apply" == true ]]; then
+        [[ "$(id -u)" != 0 && -t 0 && -t 1 ]] || die 'Apply requires a normal user and an interactive terminal'
+    fi
+    checkout="$home/.dotfiles"
+    config="$home/.config"
+    data="${XDG_DATA_HOME:-$home/.local/share}"
+    cache="${XDG_CACHE_HOME:-$home/.cache}"
+    state="${XDG_STATE_HOME:-$home/.local/state}"
+
+    if [[ -n "$login_shell" ]]; then
+        [[ "$login_shell" == /* && -x "$login_shell" ]] && grep -Fxq "$login_shell" /etc/shells ||
+            die 'Choose an executable registered in /etc/shells'
+        if approve "Change login shell to $login_shell"; then
+            # Do not change a real account when HOME is redirected to a fixture.
+            if [[ "$(uname -s)" == Darwin ]]; then
+                current=$(dscl . -read "/Users/$(id -un)" NFSHomeDirectory)
+                current="${current#NFSHomeDirectory: }"
+            else
+                current=$(getent passwd "$(id -un)" | cut -d: -f6)
+            fi
+            [[ "$current" -ef "$home" ]] || die 'HOME does not match login account'
+            chsh -s "$login_shell"
+        fi
+    fi
+
+    remove_link "$home/.zshrc" .config/zsh/zshrc src/home/.zshrc
+    for path in git/config atuin/config.toml ghostty/config zellij/config.kdl stylua.toml; do
+        remove_link "$config/$path" ".config/$path" "src/home/.config/$path"
+    done
+    remove_link "$config/mise/config.toml" setup/global-mise.toml src/home/.config/mise/config.toml
+    remove_link "$config/mise/base-tools.toml" setup/base-tools.toml src/home/.config/mise/base-tools.toml
+    remove_link "$config/mise/config.opencode.toml" setup/config.opencode.toml src/modules/opencode/config.opencode.toml
+
+    # Profiles are private, independent checkouts. Remove only links sourced
+    # from selected personal-profile paths, and keep the checkout and its data.
+    for profile in "${XDG_CONFIG_HOME:-$config}"/mise/conf.d/personal*; do
+        [[ -d "$profile/.git" && ! -L "$profile" ]] || continue
+        current=$(git -C "$profile" remote get-url origin 2>/dev/null || :)
+        [[ "$current" =~ ^(https://github\.com/|git@github\.com:)[A-Za-z0-9-]+/\.dotfiles-profile-personal(-[a-z0-9]+)*(\.git)?$ ]] || continue
+        if [[ -d "$config" && ! -L "$config" ]]; then
+            while IFS= read -r -d '' path; do
+                safe_path "$path" || continue
+                current=$(readlink "$path")
+                [[ "$current" == /* ]] || current="$(dirname "$path")/$current"
+                current=$(normalize "$current")
+                if [[ "$current" == "$profile/"* ]] && approve "Remove profile-managed link $path"; then
+                    rm -- "$path"
+                fi
+            done < <(find "$config" -type l -print0)
+        fi
+        warn "Private profile checkout preserved: $profile"
+    done
+    # May contain unrelated environments: preserve an explicit backup if reset.
+    path="${XDG_CONFIG_HOME:-$config}/mise/miserc.local.toml"
+    if safe_path "$path" && [[ -f "$path" && ! -L "$path" ]]; then
+        if approve "Disable selected mise environments by backing up $path"; then
+            local backup
+            backup=$(mktemp "$path.reset.XXXXXX")
+            mv -- "$path" "$backup"
+            info "Saved previous selection: $backup"
+        fi
+    fi
+
+    remove_tools
+    remove_plugin "$home/.local/share/dotfiles/powerlevel10k" https://github.com/romkatv/powerlevel10k.git 35833ea15f14b71dbcebc7e54c104d8d56ca5268
+    remove_plugin "$home/.local/share/dotfiles/zsh-autosuggestions" https://github.com/zsh-users/zsh-autosuggestions.git e52ee8ca55bcc56a17c828767a3f98f22a68d4eb
+    remove_repo "$config/nvim" '^(https://github\.com/|git@github\.com:)daniel-price/lazyvim(\.git)?$'
+    for path in "$data/nvim" "$cache/nvim" "$state/nvim"; do remove_artifact "$path"; done
+    for path in "$cache"/p10k-instant-prompt-*.zsh "$home"/.zcompdump*; do remove_artifact "$path"; done
+
+    if [[ "$(uname -s)" == Darwin ]]; then
+        font="$home/Library/Fonts"
+        path="$home/Library/LaunchAgents/com.daniel-price.dotfiles.caps-control.plist"
+        if safe_path "$path" && [[ -f "$path" && ! -L "$path" ]]; then
+            warn "Review current hidutil UserKeyMapping; clearing it can affect unrelated mappings."
+            if approve "Unload and remove the dotfiles Caps Lock LaunchAgent $path"; then
+                launchctl bootout "gui/$(id -u)" "$path" 2>/dev/null || :
+                rm -- "$path"
+            fi
+        fi
+    else
+        font="$data/fonts"
+        path="$config/cosmic/com.system76.CosmicComp/v1/xkb_config"
+        if safe_path "$path" && [[ -f "$path" && ! -L "$path" ]] && grep -q 'ctrl:nocaps' "$path"; then
+            warn "COSMIC Caps Lock mapping may predate installation: review and remove only ctrl:nocaps in $path via Settings."
+        fi
+    fi
+    for path in 'MesloLGS NF Regular.ttf' 'MesloLGS NF Bold.ttf' 'MesloLGS NF Italic.ttf' 'MesloLGS NF Bold Italic.ttf'; do
+        remove_artifact "$font/$path"
+    done
+
+    if command -v podman >/dev/null 2>&1 && [[ "$(id -u)" != 0 ]]; then
+        while IFS= read -r path; do
+            [[ "$path" == localhost/dotfiles-opencode-sandbox:* ]] || continue
+            if approve "Remove dotfiles-owned Podman image $path"; then podman image rm "$path"; fi
+        done < <(podman images --format '{{.Repository}}:{{.Tag}}')
+    fi
+    # The mise executable may be shared. Never remove its whole data directory.
+    remove_artifact "$home/.local/bin/mise"
+
+    if [[ "$remove_checkout" == true ]]; then
+        remove_repo "$checkout" '^(https://github\.com/|git@github\.com:)daniel-price/dotfiles(\.git)?$'
+    else
+        info "Checkout preserved: $checkout (use --remove-checkout to offer deletion)"
+    fi
+    warn 'System packages, package sources, shared caches, credentials, backups and private repositories are not automatically deleted.'
+    warn 'The exact pre-install state is unknown; review any remaining conflicts and keyboard/login-shell settings.'
+    if [[ "$apply" == false ]]; then info 'Preview only; rerun with --apply to approve changes.'; fi
+}
+
+main "$@"

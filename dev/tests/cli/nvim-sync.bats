@@ -1,8 +1,8 @@
 #!/usr/bin/env bats
 
 setup() {
-  COMMON="$BATS_TEST_DIRNAME/../../../lib/common.sh"
-  NVIM="$BATS_TEST_DIRNAME/../../../lib/nvim.sh"
+  COMMON="$BATS_TEST_DIRNAME/../../../src/lib/common.sh"
+  NVIM="$BATS_TEST_DIRNAME/../../../src/lib/nvim.sh"
   source_repo="$BATS_TEST_TMPDIR/source"
   remote="$BATS_TEST_TMPDIR/remote.git"
   config="$BATS_TEST_TMPDIR/config"
@@ -75,4 +75,47 @@ local_commit() {
   run sync_checkout
   [ "$status" -ne 0 ]
   [[ "$output" == *'Could not fetch'* ]]
+}
+
+@test "bootstrap uses one headless session with an isolated lock and cache" {
+  cat > "$BATS_TEST_TMPDIR/mise" <<'MISE'
+#!/usr/bin/env bash
+set -eu
+[[ "$*" == *"--headless"* ]]
+[[ "$DOTFILES_NVIM_LOCK" != "$DOTFILES_NVIM_CONFIG/lazy-lock.json" ]]
+[[ "$XDG_CACHE_HOME" == *dotfiles-nvim* ]]
+cmp "$DOTFILES_NVIM_ORIGINAL" "$DOTFILES_NVIM_LOCK"
+printf 'one\n' >> "$CALL_LOG"
+printf 'changed copy\n' > "$DOTFILES_NVIM_LOCK"
+touch "$DOTFILES_NVIM_SUCCESS"
+MISE
+  chmod +x "$BATS_TEST_TMPDIR/mise"
+  export CALL_LOG="$BATS_TEST_TMPDIR/calls"
+  run bash -c 'source "$1"; source "$2"; nvim_bootstrap_plugins "$3" "$4" "$(dirname "$2")"' \
+    _ "$COMMON" "$NVIM" "$BATS_TEST_TMPDIR/mise" "$config"
+  [ "$status" -eq 0 ]
+  [ "$(cat "$CALL_LOG")" = one ]
+  [ "$(cat "$config/lazy-lock.json")" = '{}' ]
+}
+
+@test "failed Neovim bootstrap restores the original lockfile" {
+  cat > "$BATS_TEST_TMPDIR/mise" <<'MISE'
+#!/usr/bin/env bash
+printf 'modified\n' > "$DOTFILES_NVIM_CONFIG/lazy-lock.json"
+exit 1
+MISE
+  chmod +x "$BATS_TEST_TMPDIR/mise"
+  run bash -c 'source "$1"; source "$2"; nvim_bootstrap_plugins "$3" "$4" "$(dirname "$2")"' \
+    _ "$COMMON" "$NVIM" "$BATS_TEST_TMPDIR/mise" "$config"
+  [ "$status" -ne 0 ]
+  [ "$(cat "$config/lazy-lock.json")" = '{}' ]
+}
+
+@test "bootstrap refuses a zero exit without plugin and parser verification" {
+  printf '#!/usr/bin/env bash\nexit 0\n' > "$BATS_TEST_TMPDIR/mise"
+  chmod +x "$BATS_TEST_TMPDIR/mise"
+  run bash -c 'source "$1"; source "$2"; nvim_bootstrap_plugins "$3" "$4" "$(dirname "$2")"' \
+    _ "$COMMON" "$NVIM" "$BATS_TEST_TMPDIR/mise" "$config"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *'did not reach verification'* ]]
 }

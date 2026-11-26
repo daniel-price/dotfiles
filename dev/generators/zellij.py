@@ -9,7 +9,7 @@ import re
 import shlex
 
 ROOT = Path(__file__).resolve().parents[2]
-SOURCE = ROOT / ".config/zellij/config.kdl"
+SOURCE = ROOT / "src/home/.config/zellij/config.kdl"
 
 BIND = re.compile(r'^\s*bind\s+"([^"]+)"\s*\{\s*$')
 MODE = re.compile(r"^\s*([a-z]+)\s*\{\s*$")
