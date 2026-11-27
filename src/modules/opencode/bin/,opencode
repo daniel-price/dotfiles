@@ -12,10 +12,12 @@ source "$ROOT/src/lib/common.sh"
 main() {
     usage() {
         printf '%s\n' \
-            'Usage: ,opencode [--profile-dir DIR] [--project DIR] [--credential-env NAME] [--dry-run|--help]' \
+            'Usage: ,opencode [--profile-dir DIR] [--project DIR] [--credential-env NAME] [-c|--continue|-s SESSION|--session SESSION] [--dry-run|--help]' \
             'Run OpenCode in rootless Podman with a single writable Git checkout.' \
             'Dry-run makes no network requests or Podman changes.' \
             'Normal runs separately confirm image pull, build and agent launch.' \
+            'Resume the last session with -c/--continue, or a specific session with -s/--session SESSION.' \
+            'OpenCode data (including in-container authentication) persists per project and profile.' \
             'Credential environment names: ANTHROPIC_API_KEY, OPENAI_API_KEY, OPENROUTER_API_KEY.'
     }
 
@@ -27,6 +29,8 @@ main() {
     profile_dir=
     project=$PWD
     dry_run=false
+    session=
+    continue_session=false
     credential_names=()
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -54,6 +58,18 @@ main() {
             [[ -n "${!2:-}" ]] || die "Credential variable $2 is not set or is empty."
             credential_names+=("$2")
             shift 2
+            ;;
+        -s|--session)
+            [[ $# -ge 2 && "$2" =~ ^ses_[a-zA-Z0-9_-]+$ && -z "$session" && "$continue_session" == false ]] ||
+                die '--session requires one session ID and cannot be combined with --continue.'
+            session=$2
+            shift 2
+            ;;
+        -c|--continue)
+            [[ -z "$session" && "$continue_session" == false ]] ||
+                die '--continue may only be specified once and cannot be combined with --session.'
+            continue_session=true
+            shift
             ;;
         --dry-run)
             dry_run=true
@@ -92,9 +108,16 @@ main() {
         log "Profile build context: $profile_context"
     fi
 
+    # Canonical checkout and profile paths isolate state even for same-named projects.
+    # Git hashes the input without writing objects to the repository.
+    state_key=$(printf '%s\0%s\0' "$project" "$profile_dir" | git -C "$project" hash-object --stdin) ||
+        die 'Could not derive a persistent project state name.'
+    state_volume="dotfiles-opencode-data-$state_key"
+
     log "Workspace: $project (read/write inside the container)."
     log "Base image: $base_image; local image: $image."
     log "Container home: ephemeral /tmp; no host home, SSH, Git credentials or sockets mounted."
+    log "Persistent OpenCode data (sessions and in-container authentication): $state_volume."
     log 'Default rootless container network allows outbound traffic; project files can be sent to providers.'
     if [[ -n "${credential_names[*]-}" ]]; then
         log "Explicitly forwarded credential variable names: ${credential_names[*]} (values not printed)."
@@ -115,6 +138,11 @@ main() {
         die 'Could not inspect Podman rootless mode; no image pulled or agent launched.'
     [[ "$rootless" == true ]] || die 'Podman is not rootless; refusing to launch.'
     [[ -t 0 ]] || die 'An interactive terminal is required to approve each action.'
+
+    if [[ -n "$session" || "$continue_session" == true ]]; then
+        podman volume exists "$state_volume" ||
+            die 'No saved OpenCode data for this project/profile. Start a new session first.'
+    fi
 
     if ! podman image exists "$shared_image"; then
         if ! podman image exists "$base_image"; then
@@ -145,7 +173,7 @@ main() {
             --tag "$image" "$profile_context" || die 'OpenCode profile image build failed.'
     fi
 
-    if ! confirm "Run OpenCode on $project with write access and outbound network?"; then
+    if ! confirm "Run OpenCode on $project with write access, outbound network and persistent OpenCode data?"; then
         log 'Declined agent launch.'
         exit 0
     fi
@@ -156,13 +184,20 @@ main() {
         --tmpfs /tmp:rw,nosuid,nodev,size=1g,mode=1777
         --pids-limit=256 --memory=4g
         --env HOME=/tmp --env XDG_CONFIG_HOME=/tmp/.config
-        --env XDG_CACHE_HOME=/tmp/.cache --env XDG_DATA_HOME=/tmp/.local/share
+        --env XDG_CACHE_HOME=/tmp/.cache --env XDG_DATA_HOME=/opencode-data
+        --volume "$state_volume:/opencode-data:rw,U,nocopy"
         --volume "$project:/workspace:rw" --workdir /workspace
     )
     for name in "${credential_names[@]+"${credential_names[@]}"}"; do
         run_args+=(--env "$name")
     done
-    podman "${run_args[@]}" "$image"
+    run_args+=("$image")
+    if [[ -n "$session" ]]; then
+        run_args+=(--session "$session")
+    elif [[ "$continue_session" == true ]]; then
+        run_args+=(--continue)
+    fi
+    podman "${run_args[@]}"
 }
 
 main "$@"
