@@ -49,7 +49,18 @@ case "$1" in
       touch "$MOCK_STATE/profile"
     fi
     ;;
-  run) printf '%s\\n' 'AGENT_MOCK_LAUNCHED' ;;
+  volume)
+    [[ "$2" == exists ]] || exit 33
+    [[ -f "$MOCK_STATE/$3" ]]
+    ;;
+  run)
+    for arg in "$@"; do
+      case "$arg" in
+        dotfiles-opencode-data-*:/opencode-data:*) : > "$MOCK_STATE/${arg%%:*}" ;;
+      esac
+    done
+    printf '%s\\n' 'AGENT_MOCK_LAUNCHED'
+    ;;
   *) exit 32 ;;
 esac
 ''')
@@ -91,7 +102,10 @@ case "$1" in -u) echo 1000 ;; -g) echo 1000 ;; *) /usr/bin/id "$@" ;; esac
 
     assert run(["--help"]).returncode == 0
     assert run(["--untrusted-flag"]).returncode != 0
-    preview = run(["--dry-run"])
+    for invalid in (["-s"], ["-s", "--privileged"], ["-s", "invalid"],
+                    ["-s", "ses_test", "-c"], ["--continue", "--continue"]):
+        assert run(invalid).returncode != 0, invalid
+    preview = run(["--dry-run", "-s", "ses_test"])
     assert preview.returncode == 0 and "Read-only preview" in preview.stdout, preview.stdout
     assert not operations(), operations()
 
@@ -113,6 +127,11 @@ case "$1" in -u) echo 1000 ;; -g) echo 1000 ;; *) /usr/bin/id "$@" ;; esac
     rootful = run([], overrides={"MOCK_ROOTLESS": "false"})
     assert rootful.returncode != 0 and "not rootless" in rootful.stdout
     assert not any("pull " in line or "run " in line for line in operations())
+    log.write_text("")
+
+    missing = run(["--continue"], answers=())
+    assert missing.returncode != 0 and "No saved OpenCode data" in missing.stdout, missing.stdout
+    assert not any(line.startswith(("pull ", "build ", "run ")) for line in operations())
     log.write_text("")
 
     # Piped yes and unattended execution must not approve any image changes.
@@ -142,6 +161,9 @@ case "$1" in -u) echo 1000 ;; -g) echo 1000 ;; *) /usr/bin/id "$@" ;; esac
                      "--memory=4g", "--workdir /workspace", "--env HOME=/tmp",
                      "--env OPENAI_API_KEY", f"--volume {project.resolve()}:/workspace:rw"):
         assert required in launch, (required, launch)
+    state_mount = next(part for part in launch.split() if part.endswith(":/opencode-data:rw,U,nocopy"))
+    assert state_mount.startswith("dotfiles-opencode-data-") and "--env XDG_DATA_HOME=/opencode-data" in launch
+    assert launch.count("--volume ") == 2
     for forbidden in (str(home), str(sibling), ".ssh", "docker.sock", "synth-token-not-real"):
         assert forbidden not in launch, (forbidden, launch)
     assert not any("synth-token-not-real" in line for line in calls), calls
@@ -151,6 +173,26 @@ case "$1" in -u) echo 1000 ;; -g) echo 1000 ;; *) /usr/bin/id "$@" ;; esac
     assert repeated.returncode == 0 and "AGENT_MOCK_LAUNCHED" in repeated.stdout
     assert not any(line.startswith(("pull ", "build ")) for line in operations())
     assert sum(line.startswith("run ") for line in operations()) == 1
+
+    for flags, expected in ((["-s", "ses_test"], "--session ses_test"),
+                            (["--session", "ses_test"], "--session ses_test"),
+                            (["-c"], "--continue"), (["--continue"], "--continue")):
+        log.write_text("")
+        resumed = run(flags, answers=(Confirm(),))
+        assert resumed.returncode == 0, resumed.stdout
+        launch = next(line for line in operations() if line.startswith("run "))
+        assert state_mount in launch and launch.endswith(expected), launch
+        assert not any(line.startswith(("pull ", "build ")) for line in operations())
+
+    # A second checkout has no access to the first checkout's state.
+    subprocess.run(["git", "-C", str(sibling), "init", "-q"], check=True)
+    log.write_text("")
+    missing = run(["--project", str(sibling), "-c"], answers=())
+    assert missing.returncode != 0 and "No saved OpenCode data" in missing.stdout
+    other = run(["--project", str(sibling)], answers=(Confirm(),))
+    assert other.returncode == 0, other.stdout
+    launch = next(line for line in operations() if line.startswith("run "))
+    assert state_mount not in launch
 
     # Profiles extend the shared image without changing the runtime mount policy.
     profile = base / "personal"
@@ -177,7 +219,8 @@ case "$1" in -u) echo 1000 ;; -g) echo 1000 ;; *) /usr/bin/id "$@" ;; esac
     assert "--build-arg OPENCODE_IMAGE=localhost/dotfiles-opencode-sandbox:" in build, build
     launch = next(line for line in calls if line.startswith("run "))
     assert "localhost/dotfiles-opencode-personal:" in launch, launch
-    assert launch.count("--volume ") == 1 and f"--volume {project.resolve()}:/workspace:rw" in launch
+    assert state_mount not in launch
+    assert launch.count("--volume ") == 2 and f"--volume {project.resolve()}:/workspace:rw" in launch
     assert str(profile) not in launch
 
     log.write_text("")
